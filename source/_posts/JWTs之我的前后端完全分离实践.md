@@ -11,7 +11,7 @@ categories:
 
 文章主要介绍JWT的相关知识以及Nodejs中的JWT,最后，以一个我最近写的论坛为实例，总结一下我在前后端完全分离方面的实践。
 
-论坛采用Vue+express+mongodb开发，不断完善ing,欢迎访问github项目地址star:[https://github.com/laoqiren/vue-express-forum](https://github.com/laoqiren/vue-express-forum)
+论坛采用Vue+express+mongodb开发，不断完善ing,欢迎访问github项目地址star:[https://github.com/laoqiren/vue-express-forum](https://github.com/laoqiren/vue-express-forum),论坛在线地址:[http://120.77.38.217:3000](http://120.77.38.217:3000)
 
 ![JWT](http://7xsi10.com1.z0.glb.clouddn.com/UfIbUjj.png)
 <!--more-->
