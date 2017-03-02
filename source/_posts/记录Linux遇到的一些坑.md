@@ -61,4 +61,41 @@ ethernet0.virtualDev = "e1000"
 
 ![solvelibX](http://7xsi10.com1.z0.glb.clouddn.com/libXS1.png)
 
+### 双系统为ubuntu扩充硬盘问题
+
+从windows将某磁盘压缩，新建空闲分区后，进入ubuntu时，提示
+
+```
+unknown fileSystem
+```
+
+由于分区情况发生变化，导致grub找不到
+
+#### 解决方法:
+列出所有磁盘: 
+```
+ls
+```
+一个一个尝试如: 
+```
+ls (hd0,10)
+```
+找到ubuntu启动盘，我启动盘是单独的boot分区，在(hd0,10)下
+此时 
+```
+ set root=hd0,msdos10
+ set prefix=(hd0,msdos10)/grub
+```
+接着
+```
+insmod normal
+normal
+```
+最后进入系统修复grub
+```
+sudo update-grub
+sudo grub-install /dev/sda
+```
+注意这里sda后不要加盘号
+
 **未完待续**
