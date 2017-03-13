@@ -42,7 +42,7 @@ B收到file后，用相同hash算法计算文件的hash值，用A的公钥解密
 
 身份验证用来保证数据发送给指定的目标了，这个和TSL握手协议中的密钥交换部分紧密联系。
 
-身份验证主要用RSA算法，还是上面的A,B，A发送数据给B,A为了保证将数据发送给B,A用B的公钥加密数据，然后B拿到后用自己的私钥解密。这样就相当于身份验证了。但是RSA有个问题就是前向保密性问题，如果B的私钥被别人获取，那么A和B之前所有的交流都透露出去了。所以我们在进行密钥交换时，一般用DH方式，采用DH Params和RSA结合的方式。
+身份验证主要用RSA算法，还是上面的A,B，A发送数据给B,A为了保证将数据发送给B,A用B的公钥加密数据，然后B拿到后用自己的私钥解密。这样就相当于身份验证了。但是RSA有个问题就是前向保密性问题，如果B的私钥被别人获取，那么A和B之前所有的交流都透露出去了。所以我们在进行密钥交换时，一般用DH方式，采用ECDH Params和RSA结合的方式。
 
 
 # 握手协议过程详解
@@ -86,10 +86,10 @@ TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
 **上面的三个Certificate,ServerkeyExchange,ServerHelloDone实际上是一次性发送的**
 
 ### ClientKeyExchange
-客户端发送密钥交换所需要的客户端信息，如DH交换算法中，会携带DH Client Params,如文章首页图所示。
+客户端发送密钥交换所需要的客户端信息，如ECDH交换算法中，会携带DH Client Params,如文章首页图所示。
 ![clientExchange](http://7xsi10.com1.z0.glb.clouddn.com/clientExchange.jpg)
 
-**在这里我们来分析密钥交换的具体过程（这里以DH交换方式为例）：**
+**在这里我们来分析密钥交换的具体过程（这里以ECDH交换方式为例）：**
 1. 服务端在SeverKeyExchange中包含了后面会用到的DH Server Params
 2. 客户端在验证服务端的证书后，发送DH Client Params
 
