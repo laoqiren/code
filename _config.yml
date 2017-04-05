@@ -72,8 +72,15 @@ deploy:
   repository: git@github.com:laoqiren/code.git
   branch: gh-pages
 
-baidu_analytics: 741fac870861d3f8b00752a6f3681815
+baidu_analytics: 179492533449f84f24555d1cbf10462f
 
 search:
   path: search.xml
   field: post
+
+feed:
+  type: atom
+  path: atom.xml
+  limit: 0
+  hub:
+  content: true
