@@ -438,4 +438,8 @@ function pipeOnDrain(src) {
 }
 ```
 
-## 未完待续
+## 结语
+
+补充一张图:
+
+![http://7xsi10.com1.z0.glb.clouddn.com/f9a3e300-9b20-11e4-9e14-a6938b3327f0.png](http://7xsi10.com1.z0.glb.clouddn.com/f9a3e300-9b20-11e4-9e14-a6938b3327f0.png)
