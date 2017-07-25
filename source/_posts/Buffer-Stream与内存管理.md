@@ -3,7 +3,7 @@ title: Buffer/Stream与内存管理
 date: 2017-06-29 21:40:28
 tags: [buffer,stream]
 categories: 
-- nodeJS
+- Nodejs
 ---
 
 这篇文章将开启我的Node源码解读系列，结合源码和官方文档，探索其背后的原理。首先想谈谈Stream这强大而又容易误解的功能，文章主要从Buffer/Stream与内存分配的关系角度来分析。

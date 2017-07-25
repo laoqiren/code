@@ -3,7 +3,7 @@ title: session身份验证
 date: 2016-09-24 13:14:12
 tags: [nodeJS,session,express]
 categories: 
-- nodeJS
+- Nodejs
 ---
 我们需要验证程序的使用者身份，需要一定的技术手段。由于http是一种无状态的协议，所以就需要额外的解决方案。最早的解决方案是Cookie,然而Cookie本身有一定限制，无论储存容量还是安全性考虑，都需要其他技术来配合进行身份的识别。
 

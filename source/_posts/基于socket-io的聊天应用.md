@@ -3,7 +3,7 @@ title: 基于socket.io的聊天应用
 date: 2016-06-01 22:07:31
 tags: [socket.io,websocket]
 categories: 
-- nodeJS
+- Nodejs
 ---
 WebSocket是HTML5的一种新通信协议，它实现了浏览器与服务器之间的双向通讯。而Socket.IO是一个完全由JavaScript实现、基于Node.js、支持WebSocket的协议用于实时通信、跨平台的开源框架，它包括了客户端的JavaScript和服务器端的Node.js。
 
