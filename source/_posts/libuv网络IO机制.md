@@ -293,6 +293,13 @@ for (i = 0; i < nfds; i++) {
 ```cpp
 tcp->io_watcher.cb = uv__server_io;
 ```
+然后由于`timeout`在event loop里被设置为0，即表示立即返回，当下一次event loop来临时，根据epoll机制：
+
+---
+LT模式: 当epoll_wait检测到描述符事件发生并将此事件通知应用程序，应用程序可以不立即处理该事件。下次调用epoll_wait时，会再次响应应用程序并通知此事件。
+
+这样就不用担心两次事件循环之间的时间有事件来不及处理了。
+
 这样这个与I/O有关的epoll操作结束，直到下一个event loop来临，又会去`取观察者->注册感兴趣的事件->找epoll询问产生的事件->执行回调`。
 
 ## 回调进入js层面
@@ -351,3 +358,5 @@ nice job!
 可以看到，调用`listen`是一个同步过程，即会调用C++层面的`Listen`,而这个`Listen`的作用就是将io观察者加入到`loop->wathcer_queue`里，完成后才会返回。
 
 然后在V8执行js代码的背后，通过执行`uv_run()`开始`event loop`,背后的io异步，实际上是利用的`epoll`机制，里面是一个无限循环，`epoll_wait()`不断地监听`watcher_queue`里每个观察者期待的事件是否发生，如果发生，就生成`events`数组，`events`数组可能来自不同的`fd`，针对每一个`fd`分别调用它们所属观察者的回调函数。接着，进入下一个for循环。
+
+可以看到暴露给应用层的异步网络I/O，内部实现还是同步的，因为epoll这种机制虽然是非阻塞的I/O多路复用，但是需要不断地去轮询事件的产生或者休眠，相当于还是阻塞了process。不过这些都是发生在V8外的event loop内部的，v8的线程没有被阻塞。而event loop的处理方式是要求`epoll_wait()`立即返回，通过循环的方式去调用它，这就有点类似于`read`方式了。
