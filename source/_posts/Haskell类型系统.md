@@ -219,7 +219,9 @@ last :: [a] -> a
 ## 其他
 实践过程中经常碰到类型转换问题，由于强类型的原因，遇到了很多麻烦，这里占个坑，需要补充这方面的解决方案。
 
-未完待续...
+![http://upload-images.jianshu.io/upload_images/1023733-27c30ca1b9b1af69.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240](http://upload-images.jianshu.io/upload_images/1023733-27c30ca1b9b1af69.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+### 数值类型转换：
 
 ## 总结
 Haskell有一套强大的类型系统，虽然是functional,OO的有些思想却在其中有一些体现。
