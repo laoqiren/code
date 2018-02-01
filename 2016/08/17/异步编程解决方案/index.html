@@ -1,0 +1,904 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/code/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/code/lib/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/code/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="异步编程," />
+
+
+
+
+
+  <link rel="alternate" href="/code/atom.xml" title="罗峡的技术博客" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/code/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="我们碰到的最简单的异步解决方案便是回调函数了，回调函数用起来比较简单，但是经常会遇到诸如下面实例的情况： jq先后执行的动画12345$(&apos;#div1&apos;).animate(&amp;#123;width:&quot;300&quot;&amp;#125;,3000,function()&amp;#1">
+<meta name="keywords" content="异步编程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="异步编程解决方案">
+<meta property="og:url" content="http://luoxia.me/code/2016/08/17/异步编程解决方案/index.html">
+<meta property="og:site_name" content="罗峡的技术博客">
+<meta property="og:description" content="我们碰到的最简单的异步解决方案便是回调函数了，回调函数用起来比较简单，但是经常会遇到诸如下面实例的情况： jq先后执行的动画12345$(&apos;#div1&apos;).animate(&amp;#123;width:&quot;300&quot;&amp;#125;,3000,function()&amp;#123;	$(&apos;#div2&apos;).animate(&amp;#123;top:&quot;200px&quot;&amp;#125;,2000,function()&amp;#123;		$(">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2017-11-16T13:10:06.491Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="异步编程解决方案">
+<meta name="twitter:description" content="我们碰到的最简单的异步解决方案便是回调函数了，回调函数用起来比较简单，但是经常会遇到诸如下面实例的情况： jq先后执行的动画12345$(&apos;#div1&apos;).animate(&amp;#123;width:&quot;300&quot;&amp;#125;,3000,function()&amp;#123;	$(&apos;#div2&apos;).animate(&amp;#123;top:&quot;200px&quot;&amp;#125;,2000,function()&amp;#123;		$(">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: undefined,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://luoxia.me/code/2016/08/17/异步编程解决方案/"/>
+
+  <title> 异步编程解决方案 | 罗峡的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?179492533449f84f24555d1cbf10462f";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/code/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">罗峡的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">爱技术，爱生活</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/code/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/code/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/code/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/code/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/code/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup">
+ <span class="search-icon fa fa-search"></span>
+ <input type="text" id="local-search-input">
+ <div id="local-search-result"></div>
+ <span class="popup-btn-close">close</span>
+</div>
+
+
+    </div>
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                异步编程解决方案
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-08-17T17:20:50+08:00" content="2016-08-17">
+              2016-08-17
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/code/categories/JavaScript/" itemprop="url" rel="index">
+                    <span itemprop="name">JavaScript</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>我们碰到的最简单的异步解决方案便是回调函数了，回调函数用起来比较简单，但是经常会遇到诸如下面实例的情况：</p>
+<p><strong>jq先后执行的动画</strong><br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$(<span class="string">'#div1'</span>).animate(&#123;<span class="attr">width</span>:<span class="string">"300"</span>&#125;,<span class="number">3000</span>,<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">	$(<span class="string">'#div2'</span>).animate(&#123;<span class="attr">top</span>:<span class="string">"200px"</span>&#125;,<span class="number">2000</span>,<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">		$(<span class="string">'#div3'</span>).animate(&#123;<span class="attr">left</span>:<span class="string">"100px"</span>&#125;,<span class="number">2000</span>,<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">			$(<span class="string">'#div4'</span>).animate...</span><br><span class="line">);</span><br></pre></td></tr></table></figure></p>
+<p><strong>服务端渲染</strong><br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">fs.readFile(template_path,<span class="string">'utf-8'</span>,<span class="function"><span class="keyword">function</span>(<span class="params">err,template</span>)</span>&#123;</span><br><span class="line">	db.query(sql,<span class="function"><span class="keyword">function</span>(<span class="params">err,data</span>)</span>&#123;</span><br><span class="line">		l10n.get(<span class="function"><span class="keyword">function</span>(<span class="params">err,resources</span>)</span>&#123;</span><br><span class="line">			render(template,data,resources);</span><br><span class="line">		&#125;);</span><br><span class="line">	&#125;);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure></p>
+<p>可见，当有多个异步调用来共同完成一个任务时，会出现函数嵌套过深的情况，使得程序难以阅读和管理。再一点就是，回调函数的写法并不适合我们线性的思维方式，我们需要用同步的写法来完成异步调用。</p>
+<p><strong>文章目录</strong></p>
+<ol>
+<li>回调函数</li>
+<li>事件相关（事件监听，事件订阅/发布模式)</li>
+<li>Promise</li>
+<li>协程(generator)控制流程，包括generator与thunk函数，generator与promise</li>
+<li>终极解决方案:async</li>
+<li>流程控制库</li>
+</ol>
+<a id="more"></a>
+<p>这个世界上不存在所谓回调函数深度嵌套的问题。 —— Jackson Tian</p>
+<p>世界上本没有嵌套回调，写得人多了，也便有了}}}}}}}}}}}}。 —— fengmk2</p>
+<h3 id="回调函数"><a href="#回调函数" class="headerlink" title="回调函数"></a>回调函数</h3><p>js作为一门非常灵活的语言，其本身有可以有许多种编程范式，而函数式编程也是其中一种，函数作为js的一等公民发挥了巨大的作用力，函数式编程在异步编程中起着重要的作用，本文并不会对函数式编程进行详细总结（这是之后文章的事儿)，只是对一些生僻不常用而本文用到的函数式编程术语进行描述。</p>
+<p>js的异步实现方式就是回调函数，回调函数作为异步操作的第二个阶段传入调用方法。如事件处理程序，ajax调用结果对应的回调，文件读取的回调等。</p>
+<p>Node中的异步操作的回调函数第一个参数为err是由于异步的实现原理（上一篇文章）即事件驱动，异步操作的第一个阶段会立即返回，等到数据读取完成供事件循环调用执行第二阶段的回调，但是出于这两段之间发生的错误将无法捕获，就只好把错误作为第一个参数传递。</p>
+<p>正如开头所述，回调函数的问题便是回调地狱和非线性的表达方式。</p>
+<h3 id="事件相关"><a href="#事件相关" class="headerlink" title="事件相关"></a>事件相关</h3><h4 id="事件监听"><a href="#事件监听" class="headerlink" title="事件监听"></a>事件监听</h4><p>这个在DOM编程中很常见:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$(<span class="built_in">document</span>).ready(<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">	<span class="comment">//TODO</span></span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure></p>
+<p>DOM解析完毕触发ready事件，执行回调</p>
+<h4 id="发布-订阅模式"><a href="#发布-订阅模式" class="headerlink" title="发布/订阅模式"></a>发布/订阅模式</h4><p>publish/subscribe模式是js基于事件驱动机制的类似于观察者模式的实现，虽然两种设计模式都有发布者和观察者，但是观察者模式是具体的目标对象调用观察者的update方法，发布/订阅模式则是有一个消息发布中心，利用事件驱动，订阅者执行事件处理程序来订阅和接收发布者的通知，实际上还是一种事件监听的方式。</p>
+<h5 id="jquery中的发布-订阅模式实现"><a href="#jquery中的发布-订阅模式实现" class="headerlink" title="jquery中的发布/订阅模式实现"></a>jquery中的发布/订阅模式实现</h5><p><strong>自定义事件</strong><br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$(<span class="string">'#btn'</span>).on(<span class="string">'myevent'</span>,<span class="function"><span class="keyword">function</span>(<span class="params">data</span>)</span>&#123;...&#125;);<span class="comment">//订阅myevent事件</span></span><br><span class="line">$(<span class="string">'#btn'</span>).trigger(<span class="string">'myevent,'</span>hello<span class="string">');//发布事件</span></span><br></pre></td></tr></table></figure></p>
+<p><strong>pub/sub插件</strong><br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">jQuery.pubsub.subscribe(<span class="string">'c49.filter.change'</span>, <span class="function"><span class="keyword">function</span>(<span class="params">topic, msg</span>)</span>&#123;</span><br><span class="line">    <span class="comment">//Do something on filter change</span></span><br><span class="line">&#125;);</span><br><span class="line">jQuery.pubsub.publish(<span class="string">'c49.filter.change'</span>, &#123;</span><br><span class="line">    <span class="string">"action"</span>:<span class="string">"add"</span>,</span><br><span class="line">    <span class="string">"filter"</span>:&#123;<span class="string">"value"</span>:<span class="number">1</span>,<span class="string">"label"</span>:<span class="string">"The price filter"</span>&#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure></p>
+<h5 id="nodeJS的核心模块event"><a href="#nodeJS的核心模块event" class="headerlink" title="nodeJS的核心模块event"></a>nodeJS的核心模块event</h5><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> event = <span class="built_in">require</span>(<span class="string">'event'</span>);</span><br><span class="line"><span class="keyword">let</span> emitter = <span class="keyword">new</span> events.EventEmitter();</span><br><span class="line">emmitter.on(<span class="string">'data'</span>,<span class="function"><span class="keyword">function</span>(<span class="params">data</span>)</span>&#123;...&#125;);<span class="comment">//订阅</span></span><br><span class="line">emmitter.emit(<span class="string">'data'</span>,<span class="string">'hhhh'</span>);<span class="comment">//发布</span></span><br></pre></td></tr></table></figure>
+<p>实际上就是提供了自定义事件的功能。</p>
+<h3 id="Promise"><a href="#Promise" class="headerlink" title="Promise"></a>Promise</h3><h4 id="起源"><a href="#起源" class="headerlink" title="起源"></a>起源</h4><p>Promise最早出现在Dojo框架中，jquery1.5以后版本有Promise/Deferred对象：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">add</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">	<span class="keyword">let</span> dtd = $.Deferred();</span><br><span class="line">	<span class="keyword">var</span> tasks = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">　　　　　　alert(<span class="string">"执行完毕！"</span>);</span><br><span class="line">　　　　　　dtd.resolve(); <span class="comment">// 改变deferred对象的执行状态</span></span><br><span class="line">　　　　&#125;;</span><br><span class="line">　　setTimeout(tasks,<span class="number">5000</span>);</span><br><span class="line">	<span class="keyword">return</span> dtd.promise();</span><br><span class="line">&#125;</span><br><span class="line">$.when(add()).done(<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;...&#125;).fail(<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;...&#125;);</span><br></pre></td></tr></table></figure></p>
+<p>$.when()接受deferred对象返回promise对象，promise对象不能改变状态，add方法内部调用dtd的promise()方法返回promise对象可以防止外部改变其状态。done,fail,progress都返回promise对象，方便链式调用。</p>
+<p>后来Promise/Deferred模式也被加入了CommonJS规范当中。</p>
+<h4 id="ES2015标准"><a href="#ES2015标准" class="headerlink" title="ES2015标准"></a>ES2015标准</h4><p>Promise对象最终被写入了ES2015标准，使得我们可以不用再写深层嵌套的回调了,以readFile为例：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> readFile = <span class="function"><span class="keyword">function</span>(<span class="params">fileName</span>)</span>&#123;</span><br><span class="line">	<span class="keyword">return</span> <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function"><span class="keyword">function</span>(<span class="params">resolve,reject</span>)</span>&#123;</span><br><span class="line">		fs.readFile(fileName,<span class="string">'utf-8'</span>,<span class="function"><span class="keyword">function</span>(<span class="params">err,data</span>)</span>&#123;</span><br><span class="line">		<span class="keyword">if</span>(error)&#123;</span><br><span class="line">			reject(error);</span><br><span class="line">		&#125; <span class="keyword">else</span>&#123;</span><br><span class="line">			resolve(data);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;);</span><br><span class="line">&#125;</span><br><span class="line">readFile(<span class="string">'./fileA.txt'</span>)</span><br><span class="line">.then(<span class="function"><span class="keyword">function</span>(<span class="params">data1</span>)</span>&#123;...&#125;)</span><br><span class="line">.then(<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;<span class="keyword">return</span> readFile(<span class="string">'./fileB.txt'</span>);&#125;)</span><br><span class="line">.then(<span class="function"><span class="keyword">function</span>(<span class="params">data2</span>)</span>&#123;...&#125;)</span><br><span class="line">.catch(<span class="function"><span class="keyword">function</span>(<span class="params">e</span>)</span>&#123;...&#125;);</span><br></pre></td></tr></table></figure></p>
+<p>这样回调嵌套变成了一连串的then()了，这样符合了同步的写法，流程比较清晰，但是这样写还是会造成过多的then，代码量也很大。另外如果我们的多个异步操作互相依赖，后面的操作依赖前面操作返回的结果，光靠promise是比较难实现的。这就要说到后面的generator函数了。</p>
+<p>promise.all()可实现多个异步任务同时执行，提供程序效率，具体的这里就不详解了。</p>
+<h3 id="协程控制流程"><a href="#协程控制流程" class="headerlink" title="协程控制流程"></a>协程控制流程</h3><h4 id="协程"><a href="#协程" class="headerlink" title="协程"></a>协程</h4><p>协程可由单线程和多线程语言实现，单线程里由多个函数实现，多个线程（函数）可以并行执行，但是只有一个线程（函数）处于运行状态，其他都处于暂停状态。js里的协程实现方式是generator函数，协程的执行权只能由generator函数的调用者才能将执行权交还给generator函数。</p>
+<h4 id="generator函数"><a href="#generator函数" class="headerlink" title="generator函数"></a>generator函数</h4><p>generator函数是es6提供的一种js协程实现方式，内部就相当于状态机，<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> *<span class="title">asyncJob</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="comment">// ...其他代码</span></span><br><span class="line">  <span class="keyword">var</span> f = <span class="keyword">yield</span> readFile(fileA);</span><br><span class="line">  <span class="comment">// ...其他代码</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>上面的asyncJob就是协程实现，yield命令表示执行到此处，执行权交给其他协程，协程遇到yield命令就暂停，等到执行权返回，再从暂停的地方继续往后执行。它的最大优点，就是代码的写法非常像同步操作，如果去除yield命令，简直一模一样。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span>* <span class="title">loadUI</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  showLoadingScreen();</span><br><span class="line">  <span class="keyword">yield</span> loadUIDataAsynchronously();<span class="comment">//异步的加载UI</span></span><br><span class="line">  hideLoadingScreen();</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">var</span> loader = loadUI();</span><br><span class="line"><span class="comment">// 加载UI</span></span><br><span class="line">loader.next()</span><br><span class="line"></span><br><span class="line"><span class="comment">// 卸载UI</span></span><br><span class="line">loader.next()</span><br></pre></td></tr></table></figure>
+<p>上面例子loader为一个遍历器，每次调用next()都会一直执行直到遇到yield语句。上面的卸载UI就相当于异步的加载UI后执行的回调函数。这样就不用写回调函数了，就实现了异步的同步表达，更符合我们的线性思维。</p>
+<p>generator函数另外一个功能就是可以向generator内部输入值，yiled语句本身没有返回值，但是遍历器在调用next()方法时可以传入参数作为上一个yield的返回值。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span>* <span class="title">test</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">	<span class="keyword">let</span> a = <span class="keyword">yield</span> <span class="number">5</span>;</span><br><span class="line">	<span class="keyword">let</span> b = <span class="keyword">yield</span> a+<span class="number">3</span>;</span><br><span class="line">	<span class="built_in">console</span>.log(b);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">let</span> t = test();</span><br><span class="line">t.next(); <span class="comment">//[5,false]</span></span><br><span class="line">t.next(<span class="number">5</span>);<span class="comment">//[8,false]</span></span><br><span class="line">t.next(<span class="number">8</span>);<span class="comment">//8</span></span><br></pre></td></tr></table></figure>
+<p>为什么讲到这一点儿呢，这对我们的流程控制非常有用，还记得上面的promise吗，我们后面的异步依赖前面操作的数据，yield就可以做到这一点。<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span>* <span class="title">longRunningTask</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="keyword">var</span> value1 = <span class="keyword">yield</span> step1();</span><br><span class="line">    <span class="keyword">var</span> value2 = <span class="keyword">yield</span> step2(value1);</span><br><span class="line">    <span class="keyword">var</span> value3 = <span class="keyword">yield</span> step3(value2);</span><br><span class="line">    <span class="keyword">var</span> value4 = <span class="keyword">yield</span> step4(value3);</span><br><span class="line">    <span class="comment">// Do something with value4</span></span><br><span class="line">  &#125; <span class="keyword">catch</span> (e) &#123;</span><br><span class="line">    <span class="comment">// Handle any error from step1 through step4</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>然后我们就需要一个自动执行器，将前一个操作的返回值输入到generator函数内部了。有哪些方式来实现这个自动执行器呢？</p>
+<p>generator和thunk函数</p>
+<p>generator和promise</p>
+<h4 id="thunk函数"><a href="#thunk函数" class="headerlink" title="thunk函数"></a>thunk函数</h4><p>编译器的”传名调用”实现，往往是将参数放到一个临时函数之中，再将这个临时函数传入函数体。这个临时函数就叫做Thunk函数。<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">f</span>(<span class="params">m</span>)</span>&#123;</span><br><span class="line">  <span class="keyword">return</span> m * <span class="number">2</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">f(x + <span class="number">5</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 等同于</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> thunk = <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> x + <span class="number">5</span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">f</span>(<span class="params">thunk</span>)</span>&#123;</span><br><span class="line">  <span class="keyword">return</span> thunk() * <span class="number">2</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>js中的thunk函数是指将多参数的函数变为只接受回调函数为参数的函数，这和偏函数类似，只是这里指定最后的参数是回调函数而已。</p>
+<p>thunk转换器示例:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> Thunk = <span class="function"><span class="keyword">function</span>(<span class="params">fn</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="function"><span class="keyword">function</span> (<span class="params">...args</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="function"><span class="keyword">function</span> (<span class="params">callback</span>) </span>&#123;</span><br><span class="line">      <span class="keyword">return</span> fn.call(<span class="keyword">this</span>, ...args, callback);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">var</span> readFile = Thunk(fs.readFile);</span><br><span class="line">readFile(fileA)(callback);</span><br></pre></td></tr></table></figure></p>
+<p>上例将readFile转换为了thunk函数，这样调用readFile就不会立即执行，而是需要等待传入callback来调用。</p>
+<p>node有一个thunkify模块可直接将函数转换为thunk函数<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> thunkify = <span class="built_in">require</span>(<span class="string">'thunkify'</span>);</span><br><span class="line"><span class="keyword">var</span> fs = <span class="built_in">require</span>(<span class="string">'fs'</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> read = thunkify(fs.readFile);</span><br><span class="line">read(<span class="string">'package.json'</span>)(<span class="function"><span class="keyword">function</span>(<span class="params">err, str</span>)</span>&#123;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure></p>
+<h4 id="generator和thunk函数实现流程控制"><a href="#generator和thunk函数实现流程控制" class="headerlink" title="generator和thunk函数实现流程控制"></a>generator和thunk函数实现流程控制</h4><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//基于thunk函数和generator函数的流程控制</span></span><br><span class="line"><span class="keyword">var</span> fs = <span class="built_in">require</span>(<span class="string">'fs'</span>);</span><br><span class="line"><span class="keyword">var</span> thunkify = <span class="built_in">require</span>(<span class="string">'thunkify'</span>);</span><br><span class="line"><span class="keyword">var</span> readFile = thunkify(fs.readFile); <span class="comment">//将fs.readFile thunk化</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">run</span>(<span class="params">fn</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">var</span> gen = fn();</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">next</span>(<span class="params">err, data</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">var</span> result = gen.next(data); <span class="comment">//交还执行权给generator函数,并将上一个异步操作的结果作为yield语句的返回值，这样可以在generator函数中处理结果。</span></span><br><span class="line">    <span class="keyword">if</span> (result.done) <span class="keyword">return</span>;</span><br><span class="line">    result.value(next);<span class="comment">//result.value是返回的一个函数(thunk函数)，接受一个回调函数作为参数</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  next();</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">var</span> g = <span class="function"><span class="keyword">function</span>* (<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="keyword">var</span> f1 = <span class="keyword">yield</span> readFile(<span class="string">'fileA'</span>);</span><br><span class="line">  <span class="comment">//process(f1);这里可以处理结果</span></span><br><span class="line">  <span class="keyword">var</span> f2 = <span class="keyword">yield</span> readFile(<span class="string">'fileB'</span>);</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">  <span class="keyword">var</span> fn = <span class="keyword">yield</span> readFile(<span class="string">'fileN'</span>);</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">run(g);</span><br></pre></td></tr></table></figure>
+<h4 id="generator和promise实现流程控制"><a href="#generator和promise实现流程控制" class="headerlink" title="generator和promise实现流程控制"></a>generator和promise实现流程控制</h4><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> fs = <span class="built_in">require</span>(<span class="string">'fs'</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> readFile = <span class="function"><span class="keyword">function</span> (<span class="params">fileName</span>)</span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function"><span class="keyword">function</span> (<span class="params">resolve, reject</span>)</span>&#123;</span><br><span class="line">    fs.readFile(fileName, <span class="function"><span class="keyword">function</span>(<span class="params">error, data</span>)</span>&#123;</span><br><span class="line">      <span class="keyword">if</span> (error) <span class="keyword">return</span> reject(error);</span><br><span class="line">      resolve(data);</span><br><span class="line">    &#125;);</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> gen = <span class="function"><span class="keyword">function</span>* (<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="keyword">var</span> f1 = <span class="keyword">yield</span> readFile(<span class="string">'/etc/fstab'</span>);</span><br><span class="line">  <span class="keyword">var</span> f2 = <span class="keyword">yield</span> readFile(<span class="string">'/etc/shells'</span>);</span><br><span class="line">  <span class="built_in">console</span>.log(f1.toString());</span><br><span class="line">  <span class="built_in">console</span>.log(f2.toString());</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">run</span>(<span class="params">gen</span>)</span>&#123;</span><br><span class="line">  <span class="keyword">var</span> g = gen();</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">next</span>(<span class="params">data</span>)</span>&#123;</span><br><span class="line">    <span class="keyword">var</span> result = g.next(data);</span><br><span class="line">    <span class="keyword">if</span> (result.done) <span class="keyword">return</span> result.value;</span><br><span class="line">    result.value.then(<span class="function"><span class="keyword">function</span>(<span class="params">data</span>)</span>&#123;</span><br><span class="line">      next(data);</span><br><span class="line">    &#125;);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  next();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">run(gen);</span><br></pre></td></tr></table></figure>
+<p>我们这已经实现了异步的同步化表达，解决了回调深度嵌套的问题，但是我们不得不自己写自动执行器，多麻烦，有一个模块叫co,可以不用自己写自动执行器</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> gen = <span class="function"><span class="keyword">function</span>* (<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="keyword">var</span> f1 = <span class="keyword">yield</span> readFile(<span class="string">'/etc/fstab'</span>);</span><br><span class="line">  <span class="keyword">var</span> f2 = <span class="keyword">yield</span> readFile(<span class="string">'/etc/shells'</span>);</span><br><span class="line">  <span class="built_in">console</span>.log(f1.toString());</span><br><span class="line">  <span class="built_in">console</span>.log(f2.toString());</span><br><span class="line">&#125;;</span><br><span class="line">co(gen).then(<span class="function"><span class="keyword">function</span> (<span class="params"></span>)</span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="string">'Generator 函数执行完成'</span>);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>但是co模块要求generator函数内的yiled后只能跟thunk函数或者promise对象。</p>
+<h3 id="终极解决方案：async"><a href="#终极解决方案：async" class="headerlink" title="终极解决方案：async"></a>终极解决方案：async</h3><p>async即异步的意思，现在还是处于草案当中，之前本来说好的 将纳入到es2016中，但是最终还是没有出现，估计是在es2017中(明年)才会纳入规范，但是它是如此美妙，加上有babel等的转换，我们可以直接用起来。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> readFile = <span class="function"><span class="keyword">function</span> (<span class="params">fileName</span>)</span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function"><span class="keyword">function</span> (<span class="params">resolve, reject</span>)</span>&#123;</span><br><span class="line">    fs.readFile(fileName, <span class="function"><span class="keyword">function</span>(<span class="params">error, data</span>)</span>&#123;</span><br><span class="line">      <span class="keyword">if</span> (error) <span class="keyword">return</span> reject(error);</span><br><span class="line">      resolve(data);</span><br><span class="line">    &#125;);</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">async</span> <span class="function"><span class="keyword">function</span> <span class="title">testAsync</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">	<span class="keyword">let</span> data1 = <span class="keyword">await</span> readFile(<span class="string">'./file1.txt'</span>);</span><br><span class="line">	<span class="built_in">console</span>.log(data1);</span><br><span class="line">	<span class="keyword">let</span> data2 = <span class="keyword">await</span> readFile(<span class="string">'./file2.txt'</span>);</span><br><span class="line">	<span class="keyword">return</span> data2;</span><br><span class="line">&#125;</span><br><span class="line">testAsync().then(<span class="function"><span class="params">data2</span>=&gt;</span><span class="built_in">console</span>.log(data2));</span><br><span class="line"><span class="built_in">console</span>.log(<span class="string">'外部hello'</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">外部hello</span></span><br><span class="line"><span class="comment">第一个文件</span></span><br><span class="line"><span class="comment">第二个文件</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
+<p>await后可跟promise对象和简单的数据，如果不是promise对象，虽然await会在这里异步的调用，但是语句相当于是同步执行了，和generator一样，内部是从上到下依次执行的，只是async自己包装了自动执行器，当我们需要多个异步任务同时执行，以提高效率时，可以将多个promise跟在await后面：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">await</span> <span class="built_in">Promise</span>.all([getFoo(), getBar()]);</span><br></pre></td></tr></table></figure></p>
+<p>可见await的方案更加语义化，流程清晰，简介。</p>
+<h3 id="流程控制库"><a href="#流程控制库" class="headerlink" title="流程控制库"></a>流程控制库</h3><p>在async方案出现之前，还有许多的用于流程控制的库</p>
+<ol>
+<li>尾触发如connect中间件</li>
+<li>async模块</li>
+<li>Step库</li>
+<li>wind库</li>
+<li>Q模块</li>
+<li>其他</li>
+</ol>
+<p>由于篇幅限制这里就不详解了，有兴趣可以查阅相关资料。</p>
+<p><strong>文章只是总结一些异步编程的方案，以及它们的关系，并没有非常详细的介绍。</strong></p>
+<p>引用朴灵前辈在《深入浅出NodeJS》异步编程的一句话：</p>
+<p><strong>这个世界以异步运行的本质是不会因为大家线性思维的惯性而改变的。就像日出月落不会因为你的心情而改变其自有的运行轨迹</strong></p>
+<p>异步是如此的美妙，异步编程却给我们一种复杂的感觉，但是困难总是有解决办法的，从最简单的回调函数，到终极解决方案async/await，正是我们不断地探寻更加优雅的解决方案的成果。</p>
+<p><strong>tomorrow will be better</strong></p>
+
+      
+    </div>
+
+    <div>
+      
+        
+<div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/code/images/wechat.jpg" alt="罗峡的博客 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎扫描上面的微信公众号二维码，关注我的个人公众号：全栈前端</div>
+</div>
+
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/code/images/wechat_pay.png" alt="罗峡的博客 WeChat Pay"/>
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/code/images/ali_pay.jpg" alt="罗峡的博客 Alipay"/>
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/code/tags/异步编程/" rel="tag">#异步编程</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/code/2016/08/16/异步的实现原理/" rel="next" title="异步的实现原理">
+                <i class="fa fa-chevron-left"></i> 异步的实现原理
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/code/2016/08/22/二进制数据处理问题/" rel="prev" title="二进制数据处理问题">
+                二进制数据处理问题 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/code/images/head.jpg"
+               alt="罗峡的博客" />
+          <p class="site-author-name" itemprop="name">罗峡的博客</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/code/archives">
+              <span class="site-state-item-count">43</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/code/categories">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/code/tags">
+                <span class="site-state-item-count">85</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/code/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/laoqiren" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://luoxia.me/life" title="生活随笔" target="_blank">生活随笔</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#回调函数"><span class="nav-number">1.</span> <span class="nav-text">回调函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#事件相关"><span class="nav-number">2.</span> <span class="nav-text">事件相关</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#事件监听"><span class="nav-number">2.1.</span> <span class="nav-text">事件监听</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#发布-订阅模式"><span class="nav-number">2.2.</span> <span class="nav-text">发布/订阅模式</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#jquery中的发布-订阅模式实现"><span class="nav-number">2.2.1.</span> <span class="nav-text">jquery中的发布/订阅模式实现</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#nodeJS的核心模块event"><span class="nav-number">2.2.2.</span> <span class="nav-text">nodeJS的核心模块event</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Promise"><span class="nav-number">3.</span> <span class="nav-text">Promise</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#起源"><span class="nav-number">3.1.</span> <span class="nav-text">起源</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ES2015标准"><span class="nav-number">3.2.</span> <span class="nav-text">ES2015标准</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#协程控制流程"><span class="nav-number">4.</span> <span class="nav-text">协程控制流程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#协程"><span class="nav-number">4.1.</span> <span class="nav-text">协程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#generator函数"><span class="nav-number">4.2.</span> <span class="nav-text">generator函数</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#thunk函数"><span class="nav-number">4.3.</span> <span class="nav-text">thunk函数</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#generator和thunk函数实现流程控制"><span class="nav-number">4.4.</span> <span class="nav-text">generator和thunk函数实现流程控制</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#generator和promise实现流程控制"><span class="nav-number">4.5.</span> <span class="nav-text">generator和promise实现流程控制</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#终极解决方案：async"><span class="nav-number">5.</span> <span class="nav-text">终极解决方案：async</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#流程控制库"><span class="nav-number">6.</span> <span class="nav-text">流程控制库</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">罗峡的博客</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/code/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/code/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/code/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/code/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length == 0) {
+       search_path = "search.xml";
+    }
+    var path = "/code/" + search_path;
+    // monitor main search box;
+
+    function proceedsearch() {
+      $("body").append('<div class="popoverlay">').css('overflow', 'hidden');
+      $('.popup').toggle();
+
+    }
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+    'use strict';
+    $.ajax({
+        url: path,
+        dataType: "xml",
+        async: true,
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            isfetched = true;
+            $('.popup').detach().appendTo('.header-inner');
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                var matchcounts = 0;
+                var str='<ul class=\"search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length > 1) {
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var content_index = [];
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_content = data.content.trim().replace(/<[^>]+>/g,"").toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    var index_content = -1;
+                    var first_occur = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title != '' && data_content != '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            index_content = data_content.indexOf(keyword);
+                            if( index_title < 0 && index_content < 0 ){
+                                isMatch = false;
+                            } else {
+                                if (index_content < 0) {
+                                    index_content = 0;
+                                }
+                                if (i == 0) {
+                                    first_occur = index_content;
+                                }
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        matchcounts += 1;
+                        str += "<li><a href='"+ data_url +"' class='search-result-title'>"+ data_title +"</a>";
+                        var content = data.content.trim().replace(/<[^>]+>/g,"");
+                        if (first_occur >= 0) {
+                            // cut out 100 characters
+                            var start = first_occur - 20;
+                            var end = first_occur + 80;
+                            if(start < 0){
+                                start = 0;
+                            }
+                            if(start == 0){
+                                end = 50;
+                            }
+                            if(end > content.length){
+                                end = content.length;
+                            }
+                            var match_content = content.substring(start, end);
+                            // highlight all keywords
+                            keywords.forEach(function(keyword){
+                                var regS = new RegExp(keyword, "gi");
+                                match_content = match_content.replace(regS, "<b class=\"search-keyword\">"+keyword+"</b>");
+                            });
+
+                            str += "<p class=\"search-result\">" + match_content +"...</p>"
+                        }
+                        str += "</li>";
+                    }
+                })};
+                str += "</ul>";
+                if (matchcounts == 0) { str = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>' }
+                if (keywords == "") { str = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>' }
+                $resultContent.innerHTML = str;
+            });
+            proceedsearch();
+        }
+    });}
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched == false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+
+    });
+
+    $('.popup-btn-close').click(function(e){
+      $('.popup').hide();
+      $(".popoverlay").remove();
+      $('body').css('overflow', '');
+    });
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+  </script>
+
+
+  
+
+  
+
+  
+<script type="text/javascript" async src="//push.zhanzhang.baidu.com/push.js">
+</script>
+
+
+</body>
+</html>

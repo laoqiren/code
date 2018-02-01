@@ -1,0 +1,881 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/code/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/code/lib/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/code/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="云计算,openstack,私有云," />
+
+
+
+
+
+  <link rel="alternate" href="/code/atom.xml" title="罗峡的技术博客" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/code/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="只是一个简单的开始。">
+<meta name="keywords" content="云计算,openstack,私有云">
+<meta property="og:type" content="article">
+<meta property="og:title" content="一个私有云实例的起步">
+<meta property="og:url" content="http://luoxia.me/code/2017/05/30/一个私有云实例的起步/index.html">
+<meta property="og:site_name" content="罗峡的技术博客">
+<meta property="og:description" content="只是一个简单的开始。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/%E8%99%9A%E6%8B%9F%E5%8C%96%E6%8A%80%E6%9C%AF%20.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/2017-05-30%2014-06-07%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/2017-05-29%2014-04-19%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/2017-05-29%2023-39-59%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/2017-05-30%2009-46-59%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/2017-05-30%2009-48-40%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/2017-05-29%2019-16-18%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/2017-05-30%2009-47-36%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/2017-05-30%2009-49-18%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE.png">
+<meta property="og:image" content="https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1496141480309&di=bca5c982a951ff8a9fcf90b90ba30fe5&imgtype=0&src=http%3A%2F%2Fppt.downhot.com%2Fd%2Ffile%2Fp%2F2014%2F06%2F24%2F768749e5278c9f0cb2aabc3728f0e75a.jpg">
+<meta property="og:updated_time" content="2017-11-16T13:10:06.490Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="一个私有云实例的起步">
+<meta name="twitter:description" content="只是一个简单的开始。">
+<meta name="twitter:image" content="http://7xsi10.com1.z0.glb.clouddn.com/%E8%99%9A%E6%8B%9F%E5%8C%96%E6%8A%80%E6%9C%AF%20.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: undefined,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://luoxia.me/code/2017/05/30/一个私有云实例的起步/"/>
+
+  <title> 一个私有云实例的起步 | 罗峡的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?179492533449f84f24555d1cbf10462f";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/code/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">罗峡的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">爱技术，爱生活</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/code/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/code/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/code/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/code/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/code/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup">
+ <span class="search-icon fa fa-search"></span>
+ <input type="text" id="local-search-input">
+ <div id="local-search-result"></div>
+ <span class="popup-btn-close">close</span>
+</div>
+
+
+    </div>
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                一个私有云实例的起步
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2017-05-30T10:48:21+08:00" content="2017-05-30">
+              2017-05-30
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/code/categories/云计算/" itemprop="url" rel="index">
+                    <span itemprop="name">云计算</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>只是一个简单的开始。<br><a id="more"></a></p>
+<p>当云计算老师要求我们在自己笔记本上搭建私有云时我一开始是拒绝的，多耗资源的玩意儿啊，弄一个最低配单机版的，内存就要求动不动就4G+，磁盘40G+。。。</p>
+<p>这一折腾下来，还是学到了不少，总结下一些坑吧。</p>
+<p><strong>资源有限，所有组件在一台虚拟机(all-in-one),客户机为ubuntu 14.04 server版</strong></p>
+<h2 id="虚拟化那些事儿"><a href="#虚拟化那些事儿" class="headerlink" title="虚拟化那些事儿"></a>虚拟化那些事儿</h2><p>这里放一张我画的简单思维导图吧：<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/%E8%99%9A%E6%8B%9F%E5%8C%96%E6%8A%80%E6%9C%AF%20.png" alt="virtual technology"></p>
+<h2 id="网络配置那些事儿"><a href="#网络配置那些事儿" class="headerlink" title="网络配置那些事儿"></a>网络配置那些事儿</h2><p>一开始我是选择VirtualBox来搭建的，但在网络配置过程中遇到了一些坑:</p>
+<p>与VMWare不同，VirtualBox只虚拟了一张网卡类似于VMWare的VMnet8，而没有用于宿主机连接客户机的host-only网卡。由于客户os是ubuntu server版，到时候访问dashboard不得不需要宿主机连接客户机。于是又加一张host-only网卡。</p>
+<p>结果发现一个问题：</p>
+<p>在NAT网络正常情况下，临时通过ifconfig来为host网卡配置静态ip，世界美好，但是，当我将配置写入文件时，NAT就挂了，目前还没找到解决方案。</p>
+<p>还有一个问题，我尝试为NAT网卡分配静态IP，发现行不通。</p>
+<p>最终还是投奔VMWare,简单粗暴的NAT网卡，可以禁用DHCP,可以ping通客户机。<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/2017-05-30%2014-06-07%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE.png" alt=""></p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/2017-05-29%2014-04-19%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE.png" alt=""></p>
+<h3 id="为openstack-Neutron配置网络"><a href="#为openstack-Neutron配置网络" class="headerlink" title="为openstack Neutron配置网络"></a>为openstack Neutron配置网络</h3><p>openstck主机的ip与NAT网卡ip相同:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">HOST_IP=172.16.38.101</span><br></pre></td></tr></table></figure></p>
+<p>为了外网能够访问dashboard，让br-ex网桥和客户机NAT网卡关联:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">## Neutron options</span><br><span class="line">Q_USE_SECGROUP=True</span><br><span class="line">FLOATING_RANGE=&quot;172.16.38.105/24&quot;</span><br><span class="line">FIXED_RANGE=&quot;10.0.0.0/24&quot;</span><br><span class="line">Q_FLOATING_ALLOCATION_POOL=start=172.16.38.130,end=172.16.38.138</span><br><span class="line">PUBLIC_NETWORK_GATEWAY=&quot;172.16.38.2&quot;</span><br><span class="line">Q_L3_ENABLED=True</span><br><span class="line">PUBLIC_INTERFACE=eth0</span><br><span class="line">Q_USE_PROVIDERNET_FOR_PUBLIC=True</span><br><span class="line">OVS_PHYSICAL_BRIDGE=br-ex</span><br><span class="line">PUBLIC_BRIDGE=br-ex</span><br><span class="line">OVS_BRIDGE_MAPPINGS=public:br-ex</span><br></pre></td></tr></table></figure>
+<p>安装好后可以通过<code>ovs-vsctrl show</code>检查br-ex和eth0的对应关系是否正常:<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/2017-05-29%2023-39-59%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE.png" alt=""></p>
+<h3 id="instance的网络配置"><a href="#instance的网络配置" class="headerlink" title="instance的网络配置"></a>instance的网络配置</h3><p>一个简单的网络拓扑图:<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/2017-05-30%2009-46-59%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE.png" alt=""></p>
+<p>public用于openstack主机外网访问，与openstack eth0网卡处于同一网段,这里(172.16.38),<br>用于给实例分配floating IP，可以它的范围就是我们在local.conf里关于Neutron options的<br><code>Q_FLOATING_ALLOCATION_POOL=start=172.16.38.130,end=172.16.38.138</code>字段。</p>
+<p>然后private就是实例内部网络了，在创建实例的时候，分配网络就分配private network,可以看到它的范围就是字段<code>FIXED_RANGE=&quot;10.0.0.0/24&quot;</code></p>
+<p>路由器连接public 和 private<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/2017-05-30%2009-48-40%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE.png" alt=""></p>
+<h2 id="stack-sh那些事儿"><a href="#stack-sh那些事儿" class="headerlink" title="stack.sh那些事儿"></a>stack.sh那些事儿</h2><h3 id="镜像源"><a href="#镜像源" class="headerlink" title="镜像源"></a>镜像源</h3><p>网上的文章都将镜像源换成了<code>http://git.trystack.cn</code><br>即:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">GIT_BASE=http://git.trystack.cn</span><br><span class="line">NOVNC_REPO=http://git.trystack.cn/kanaka/noVNC.git</span><br><span class="line">SPICE_REPO=http://git.trystack.cn/git/spice/spice-html5.git</span><br></pre></td></tr></table></figure></p>
+<p>但发现<code>http://git.trystack.cn/kanaka/noVNC.git</code>直接就是404,安装过程中也因为找不到镜像中断过，应该是镜像源出现问题了，于是我换成了github源。</p>
+<h3 id="djiango问题"><a href="#djiango问题" class="headerlink" title="djiango问题"></a>djiango问题</h3><p><img src="http://7xsi10.com1.z0.glb.clouddn.com/2017-05-29%2019-16-18%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE.png" alt=""></p>
+<p>解决办法:</p>
+<p>先查看openstacksdk版本:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">root@ubuntu:~# python</span><br><span class="line">Python 2.7.6 (default, Oct 26 2016, 20:30:19) </span><br><span class="line">[GCC 4.8.4] on linux2</span><br><span class="line">Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information.</span><br><span class="line">&gt;&gt;&gt; import openstack</span><br><span class="line">&gt;&gt;&gt; import pbr.version</span><br><span class="line">&gt;&gt;&gt; print(pbr.version.VersionInfo(&apos;openstacksdk&apos;).version_string())</span><br><span class="line">0.8.1</span><br><span class="line">&gt;&gt;&gt; quit()</span><br></pre></td></tr></table></figure></p>
+<p>修改<code>/usr/local/lib/python2.7/dist-packages/openstack/session.py</code>里的<code>DEFAULT_USER_AGENT = &quot;openstacksdk/%s&quot; % openstack.__version__</code>为:<br><code>DEFAULT_USER_AGENT = &quot;openstacksdk/0.8.1&quot;</code><br>重新安装<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">./unstack.sh</span><br><span class="line">./clean.sh</span><br><span class="line">./stack.sh</span><br></pre></td></tr></table></figure></p>
+<h2 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h2><h3 id="想重启服务"><a href="#想重启服务" class="headerlink" title="想重启服务?"></a>想重启服务?</h3><p>当重启虚拟机后，发现宿主机和客户机互相都ping不通了，又是一个坑，因为eth0 桥接到br-ex 上面去了，而重启后br-ex 没有ip 配置，把eth0 从 br-ex 上去掉，或者手动通过ifconfig 给 br-ex 配置ip ，都可以解决问题。</p>
+<p>对于重启服务，之前的openstack是有<code>rejoin-stack.sh</code>方式的，但官方已经不推荐这种做法。</p>
+<p>所以我就直接针对于安装完毕的状态创建快照，下次直接恢复就是了(那么上面的网络问题也就不是问题了)。</p>
+<h3 id="安全访问控制"><a href="#安全访问控制" class="headerlink" title="安全访问控制"></a>安全访问控制</h3><p>在配置安全访问的时候，如果直接使用default secure会导致openstack主机没法ping通实例floating IP,或者ssh连接，需要自定义规则:</p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/2017-05-30%2009-47-36%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE.png" alt=""></p>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>这只是一个简单的开始，更多理论知识和实践，有待积累。</p>
+<p>最后进入我们创建的实例去看看吧。一个简单的私有云实例。<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/2017-05-30%2009-49-18%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE.png" alt=""></p>
+<p>最后，端午安康！</p>
+<p><img src="https://timgsa.baidu.com/timg?image&amp;quality=80&amp;size=b9999_10000&amp;sec=1496141480309&amp;di=bca5c982a951ff8a9fcf90b90ba30fe5&amp;imgtype=0&amp;src=http%3A%2F%2Fppt.downhot.com%2Fd%2Ffile%2Fp%2F2014%2F06%2F24%2F768749e5278c9f0cb2aabc3728f0e75a.jpg" alt=""></p>
+
+      
+    </div>
+
+    <div>
+      
+        
+<div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/code/images/wechat.jpg" alt="罗峡的博客 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎扫描上面的微信公众号二维码，关注我的个人公众号：全栈前端</div>
+</div>
+
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/code/images/wechat_pay.png" alt="罗峡的博客 WeChat Pay"/>
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/code/images/ali_pay.jpg" alt="罗峡的博客 Alipay"/>
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/code/tags/云计算/" rel="tag">#云计算</a>
+          
+            <a href="/code/tags/openstack/" rel="tag">#openstack</a>
+          
+            <a href="/code/tags/私有云/" rel="tag">#私有云</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/code/2017/04/01/docker初步实践/" rel="next" title="Docker初步实践">
+                <i class="fa fa-chevron-left"></i> Docker初步实践
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/code/2017/06/29/Buffer-Stream与内存管理/" rel="prev" title="Buffer/Stream与内存管理">
+                Buffer/Stream与内存管理 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/code/images/head.jpg"
+               alt="罗峡的博客" />
+          <p class="site-author-name" itemprop="name">罗峡的博客</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/code/archives">
+              <span class="site-state-item-count">43</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/code/categories">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/code/tags">
+                <span class="site-state-item-count">85</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/code/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/laoqiren" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://luoxia.me/life" title="生活随笔" target="_blank">生活随笔</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#虚拟化那些事儿"><span class="nav-number">1.</span> <span class="nav-text">虚拟化那些事儿</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#网络配置那些事儿"><span class="nav-number">2.</span> <span class="nav-text">网络配置那些事儿</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#为openstack-Neutron配置网络"><span class="nav-number">2.1.</span> <span class="nav-text">为openstack Neutron配置网络</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#instance的网络配置"><span class="nav-number">2.2.</span> <span class="nav-text">instance的网络配置</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#stack-sh那些事儿"><span class="nav-number">3.</span> <span class="nav-text">stack.sh那些事儿</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#镜像源"><span class="nav-number">3.1.</span> <span class="nav-text">镜像源</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#djiango问题"><span class="nav-number">3.2.</span> <span class="nav-text">djiango问题</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#其他"><span class="nav-number">4.</span> <span class="nav-text">其他</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#想重启服务"><span class="nav-number">4.1.</span> <span class="nav-text">想重启服务?</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#安全访问控制"><span class="nav-number">4.2.</span> <span class="nav-text">安全访问控制</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结语"><span class="nav-number">5.</span> <span class="nav-text">结语</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">罗峡的博客</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/code/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/code/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/code/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/code/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length == 0) {
+       search_path = "search.xml";
+    }
+    var path = "/code/" + search_path;
+    // monitor main search box;
+
+    function proceedsearch() {
+      $("body").append('<div class="popoverlay">').css('overflow', 'hidden');
+      $('.popup').toggle();
+
+    }
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+    'use strict';
+    $.ajax({
+        url: path,
+        dataType: "xml",
+        async: true,
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            isfetched = true;
+            $('.popup').detach().appendTo('.header-inner');
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                var matchcounts = 0;
+                var str='<ul class=\"search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length > 1) {
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var content_index = [];
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_content = data.content.trim().replace(/<[^>]+>/g,"").toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    var index_content = -1;
+                    var first_occur = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title != '' && data_content != '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            index_content = data_content.indexOf(keyword);
+                            if( index_title < 0 && index_content < 0 ){
+                                isMatch = false;
+                            } else {
+                                if (index_content < 0) {
+                                    index_content = 0;
+                                }
+                                if (i == 0) {
+                                    first_occur = index_content;
+                                }
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        matchcounts += 1;
+                        str += "<li><a href='"+ data_url +"' class='search-result-title'>"+ data_title +"</a>";
+                        var content = data.content.trim().replace(/<[^>]+>/g,"");
+                        if (first_occur >= 0) {
+                            // cut out 100 characters
+                            var start = first_occur - 20;
+                            var end = first_occur + 80;
+                            if(start < 0){
+                                start = 0;
+                            }
+                            if(start == 0){
+                                end = 50;
+                            }
+                            if(end > content.length){
+                                end = content.length;
+                            }
+                            var match_content = content.substring(start, end);
+                            // highlight all keywords
+                            keywords.forEach(function(keyword){
+                                var regS = new RegExp(keyword, "gi");
+                                match_content = match_content.replace(regS, "<b class=\"search-keyword\">"+keyword+"</b>");
+                            });
+
+                            str += "<p class=\"search-result\">" + match_content +"...</p>"
+                        }
+                        str += "</li>";
+                    }
+                })};
+                str += "</ul>";
+                if (matchcounts == 0) { str = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>' }
+                if (keywords == "") { str = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>' }
+                $resultContent.innerHTML = str;
+            });
+            proceedsearch();
+        }
+    });}
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched == false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+
+    });
+
+    $('.popup-btn-close').click(function(e){
+      $('.popup').hide();
+      $(".popoverlay").remove();
+      $('body').css('overflow', '');
+    });
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+  </script>
+
+
+  
+
+  
+
+  
+<script type="text/javascript" async src="//push.zhanzhang.baidu.com/push.js">
+</script>
+
+
+</body>
+</html>

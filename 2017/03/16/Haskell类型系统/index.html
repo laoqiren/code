@@ -1,0 +1,893 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/code/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/code/lib/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/code/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Haskell,functional," />
+
+
+
+
+
+  <link rel="alternate" href="/code/atom.xml" title="罗峡的技术博客" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/code/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="这篇文章主要总结Haskell的类型系统。文章参照《Learn you a Haskell》。">
+<meta name="keywords" content="Haskell,functional">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Haskell类型系统">
+<meta property="og:url" content="http://luoxia.me/code/2017/03/16/Haskell类型系统/index.html">
+<meta property="og:site_name" content="罗峡的技术博客">
+<meta property="og:description" content="这篇文章主要总结Haskell的类型系统。文章参照《Learn you a Haskell》。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/1023733-27c30ca1b9b1af69.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:updated_time" content="2017-11-16T13:10:06.484Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Haskell类型系统">
+<meta name="twitter:description" content="这篇文章主要总结Haskell的类型系统。文章参照《Learn you a Haskell》。">
+<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/1023733-27c30ca1b9b1af69.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: undefined,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://luoxia.me/code/2017/03/16/Haskell类型系统/"/>
+
+  <title> Haskell类型系统 | 罗峡的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?179492533449f84f24555d1cbf10462f";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/code/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">罗峡的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">爱技术，爱生活</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/code/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/code/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/code/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/code/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/code/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup">
+ <span class="search-icon fa fa-search"></span>
+ <input type="text" id="local-search-input">
+ <div id="local-search-result"></div>
+ <span class="popup-btn-close">close</span>
+</div>
+
+
+    </div>
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Haskell类型系统
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2017-03-16T09:32:24+08:00" content="2017-03-16">
+              2017-03-16
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/code/categories/Haskell/" itemprop="url" rel="index">
+                    <span itemprop="name">Haskell</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>这篇文章主要总结Haskell的类型系统。文章参照《Learn you a Haskell》。</p>
+<a id="more"></a>
+<h2 id="表达式类型"><a href="#表达式类型" class="headerlink" title="表达式类型"></a>表达式类型</h2><p>Int,Integer,Float,Double,Bool,Char,[]中各个项类型必须相同，()的类型跟其中的每一个元素的类型相关，只有每个元素对应类型相同，元素数目相同的两个Tuple类型才相同。</p>
+<p>函数同样有类型声明。类型必须以大写开头。</p>
+<h2 id="类型参数"><a href="#类型参数" class="headerlink" title="类型参数"></a>类型参数</h2><p>如<code>head</code>函数: <code>head :: [a] -&gt; a</code>，表示与具体类型无关</p>
+<h2 id="typeclass"><a href="#typeclass" class="headerlink" title="typeclass"></a>typeclass</h2><p>如 <code>(==) :: Eq a =&gt; a -&gt; a -&gt; Bool</code>可以看到类型类约束<code>Eq a</code>,相当于interface定义行为</p>
+<p>常见typeclass:</p>
+<p>Eq:可判断相等性；Ord：可比较大小（必须先加入Eq)；Show：可以用字符串表示，Read：可以将一个字符串转换成某成员类型。（对于<code>read &quot;4&quot;</code>这种要加入类型注释:<code>read &quot;4&quot;::Int</code>）；Enum:可枚举，如<code>[&#39;a&#39;..&#39;e&#39;]</code>；Bounded:有一个上限和下限<code>minBound :: Int</code>: <code>-2147483648</code>；Num:具有数字特征，包含所有数字，如 <code>:t (*)</code>:<code>(*) :: (Num a) =&gt; a -&gt; a -&gt; a</code>；Integral:仅饱含整数，成员有:Int, Integer；Floating:仅包含Float,Double。</p>
+<p>一个有用的函数<code>fromIntegral</code>：用于将Integral typeclass成员转换成更通用的<code>Num</code>　typeclass成员:<br><code>fromIntegral :: (Num b, Integral a) =&gt; a -&gt; b</code>，比如我们求一个List的length,再加上一个Float，就会报错，因为<code>length :: [a] -&gt; Int</code>，我们可以<code>fromIntegral (length [1,2,3,4]) + 3.2</code>来解决。</p>
+<h2 id="构造自己的Types和Typeclasses"><a href="#构造自己的Types和Typeclasses" class="headerlink" title="构造自己的Types和Typeclasses"></a>构造自己的Types和Typeclasses</h2><h3 id="ADT（代数数据类型）"><a href="#ADT（代数数据类型）" class="headerlink" title="ADT（代数数据类型）"></a>ADT（代数数据类型）</h3><p>如Bool:<code>data Bool = False | True</code>,False,True就是值构造子，更复杂的例子:</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">data</span> <span class="type">Shape</span> = <span class="type">Circle</span> <span class="type">Float</span> <span class="type">Float</span> <span class="type">Float</span> | <span class="type">Rectangle</span> <span class="type">Float</span> <span class="type">Float</span> <span class="type">Float</span> <span class="type">Float</span></span></span><br></pre></td></tr></table></figure>
+<p>其中Circle,Rectangle两个值构造子后面跟着三项，实际为参数，因为值构造子相当于函数，如<code>Circle :: Float -&gt; Float -&gt; Float -&gt; Shape</code></p>
+<p>通过<code>deriving</code>将类型派生为指定<code>typeclass</code>的成员</p>
+<p>ADT的每个值构造子的每个参数必须有具体类型</p>
+<h3 id="Record-Syntax"><a href="#Record-Syntax" class="headerlink" title="Record Syntax"></a>Record Syntax</h3><p>例如表示一个人的type:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">data</span> <span class="type">Person</span> = <span class="type">Person</span> <span class="type">String</span> <span class="type">String</span> <span class="type">Int</span> <span class="type">Float</span> <span class="type">String</span> <span class="type">String</span> <span class="keyword">deriving</span> (<span class="type">Show</span>)</span></span><br></pre></td></tr></table></figure></p>
+<p>分别表示firstName,lastName等等，我们要获取这些firstName啥的，还得这样:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="title">firstName</span> :: <span class="type">Person</span> -&gt; <span class="type">String</span></span><br><span class="line"><span class="title">firstName</span> (<span class="type">Person</span> firstname _ _ _ _ _) = firstname</span><br></pre></td></tr></table></figure></p>
+<p>显然麻烦，而解决方案:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">data</span> <span class="type">Person</span> = <span class="type">Person</span> &#123; <span class="title">firstName</span> :: <span class="type">String</span></span></span><br><span class="line"><span class="class">                     , <span class="title">lastName</span> :: <span class="type">String</span></span></span><br><span class="line"><span class="class">                     , <span class="title">age</span> :: <span class="type">Int</span></span></span><br><span class="line"><span class="class">                     , <span class="title">height</span> :: <span class="type">Float</span></span></span><br><span class="line"><span class="class">                     , <span class="title">phoneNumber</span> :: <span class="type">String</span></span></span><br><span class="line"><span class="class">                     , <span class="title">flavor</span> :: <span class="type">String</span></span></span><br><span class="line"><span class="class">                     &#125; <span class="keyword">deriving</span> (<span class="type">Show</span>)</span></span><br></pre></td></tr></table></figure></p>
+<p>即自动创建了这些取值函数，如<code>firstName :: Person -&gt; String</code></p>
+<h3 id="Type-parameters"><a href="#Type-parameters" class="headerlink" title="Type parameters"></a>Type parameters</h3><p>如<code>data Maybe a = Nothing | Just a</code>，<code>a</code>就是类型参数，这有点类似于C++的类模板，a可以是任意type。<code>Maybe</code>只是一个类型构造子，最终的type是根据a来的,如 <code>Just &quot;hey&quot; :: Maybe [Char]</code>。还有如<code>[]</code>，同样可以根据类型参数的实际type来构造不同的type：<code>[Char],[Int]</code>等。这种情况<code>read</code>的时候要加入完整的类型注释:<code>read &quot;Just &#39;t&#39;&quot; :: Maybe Char</code></p>
+<p>永远不给类型参数加typeclass约束</p>
+<p>类型构造子和值构造子的区分是相当重要的。在声明数据类型时，等号=左端的那个是类型构造子，右端的(中间可能有|分隔)都是值构造子。</p>
+<h3 id="Derived-instances"><a href="#Derived-instances" class="headerlink" title="Derived instances"></a>Derived instances</h3><p>派生为指定typeclass的成员，如<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">data</span> <span class="type">Day</span> = <span class="type">Monday</span> | <span class="type">Tuesday</span> | <span class="type">Wednesday</span> | <span class="type">Thursday</span> | <span class="type">Friday</span> | <span class="type">Saturday</span> | <span class="type">Sunday</span></span></span><br><span class="line">           <span class="keyword">deriving</span> (<span class="type">Eq</span>, <span class="type">Ord</span>, <span class="type">Show</span>, <span class="type">Read</span>, <span class="type">Bounded</span>, <span class="type">Enum</span>)</span><br></pre></td></tr></table></figure></p>
+<p>可以:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[Thursday .. Sunday]</span><br><span class="line">[Thursday,Friday,Saturday,Sunday]</span><br><span class="line"></span><br><span class="line">[minBound .. maxBound] :: [Day]</span><br><span class="line">[Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday]</span><br></pre></td></tr></table></figure></p>
+<h3 id="Type-synonyms"><a href="#Type-synonyms" class="headerlink" title="Type synonyms"></a>Type synonyms</h3><p>类型同义词:<code>type String = [Char]</code></p>
+<h3 id="Recursive-data-structures-递归地定义数据结构"><a href="#Recursive-data-structures-递归地定义数据结构" class="headerlink" title="Recursive data structures (递归地定义数据结构)"></a>Recursive data structures (递归地定义数据结构)</h3><p>比如一个List:<code>5:6:8:[]</code>即[5,6,8]：<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">infixr</span> <span class="number">5</span> :-:</span><br><span class="line"><span class="class"><span class="keyword">data</span> <span class="type">List</span> a = <span class="type">Empty</span> | a :-: (<span class="type">List</span> <span class="title">a</span>) <span class="keyword">deriving</span> (<span class="type">Show</span>, <span class="type">Read</span>, <span class="type">Eq</span>, <span class="type">Ord</span>)</span></span><br></pre></td></tr></table></figure></p>
+<p>再比如一个二叉树：<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">data</span> <span class="type">BinaryTree</span> a = <span class="type">Node</span> a (<span class="type">BinaryTree</span> <span class="title">a</span>) (<span class="type">BinaryTree</span> <span class="title">a</span>)</span></span><br><span class="line">                  | <span class="type">Empty</span></span><br><span class="line">                  <span class="keyword">deriving</span> (<span class="type">Show</span>)</span><br><span class="line"></span><br><span class="line"><span class="title">simpleTree</span> = <span class="type">Node</span> <span class="string">"parent"</span> (<span class="type">Node</span> <span class="string">"left child"</span> <span class="type">Empty</span> <span class="type">Empty</span>)</span><br><span class="line">                           (<span class="type">Node</span> <span class="string">"right child"</span> <span class="type">Empty</span> <span class="type">Empty</span>)</span><br></pre></td></tr></table></figure></p>
+<h3 id="构造自己的typeclass和type-instance"><a href="#构造自己的typeclass和type-instance" class="headerlink" title="构造自己的typeclass和type instance"></a>构造自己的typeclass和type instance</h3><p>定义typeclass，如<code>Eq</code>:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="type">Eq</span> a <span class="keyword">where</span></span></span><br><span class="line">    (==) :: a -&gt; a -&gt; <span class="type">Bool</span></span><br><span class="line">    (/=) :: a -&gt; a -&gt; <span class="type">Bool</span></span><br><span class="line">    x == y = not (x /= y)</span><br><span class="line">    x /= y = not (x == y)</span><br></pre></td></tr></table></figure></p>
+<p>可以看到<code>==</code>和<code>x /= y</code>相互依赖定义，这样使得<code>Eq</code>的<code>minimal complete definition</code>成了<code>==</code>和<code>/=</code>其中一个，即只需要定义其中一个就能完整定义出<code>Eq</code>的instance了。比如:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">data</span> <span class="type">TrafficLight</span> = <span class="type">Red</span> | <span class="type">Yellow</span> | <span class="type">Green</span></span></span><br><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Eq</span> <span class="type">TrafficLight</span> <span class="keyword">where</span></span></span><br><span class="line">    <span class="type">Red</span> == <span class="type">Red</span> = <span class="type">True</span></span><br><span class="line">    <span class="type">Green</span> == <span class="type">Green</span> = <span class="type">True</span></span><br><span class="line">    <span class="type">Yellow</span> == <span class="type">Yellow</span> = <span class="type">True</span></span><br><span class="line">    _ == _ = <span class="type">False</span></span><br></pre></td></tr></table></figure></p>
+<p>还可以定义sub typeclass:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">instance</span> (<span class="type">Eq</span> <span class="title">m</span>) =&gt; <span class="type">Eq</span> (<span class="type">Maybe</span> <span class="title">m</span>) <span class="keyword">where</span></span></span><br><span class="line">    <span class="type">Just</span> x == <span class="type">Just</span> y = x == y</span><br><span class="line">    <span class="type">Nothing</span> == <span class="type">Nothing</span> = <span class="type">True</span></span><br><span class="line">    _ == _ = <span class="type">False</span></span><br></pre></td></tr></table></figure></p>
+<h3 id="Kind"><a href="#Kind" class="headerlink" title="Kind"></a>Kind</h3><p>用于类型的类型。对于有类型参数的构造子如<code>Maybe a = Nothing | Just a</code>这种，<code>:k Maybe</code>就是:<code>*-&gt;*</code>即接受一个具体类型返回一个具体类型。</p>
+<p>这里具体类型指有具体形态的，比如一个函数的类型声明:<code>:k Int -&gt; Int</code>结果是<code>*</code>，因为这是个具体的类型。对于没有类型参数的构造子，如<code>:k Int</code>结果就是<code>*</code></p>
+<p>类型构造子可以做curry:<code>:k Either String</code>结果是<code>Either String :: * -&gt; *</code>。</p>
+<p>就比如定义Functor的instance的时候，就必须接受一个<code>* -&gt; *</code>类型&gt;。</p>
+<p>Functor:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="type">Functor</span> f <span class="keyword">where</span></span></span><br><span class="line">    fmap :: (a -&gt; b) -&gt; f a -&gt; f b</span><br></pre></td></tr></table></figure></p>
+<p>看看这个类型:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">data</span> <span class="type">Barry</span> t k p = <span class="type">Barry</span> &#123; <span class="title">yabba</span> :: <span class="title">p</span>, <span class="title">dabba</span> :: <span class="title">t</span> <span class="title">k</span> &#125;</span></span><br></pre></td></tr></table></figure></p>
+<p><code>Barry :: (* -&gt; *) -&gt; * -&gt; * -&gt; *</code></p>
+<p>要想它成为functor，就必须:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Functor</span> (<span class="type">Barry</span> <span class="title">a</span> <span class="title">b</span>) <span class="keyword">where</span></span></span><br><span class="line">    fmap f (<span class="type">Barry</span> &#123;yabba = x, dabba = y&#125;) = <span class="type">Barry</span> &#123;yabba = f x, dabba = y&#125;</span><br></pre></td></tr></table></figure></p>
+<p>因为<code>Barry a b</code>的Kind这个时候就是<code>* -&gt; *</code>。</p>
+<h3 id="关键字”newtype”"><a href="#关键字”newtype”" class="headerlink" title="关键字”newtype”"></a>关键字”newtype”</h3><p>将现有类型包装为新的类型。</p>
+<p>比如对于<code>ZipList</code>:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">newtype</span> <span class="type">ZipList</span> a = <span class="type">ZipList</span> &#123;<span class="title">getZipList</span> :: [<span class="title">a</span>]&#125;</span></span><br></pre></td></tr></table></figure></p>
+<p>不过是将<code>[]</code>进行了包装，而这么做的意义是，因为对原有类型的包装得来的新类型不会自动成为原类型定义的那些typeclass的instance。比如原有<code>[]</code>对于<code>Applicative instance</code>的<code>&lt;*&gt;</code>实现是一种交叉结合的方式，如果需要换种方式实现，就可以用我们的新的类型<code>ZipList</code>。</p>
+<p>On newtype laziness</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">newtype</span> <span class="type">CoolBool</span> = <span class="type">CoolBool</span> &#123;<span class="title">getCoolBool</span> :: <span class="type">Bool</span>&#125;</span></span><br><span class="line"></span><br><span class="line"><span class="title">helloMe</span> :: <span class="type">CoolBool</span> -&gt; <span class="type">String</span></span><br><span class="line"><span class="title">helloMe</span> (<span class="type">CoolBool</span> _) = <span class="string">"hello"</span></span><br></pre></td></tr></table></figure>
+<p>然后我们<code>helloMe undefined</code>结果正常为”hello”,不同于<code>data</code>定义的时候抛出错误。</p>
+<p>因为这里进行模式匹配的时候不用进行值构造子的计算。当我们使用 newtype 的时候，Haskell 内部可以将新的类型用旧的类型来表示。他不必加入另一层 box 来包住旧有的类型。他只要注意他是不同的类型就好了。而且 Haskell 会知道 newtype 定义的类型一定只会有一个构造子，他不必计算喂给函数的值就能确定他是 (CoolBool _) 的形式，因为 newtype 只有一个可能的值跟单一字段！</p>
+<h2 id="关于多态"><a href="#关于多态" class="headerlink" title="关于多态"></a>关于多态</h2><p>与其他语言进行对比总结。</p>
+<p>C++中：<br>多态分为编译时多态（静态多态）和运行时多态（动态多态），而真正意义上的多态实际上只有运行时多态，通过虚函数和继承实现，即属于晚绑定，在运行时函数调用地址才能确定。</p>
+<p>针对编译时多态，有模板，函数（操作符）重载(即Ad-hoc多态），模板特化，Duck Typing。</p>
+<p>运行时多态：<a href="http://blog.csdn.net/hackbuteer1/article/details/7475622" target="_blank" rel="noopener">http://blog.csdn.net/hackbuteer1/article/details/7475622</a></p>
+<p>haskell中：</p>
+<p><strong>参数化多态：</strong></p>
+<p>Prelude&gt; :type last<br>last :: [a] -&gt; a</p>
+<p>可以看到last函数的类型签名包含类型变量，不在意具体的类型，对应C++的模板（函数模板，类模板）即泛型实现</p>
+<p><strong>ad-hoc多态：</strong><br>这里的ad-hoc多态与C++有一定区别，因为在haskell中通过type class来实现，而type class又类似于C++的虚函数，每个instance对type class定义的函数都有自己的实现。这勉强叫做“函数重载”，这或许就是它被称为ad-hoc多态的原因。而在C++中ad-hoc多态和虚函数多态完全不一样的。</p>
+<h2 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h2><p>实践过程中经常碰到类型转换问题，由于强类型的原因，遇到了很多麻烦，这里占个坑，需要补充这方面的解决方案。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/1023733-27c30ca1b9b1af69.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="http://upload-images.jianshu.io/upload_images/1023733-27c30ca1b9b1af69.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<h3 id="数值类型转换："><a href="#数值类型转换：" class="headerlink" title="数值类型转换："></a>数值类型转换：</h3><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>Haskell有一套强大的类型系统，虽然是functional,OO的有些思想却在其中有一些体现。</p>
+<p>详情参考书籍<a href="https://learnyoua.haskell.sg/content/zh-cn" target="_blank" rel="noopener">https://learnyoua.haskell.sg/content/zh-cn</a></p>
+
+      
+    </div>
+
+    <div>
+      
+        
+<div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/code/images/wechat.jpg" alt="罗峡的博客 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎扫描上面的微信公众号二维码，关注我的个人公众号：全栈前端</div>
+</div>
+
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/code/images/wechat_pay.png" alt="罗峡的博客 WeChat Pay"/>
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/code/images/ali_pay.jpg" alt="罗峡的博客 Alipay"/>
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/code/tags/Haskell/" rel="tag">#Haskell</a>
+          
+            <a href="/code/tags/functional/" rel="tag">#functional</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/code/2017/03/13/Let-s-Encrypt/" rel="next" title="Let's Encrypt">
+                <i class="fa fa-chevron-left"></i> Let's Encrypt
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/code/2017/03/23/记一个立方体的产生/" rel="prev" title="记一个立方体的产生">
+                记一个立方体的产生 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/code/images/head.jpg"
+               alt="罗峡的博客" />
+          <p class="site-author-name" itemprop="name">罗峡的博客</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/code/archives">
+              <span class="site-state-item-count">43</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/code/categories">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/code/tags">
+                <span class="site-state-item-count">85</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/code/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/laoqiren" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://luoxia.me/life" title="生活随笔" target="_blank">生活随笔</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#表达式类型"><span class="nav-number">1.</span> <span class="nav-text">表达式类型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#类型参数"><span class="nav-number">2.</span> <span class="nav-text">类型参数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#typeclass"><span class="nav-number">3.</span> <span class="nav-text">typeclass</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#构造自己的Types和Typeclasses"><span class="nav-number">4.</span> <span class="nav-text">构造自己的Types和Typeclasses</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ADT（代数数据类型）"><span class="nav-number">4.1.</span> <span class="nav-text">ADT（代数数据类型）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Record-Syntax"><span class="nav-number">4.2.</span> <span class="nav-text">Record Syntax</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Type-parameters"><span class="nav-number">4.3.</span> <span class="nav-text">Type parameters</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Derived-instances"><span class="nav-number">4.4.</span> <span class="nav-text">Derived instances</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Type-synonyms"><span class="nav-number">4.5.</span> <span class="nav-text">Type synonyms</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Recursive-data-structures-递归地定义数据结构"><span class="nav-number">4.6.</span> <span class="nav-text">Recursive data structures (递归地定义数据结构)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#构造自己的typeclass和type-instance"><span class="nav-number">4.7.</span> <span class="nav-text">构造自己的typeclass和type instance</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Kind"><span class="nav-number">4.8.</span> <span class="nav-text">Kind</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#关键字”newtype”"><span class="nav-number">4.9.</span> <span class="nav-text">关键字”newtype”</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#关于多态"><span class="nav-number">5.</span> <span class="nav-text">关于多态</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#其他"><span class="nav-number">6.</span> <span class="nav-text">其他</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#数值类型转换："><span class="nav-number">6.1.</span> <span class="nav-text">数值类型转换：</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">7.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">罗峡的博客</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/code/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/code/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/code/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/code/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length == 0) {
+       search_path = "search.xml";
+    }
+    var path = "/code/" + search_path;
+    // monitor main search box;
+
+    function proceedsearch() {
+      $("body").append('<div class="popoverlay">').css('overflow', 'hidden');
+      $('.popup').toggle();
+
+    }
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+    'use strict';
+    $.ajax({
+        url: path,
+        dataType: "xml",
+        async: true,
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            isfetched = true;
+            $('.popup').detach().appendTo('.header-inner');
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                var matchcounts = 0;
+                var str='<ul class=\"search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length > 1) {
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var content_index = [];
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_content = data.content.trim().replace(/<[^>]+>/g,"").toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    var index_content = -1;
+                    var first_occur = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title != '' && data_content != '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            index_content = data_content.indexOf(keyword);
+                            if( index_title < 0 && index_content < 0 ){
+                                isMatch = false;
+                            } else {
+                                if (index_content < 0) {
+                                    index_content = 0;
+                                }
+                                if (i == 0) {
+                                    first_occur = index_content;
+                                }
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        matchcounts += 1;
+                        str += "<li><a href='"+ data_url +"' class='search-result-title'>"+ data_title +"</a>";
+                        var content = data.content.trim().replace(/<[^>]+>/g,"");
+                        if (first_occur >= 0) {
+                            // cut out 100 characters
+                            var start = first_occur - 20;
+                            var end = first_occur + 80;
+                            if(start < 0){
+                                start = 0;
+                            }
+                            if(start == 0){
+                                end = 50;
+                            }
+                            if(end > content.length){
+                                end = content.length;
+                            }
+                            var match_content = content.substring(start, end);
+                            // highlight all keywords
+                            keywords.forEach(function(keyword){
+                                var regS = new RegExp(keyword, "gi");
+                                match_content = match_content.replace(regS, "<b class=\"search-keyword\">"+keyword+"</b>");
+                            });
+
+                            str += "<p class=\"search-result\">" + match_content +"...</p>"
+                        }
+                        str += "</li>";
+                    }
+                })};
+                str += "</ul>";
+                if (matchcounts == 0) { str = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>' }
+                if (keywords == "") { str = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>' }
+                $resultContent.innerHTML = str;
+            });
+            proceedsearch();
+        }
+    });}
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched == false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+
+    });
+
+    $('.popup-btn-close').click(function(e){
+      $('.popup').hide();
+      $(".popoverlay").remove();
+      $('body').css('overflow', '');
+    });
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+  </script>
+
+
+  
+
+  
+
+  
+<script type="text/javascript" async src="//push.zhanzhang.baidu.com/push.js">
+</script>
+
+
+</body>
+</html>

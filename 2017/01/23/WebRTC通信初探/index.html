@@ -1,0 +1,904 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/code/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/code/lib/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/code/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="HTML5,WebRTC," />
+
+
+
+
+
+  <link rel="alternate" href="/code/atom.xml" title="罗峡的技术博客" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/code/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="WebRTC是由谷歌收购GIPS公司开源的一项用于方便实现音频和视频实时P2P通信的技术。除了音频和视频通信外，还支持其他包括字符串，Blob,ArrayBuffer,ArrayBufferView等数据类型的传输。 与之前聊过的WebSocket应用层协议不同，虽然都能实现实时通信，但是ws实现server-clie">
+<meta name="keywords" content="HTML5,WebRTC">
+<meta property="og:type" content="article">
+<meta property="og:title" content="WebRTC通信初探">
+<meta property="og:url" content="http://luoxia.me/code/2017/01/23/WebRTC通信初探/index.html">
+<meta property="og:site_name" content="罗峡的技术博客">
+<meta property="og:description" content="WebRTC是由谷歌收购GIPS公司开源的一项用于方便实现音频和视频实时P2P通信的技术。除了音频和视频通信外，还支持其他包括字符串，Blob,ArrayBuffer,ArrayBufferView等数据类型的传输。 与之前聊过的WebSocket应用层协议不同，虽然都能实现实时通信，但是ws实现server-client的全双工通信，而WebRTC实现了端对端的通信技术，不依赖于服务器，在视频直">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/f1d3e86b156c3c663fab85434ee07858_b.png">
+<meta property="og:image" content="http://images.cnitblog.com/blog2015/57211/201503/250050215053233.png">
+<meta property="og:image" content="http://lingyu.wang/img/WebRTC/3.png">
+<meta property="og:updated_time" content="2017-11-16T13:10:06.486Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="WebRTC通信初探">
+<meta name="twitter:description" content="WebRTC是由谷歌收购GIPS公司开源的一项用于方便实现音频和视频实时P2P通信的技术。除了音频和视频通信外，还支持其他包括字符串，Blob,ArrayBuffer,ArrayBufferView等数据类型的传输。 与之前聊过的WebSocket应用层协议不同，虽然都能实现实时通信，但是ws实现server-client的全双工通信，而WebRTC实现了端对端的通信技术，不依赖于服务器，在视频直">
+<meta name="twitter:image" content="http://7xsi10.com1.z0.glb.clouddn.com/f1d3e86b156c3c663fab85434ee07858_b.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: undefined,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://luoxia.me/code/2017/01/23/WebRTC通信初探/"/>
+
+  <title> WebRTC通信初探 | 罗峡的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?179492533449f84f24555d1cbf10462f";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/code/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">罗峡的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">爱技术，爱生活</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/code/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/code/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/code/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/code/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/code/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup">
+ <span class="search-icon fa fa-search"></span>
+ <input type="text" id="local-search-input">
+ <div id="local-search-result"></div>
+ <span class="popup-btn-close">close</span>
+</div>
+
+
+    </div>
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                WebRTC通信初探
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2017-01-23T10:17:37+08:00" content="2017-01-23">
+              2017-01-23
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/code/categories/HTML5/" itemprop="url" rel="index">
+                    <span itemprop="name">HTML5</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>WebRTC是由谷歌收购GIPS公司开源的一项用于方便实现音频和视频实时P2P通信的技术。除了音频和视频通信外，还支持其他包括字符串，Blob,ArrayBuffer,ArrayBufferView等数据类型的传输。</p>
+<p>与之前聊过的WebSocket应用层协议不同，虽然都能实现实时通信，但是ws实现server-client的全双工通信，而WebRTC实现了端对端的通信技术，不依赖于服务器，在视频直播会议，游戏，文件传输等领域发挥着重要作用。</p>
+<p><strong>文章目录</strong></p>
+<ol>
+<li>WebRTC底层架构</li>
+<li>MediaStream获取音视频数据流</li>
+<li>RTCPeerConnection实现P2P通信</li>
+<li>NAT/防火墙 穿越技术</li>
+<li>RTCDataChannel API</li>
+<li>遇到的问题总结</li>
+</ol>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/f1d3e86b156c3c663fab85434ee07858_b.png" alt="WebRTC"><br><a id="more"></a></p>
+<h2 id="底层架构"><a href="#底层架构" class="headerlink" title="底层架构"></a>底层架构</h2><p>上图实为WebRTC的底层架构，可以其用到的技术非常多的，包括视频音频处理以及网络传输，防火墙穿越等技术。</p>
+<hr>
+<p>WebRTC有三个模块，Voice Engine(音频引擎)，Video Engine(视频引擎)，Transport。Voice Engine包含iSAC/iLBC Codec(音频编解码器，前者是针对宽带和超宽带，后者是针对窄带)，NetEQ for voice(处理网络抖动和语音包丢失)，Echo Canceler(回声消除器)，Noise Reduction(噪声抑制)；Video Engine包含VP8 Codec(视频图像编解码器)，Video jitter buffer(视频抖动缓冲器，处理视频抖动和视频信息包丢失)，Image enhancements(图像质量增强)。Transport包含SRTP(安全的实时传输协议，用以音视频流传输)，Multiplexing(多路复用)，P2P，STUN+TURN+ICE(用于NAT网络和防火墙穿越的)。除此之外，安全传输可能还会用到DTLS(数据报安全传输)，用于加密传输和密钥协商。整个WebRTC通信是基于UDP的</p>
+<h2 id="MediaStream获取音视频数据流"><a href="#MediaStream获取音视频数据流" class="headerlink" title="MediaStream获取音视频数据流"></a>MediaStream获取音视频数据流</h2><h3 id="getUserMedia-constraints-successCallback-errCallback"><a href="#getUserMedia-constraints-successCallback-errCallback" class="headerlink" title="getUserMedia(constraints,successCallback,errCallback)"></a>getUserMedia(constraints,successCallback,errCallback)</h3><p>navigator上的方法，用于获取用户授权提供的音频视频数据流，三个参数分别为约束对象，成功的回调函数，发送错误的回调函数。</p>
+<h3 id="浏览器兼容性"><a href="#浏览器兼容性" class="headerlink" title="浏览器兼容性"></a>浏览器兼容性</h3><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> getUserMedia = (navigator.getUserMedia || </span><br><span class="line">                    navigator.webkitGetUserMedia || </span><br><span class="line">                    navigator.mozGetUserMedia || </span><br><span class="line">                    navigator.msGetUserMedia);</span><br></pre></td></tr></table></figure>
+<h3 id="上栗子：MediaStream和Canvas实现拍照功能"><a href="#上栗子：MediaStream和Canvas实现拍照功能" class="headerlink" title="上栗子：MediaStream和Canvas实现拍照功能"></a>上栗子：MediaStream和Canvas实现拍照功能</h3><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> getUserMedia = (navigator.getUserMedia || </span><br><span class="line">                    navigator.webkitGetUserMedia || </span><br><span class="line">                    navigator.mozGetUserMedia || </span><br><span class="line">                    navigator.msGetUserMedia);</span><br><span class="line"><span class="keyword">let</span> video = <span class="built_in">document</span>.getElementById(<span class="string">'video'</span>),</span><br><span class="line">	canvas = <span class="built_in">document</span>.getElementById(<span class="string">'canvas'</span>),</span><br><span class="line">	ctx = canvas.getContext(<span class="string">'2d'</span>),</span><br><span class="line">	localStream = <span class="literal">null</span>;</span><br><span class="line">getUserMedia(&#123;<span class="attr">video</span>:<span class="literal">true</span>,<span class="attr">audio</span>:<span class="literal">true</span>&#125;,stream=&gt;&#123;</span><br><span class="line">    video.src = <span class="built_in">window</span>.URL.createObjectURL(stream);</span><br><span class="line">    localStream = stream;</span><br><span class="line">&#125;,err=&gt;&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'get stream failed!'</span>);</span><br><span class="line">&#125;);</span><br><span class="line">video.addEventListener(<span class="string">'click'</span>,()=&gt;&#123;</span><br><span class="line">    <span class="keyword">if</span>(localStream)&#123;</span><br><span class="line">        ctx.drawImage(video,<span class="number">0</span>,<span class="number">0</span>);</span><br><span class="line">        <span class="built_in">document</span>.getElementById(<span class="string">'img'</span>).src = canvas.toDataURL(<span class="string">'image/png'</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<h2 id="RTCPeerConnection实现P2P通信"><a href="#RTCPeerConnection实现P2P通信" class="headerlink" title="RTCPeerConnection实现P2P通信"></a>RTCPeerConnection实现P2P通信</h2><p>P2P通信基于UDP传输协议，更加注重传输实时性。P2P建立过程是比较复杂的。主要是交换SDP和ICE信息。<br><img src="http://images.cnitblog.com/blog2015/57211/201503/250050215053233.png" alt="P2P"></p>
+<p>上图所示为利用信令服务器实现P2P通信的流程图，其中还包含了STUN服务器（非WebRTC实现)</p>
+<h3 id="P2P通信建立过程"><a href="#P2P通信建立过程" class="headerlink" title="P2P通信建立过程"></a>P2P通信建立过程</h3><h4 id="交换SDP"><a href="#交换SDP" class="headerlink" title="交换SDP"></a>交换SDP</h4><p>SDP是一种会话描述协议（Session Description Protocol），包含了一系列信息包括会话使用的媒体种类，双方ip和port,带宽，会话属性等。</p>
+<p>SDP交换采用Offer/Answer形式。</p>
+<ol>
+<li>首先Offer方通过new RTCPeerConnection(config)建立PeerConnection</li>
+<li>Offer方通过createOffer生成sessionDescription，设置localDescription,并通过信令服务器发送给Answer方</li>
+<li>Answer方收到offer,发现并没有与之对应的peerConnection,新建peerConnection,并设置remoteDescription</li>
+<li>Answer方通过createAnswer生成sessionDescripton,设置localDescription,并通过信令服务器发送answer</li>
+<li>Offer方收到answer,设置remoteDescription</li>
+<li>SDP交换结束</li>
+</ol>
+<h4 id="交换ICE"><a href="#交换ICE" class="headerlink" title="交换ICE"></a>交换ICE</h4><p>ICE是一种用于实现NAT/防火墙穿越的协议，可以实现:</p>
+<ol>
+<li>P2P直接通信</li>
+<li>使用STUN服务器实现突破NAT的P2P通信</li>
+<li>使用TURN中继服务器实现突破防火墙的中继通信</li>
+</ol>
+<p>交换过程：</p>
+<ol>
+<li>双方在new RTCPeerConnection(config)建立连接后，当网络候选者可用时，会触发icecandidate事件</li>
+<li>在onicecandidate事件处理程序中将candidate通过信令服务器发送给对方</li>
+<li>双方在接受到彼此的candidate后，通过addIceCandidate将对方的candidate加入到PeerConnection实例中。</li>
+</ol>
+<p>在连接建立前或者建立后调用peerConnection.addStream()方法将本地视频/音频数据流加入到connection当中，当对方接受到视频流时会触发addStream事件，在其处理程序中我们可以接受数据流将其显示。</p>
+<h3 id="基于Socket-io和WebRTC的两人视频聊天室"><a href="#基于Socket-io和WebRTC的两人视频聊天室" class="headerlink" title="基于Socket.io和WebRTC的两人视频聊天室"></a>基于Socket.io和WebRTC的两人视频聊天室</h3><p>上述过程的信令服务器可以使用WebSocket服务，而Node.js可以方便的实现ws服务，socket.io更是封装了一系列API，可以方便的实现多人视频聊天室，多人视频聊天室有需要注意一些其他诸如SDP冲突问题，这里先以两人通信为例来更深入理解整个过程。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//代码较多这里省略</span></span><br></pre></td></tr></table></figure>
+<h2 id="NAT-防火墙穿越技术"><a href="#NAT-防火墙穿越技术" class="headerlink" title="NAT/防火墙穿越技术"></a>NAT/防火墙穿越技术</h2><p>之所以将NAT/防火墙单独出来，是因为NAT/防火墙问题是建立端对端通信的一个重要问题<br><img src="http://lingyu.wang/img/WebRTC/3.png" alt="STUN"></p>
+<h3 id="NAT"><a href="#NAT" class="headerlink" title="NAT"></a>NAT</h3><p>NAT将连接到公网的全局ip转换为内网ip，实现多个终端通信，防止受到来自外网的攻击，有效节省IPV4数量。WebRTC必须穿越NAT进行通信。ICE可以通过STUN技术穿越NAT。</p>
+<p>NAT的实现方式有三种，即静态转换Static Nat、动态转换Dynamic Nat和端口多路复用OverLoad。目前用得比较多的就是端口多路复用。</p>
+<p>STUN服务器可以是自己搭建的，也可以是直接使用现成的，比如谷歌的stun服务:stun:stun.l.google.com:19302</p>
+<p>自己搭建STUN服务器比较简单，这里篇幅有限，省略</p>
+<p>配置好STUN服务，以此建立RTCPeerConnection,配置方法就是上面的config对象:</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> config = &#123;</span><br><span class="line">	<span class="string">"iceServers"</span>:[&#123;<span class="string">"url"</span>:<span class="string">"stun:stun.yourdomain.com:3478"</span>&#125;]</span><br><span class="line">	&#125;</span><br><span class="line"><span class="keyword">let</span> peer = <span class="keyword">new</span> RTCPeerConnection(config);</span><br></pre></td></tr></table></figure>
+<h3 id="防火墙"><a href="#防火墙" class="headerlink" title="防火墙"></a>防火墙</h3><p>对于防火墙，需要依靠TURN服务器来进行通信。起一各TURN服务器监听在某个端口时，需要设置防火墙开发这个端口。搭建TURN服务器也比较简单，在这里也省略。</p>
+<p>同样也要配置好config:</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> config = &#123;</span><br><span class="line">	<span class="string">"iceServers"</span>:[</span><br><span class="line">		&#123;<span class="string">"url"</span>:<span class="string">"stun:stun.yourdomain.com:3478"</span>&#125;,&#123;<span class="string">"url"</span>:<span class="string">"turn:turn.yourdomain.com:3478"</span>,<span class="string">"username"</span>:<span class="string">"yourid"</span>,<span class="string">"credential:"</span>yourpassword<span class="string">"&#125;]</span></span><br><span class="line"><span class="string">	&#125;</span></span><br><span class="line"><span class="string">let peer = new RTCPeerConnection(config);</span></span><br></pre></td></tr></table></figure>
+<h2 id="RTCDataChannel-API"><a href="#RTCDataChannel-API" class="headerlink" title="RTCDataChannel API"></a>RTCDataChannel API</h2><p>既然可以实现音频视频的实时通信，为何不可以实现文本，文件等数据的传输呢？RTCDataChannel API就提供了这个功能。它通过将数据直接从一个浏览器发送到另一个浏览器，不需要将数据通过服务器来进行中转发送，简化了过程，保证实时性，同时还确保数据的安全私密性。</p>
+<p>RTCDataChannel 与RTCPeerConnection API相结合，使用SCTP（流控制传输协议）实现稳定有序的数据传递。其仍然需要信令服务器的参与。以及STUN和TURN服务器来穿越NAT/防火墙。</p>
+<p>RTCDataChannel支持两种模式运行：不可信赖模式（类似UDP)和可信赖模式（类似于TCP)。</p>
+<h3 id="流程分析"><a href="#流程分析" class="headerlink" title="流程分析"></a>流程分析</h3><ol>
+<li>通过config建立RTCPeerConnection</li>
+<li>通过peerConnection.createDataChannel(label,dataChannelConfig)获取dataChannel对象</li>
+<li>按照上述P2P建立流程完成SDP和ICE信息交换</li>
+<li>调用send()方法发送消息</li>
+<li>接收方监听message事件，获取数据</li>
+</ol>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> dataChannel = peerConnection.createDataChannel(<span class="string">'dataChannel'</span>,&#123;<span class="string">'reliable:false'</span>&#125;);</span><br></pre></td></tr></table></figure>
+<p>详细API可查看WebRTC官网</p>
+<h2 id="遇到的问题总结"><a href="#遇到的问题总结" class="headerlink" title="遇到的问题总结"></a>遇到的问题总结</h2>
+      
+    </div>
+
+    <div>
+      
+        
+<div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/code/images/wechat.jpg" alt="罗峡的博客 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎扫描上面的微信公众号二维码，关注我的个人公众号：全栈前端</div>
+</div>
+
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/code/images/wechat_pay.png" alt="罗峡的博客 WeChat Pay"/>
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/code/images/ali_pay.jpg" alt="罗峡的博客 Alipay"/>
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/code/tags/HTML5/" rel="tag">#HTML5</a>
+          
+            <a href="/code/tags/WebRTC/" rel="tag">#WebRTC</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/code/2016/11/27/Cluster模块/" rel="next" title="Cluster模块">
+                <i class="fa fa-chevron-left"></i> Cluster模块
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/code/2017/02/07/使用React SSR构建Isomorphic应用/" rel="prev" title="使用React SSR构建Isomorphic应用">
+                使用React SSR构建Isomorphic应用 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/code/images/head.jpg"
+               alt="罗峡的博客" />
+          <p class="site-author-name" itemprop="name">罗峡的博客</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/code/archives">
+              <span class="site-state-item-count">43</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/code/categories">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/code/tags">
+                <span class="site-state-item-count">85</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/code/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/laoqiren" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://luoxia.me/life" title="生活随笔" target="_blank">生活随笔</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#底层架构"><span class="nav-number">1.</span> <span class="nav-text">底层架构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MediaStream获取音视频数据流"><span class="nav-number">2.</span> <span class="nav-text">MediaStream获取音视频数据流</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#getUserMedia-constraints-successCallback-errCallback"><span class="nav-number">2.1.</span> <span class="nav-text">getUserMedia(constraints,successCallback,errCallback)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#浏览器兼容性"><span class="nav-number">2.2.</span> <span class="nav-text">浏览器兼容性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#上栗子：MediaStream和Canvas实现拍照功能"><span class="nav-number">2.3.</span> <span class="nav-text">上栗子：MediaStream和Canvas实现拍照功能</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RTCPeerConnection实现P2P通信"><span class="nav-number">3.</span> <span class="nav-text">RTCPeerConnection实现P2P通信</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#P2P通信建立过程"><span class="nav-number">3.1.</span> <span class="nav-text">P2P通信建立过程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#交换SDP"><span class="nav-number">3.1.1.</span> <span class="nav-text">交换SDP</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#交换ICE"><span class="nav-number">3.1.2.</span> <span class="nav-text">交换ICE</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#基于Socket-io和WebRTC的两人视频聊天室"><span class="nav-number">3.2.</span> <span class="nav-text">基于Socket.io和WebRTC的两人视频聊天室</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#NAT-防火墙穿越技术"><span class="nav-number">4.</span> <span class="nav-text">NAT/防火墙穿越技术</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#NAT"><span class="nav-number">4.1.</span> <span class="nav-text">NAT</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#防火墙"><span class="nav-number">4.2.</span> <span class="nav-text">防火墙</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RTCDataChannel-API"><span class="nav-number">5.</span> <span class="nav-text">RTCDataChannel API</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#流程分析"><span class="nav-number">5.1.</span> <span class="nav-text">流程分析</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#遇到的问题总结"><span class="nav-number">6.</span> <span class="nav-text">遇到的问题总结</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">罗峡的博客</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/code/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/code/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/code/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/code/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length == 0) {
+       search_path = "search.xml";
+    }
+    var path = "/code/" + search_path;
+    // monitor main search box;
+
+    function proceedsearch() {
+      $("body").append('<div class="popoverlay">').css('overflow', 'hidden');
+      $('.popup').toggle();
+
+    }
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+    'use strict';
+    $.ajax({
+        url: path,
+        dataType: "xml",
+        async: true,
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            isfetched = true;
+            $('.popup').detach().appendTo('.header-inner');
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                var matchcounts = 0;
+                var str='<ul class=\"search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length > 1) {
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var content_index = [];
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_content = data.content.trim().replace(/<[^>]+>/g,"").toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    var index_content = -1;
+                    var first_occur = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title != '' && data_content != '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            index_content = data_content.indexOf(keyword);
+                            if( index_title < 0 && index_content < 0 ){
+                                isMatch = false;
+                            } else {
+                                if (index_content < 0) {
+                                    index_content = 0;
+                                }
+                                if (i == 0) {
+                                    first_occur = index_content;
+                                }
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        matchcounts += 1;
+                        str += "<li><a href='"+ data_url +"' class='search-result-title'>"+ data_title +"</a>";
+                        var content = data.content.trim().replace(/<[^>]+>/g,"");
+                        if (first_occur >= 0) {
+                            // cut out 100 characters
+                            var start = first_occur - 20;
+                            var end = first_occur + 80;
+                            if(start < 0){
+                                start = 0;
+                            }
+                            if(start == 0){
+                                end = 50;
+                            }
+                            if(end > content.length){
+                                end = content.length;
+                            }
+                            var match_content = content.substring(start, end);
+                            // highlight all keywords
+                            keywords.forEach(function(keyword){
+                                var regS = new RegExp(keyword, "gi");
+                                match_content = match_content.replace(regS, "<b class=\"search-keyword\">"+keyword+"</b>");
+                            });
+
+                            str += "<p class=\"search-result\">" + match_content +"...</p>"
+                        }
+                        str += "</li>";
+                    }
+                })};
+                str += "</ul>";
+                if (matchcounts == 0) { str = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>' }
+                if (keywords == "") { str = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>' }
+                $resultContent.innerHTML = str;
+            });
+            proceedsearch();
+        }
+    });}
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched == false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+
+    });
+
+    $('.popup-btn-close').click(function(e){
+      $('.popup').hide();
+      $(".popoverlay").remove();
+      $('body').css('overflow', '');
+    });
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+  </script>
+
+
+  
+
+  
+
+  
+<script type="text/javascript" async src="//push.zhanzhang.baidu.com/push.js">
+</script>
+
+
+</body>
+</html>

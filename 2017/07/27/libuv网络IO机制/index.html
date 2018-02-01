@@ -1,0 +1,891 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/code/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/code/lib/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/code/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="异步,event loop,libuv," />
+
+
+
+
+
+  <link rel="alternate" href="/code/atom.xml" title="罗峡的技术博客" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/code/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="两条故事线去探索http.Server从listen()到connection事件的触发其背后的原理，主要是为了理解libuv在网络I/O方面的异步实现。一条故事线看TCP handle的I/O观察者是怎样加入到event loop的观察者队列，另一条故事线看隐藏于背后的event loop在liunx下如何利用系统的">
+<meta name="keywords" content="异步,event loop,libuv">
+<meta property="og:type" content="article">
+<meta property="og:title" content="libuv网络I&#x2F;O机制">
+<meta property="og:url" content="http://luoxia.me/code/2017/07/27/libuv网络IO机制/index.html">
+<meta property="og:site_name" content="罗峡的技术博客">
+<meta property="og:description" content="两条故事线去探索http.Server从listen()到connection事件的触发其背后的原理，主要是为了理解libuv在网络I/O方面的异步实现。一条故事线看TCP handle的I/O观察者是怎样加入到event loop的观察者队列，另一条故事线看隐藏于背后的event loop在liunx下如何利用系统的epoll机制注册并收集events从而调用观察者回调。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/uv_handle_fileds.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/UV_STREAM_PRIVATE_FIELDS.png">
+<meta property="og:updated_time" content="2017-11-16T13:10:06.488Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="libuv网络I&#x2F;O机制">
+<meta name="twitter:description" content="两条故事线去探索http.Server从listen()到connection事件的触发其背后的原理，主要是为了理解libuv在网络I/O方面的异步实现。一条故事线看TCP handle的I/O观察者是怎样加入到event loop的观察者队列，另一条故事线看隐藏于背后的event loop在liunx下如何利用系统的epoll机制注册并收集events从而调用观察者回调。">
+<meta name="twitter:image" content="http://7xsi10.com1.z0.glb.clouddn.com/uv_handle_fileds.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: undefined,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://luoxia.me/code/2017/07/27/libuv网络IO机制/"/>
+
+  <title> libuv网络I/O机制 | 罗峡的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?179492533449f84f24555d1cbf10462f";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/code/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">罗峡的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">爱技术，爱生活</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/code/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/code/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/code/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/code/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/code/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup">
+ <span class="search-icon fa fa-search"></span>
+ <input type="text" id="local-search-input">
+ <div id="local-search-result"></div>
+ <span class="popup-btn-close">close</span>
+</div>
+
+
+    </div>
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                libuv网络I/O机制
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2017-07-27T14:18:17+08:00" content="2017-07-27">
+              2017-07-27
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/code/categories/Nodejs/" itemprop="url" rel="index">
+                    <span itemprop="name">Nodejs</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>两条故事线去探索http.Server从<code>listen()</code>到<code>connection</code>事件的触发其背后的原理，主要是为了理解libuv在网络I/O方面的异步实现。一条故事线看TCP handle的I/O观察者是怎样加入到event loop的观察者队列，另一条故事线看隐藏于背后的event loop在liunx下如何利用系统的<code>epoll</code>机制注册并收集events从而调用观察者回调。</p>
+<a id="more"></a>
+<p>源码解读以linux系统为方向。我们知道libuv对不同平台的内部网络I/O异步机制进行了抽象，如Windows的IOCP,FreeBSD下的kqueue,linux下的epoll等。</p>
+<h2 id="从js层面来到C-层面"><a href="#从js层面来到C-层面" class="headerlink" title="从js层面来到C++层面"></a>从js层面来到C++层面</h2><p><code>http.Server</code>类继承<code>net.Server</code>类,以<code>Server.listen()</code>为例，其实调用的是<code>net.Server.listen()</code>,实际调用的是<code>setupListenHandle()</code>,包括<code>createServerHandle()</code>到C++层面创建handle和调用C++层面定义的<code>listen()</code>方法:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">rval = createServerHandle(address, port, addressType, fd);</span><br><span class="line"><span class="keyword">this</span>._handle = rval;</span><br><span class="line"><span class="keyword">this</span>[async_id_symbol] = getNewAsyncId(<span class="keyword">this</span>._handle);</span><br><span class="line"><span class="keyword">this</span>._handle.onconnection = onconnection;</span><br><span class="line"><span class="keyword">this</span>._handle.owner = <span class="keyword">this</span>;</span><br><span class="line"><span class="keyword">var</span> err = <span class="keyword">this</span>._handle.listen(backlog || <span class="number">511</span>);</span><br><span class="line">nextTick(<span class="keyword">this</span>[async_id_symbol], emitListeningNT, <span class="keyword">this</span>); <span class="comment">//触发listening事件</span></span><br></pre></td></tr></table></figure></p>
+<p>在<code>emitListeningNT</code>里触发<code>listening</code>事件,其中<code>handle</code>是C/C++内建模块<code>tcp_wrap.cc</code>里定义的,这里还定义了<code>onconnection</code>，这个会在C/C++层面合适的时候调用，而<code>onconnection()</code>里会触发<code>connection</code>事件。</p>
+<p>说到handle创建，<code>onconnection</code>的调用,那就要开始我们的第一条故事线:向event loop里加入观察者。</p>
+<h2 id="故事线一：向event-loop观察者队列里加入观察者"><a href="#故事线一：向event-loop观察者队列里加入观察者" class="headerlink" title="故事线一：向event loop观察者队列里加入观察者"></a>故事线一：向event loop观察者队列里加入观察者</h2><h3 id="观察者的产生"><a href="#观察者的产生" class="headerlink" title="观察者的产生"></a>观察者的产生</h3><p>首先<code>TCPWrap</code>类的constructor:<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">TCPWrap::TCPWrap(Environment* env, Local&lt;Object&gt; object)</span><br><span class="line">    : ConnectionWrap(env,</span><br><span class="line">                     object,</span><br><span class="line">                     AsyncWrap::PROVIDER_TCPWRAP) &#123;</span><br><span class="line">  <span class="keyword">int</span> r = uv_tcp_init(env-&gt;event_loop(), &amp;handle_);</span><br><span class="line">  CHECK_EQ(r, <span class="number">0</span>);</span><br><span class="line">  UpdateWriteQueueSize();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>我们看到调用了<code>uv_tcp_init()</code>用于设置<code>handle_</code>，比如将<code>env.event_loop()</code>赋值给<code>handle_-&gt;loop</code>。</p>
+<p><code>TCPWrap</code>继承<code>ConnectionWrap</code>：<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">TCPWrap</span> :</span> <span class="keyword">public</span> ConnectionWrap&lt;TCPWrap, <span class="keyword">uv_tcp_t</span>&gt;&#123;</span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>然后这里这里的<code>handle_</code>就是在<code>ConnectionWrap</code>里定义的:<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">namespace</span> node &#123;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> WrapType, <span class="keyword">typename</span> UVType&gt;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ConnectionWrap</span> :</span> <span class="keyword">public</span> StreamWrap &#123;</span><br><span class="line">  ...</span><br><span class="line">  UVType handle_;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<p>可以看到这里的<code>handle_</code>类型根据模板参数<code>UVType</code>来,这样<code>&amp;wrap-&gt;handle_</code>就是一个<code>uv_tcp_t</code>观察者类型的指针了。</p>
+<p>关于<code>uv_tcp_t</code>:<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">uv_tcp_s</span> &#123;</span></span><br><span class="line">  UV_HANDLE_FIELDS</span><br><span class="line">  UV_STREAM_FIELDS</span><br><span class="line">  UV_TCP_PRIVATE_FIELDS</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<p><code>UV_HANDLE_FIELDS</code>定义如下:</p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/uv_handle_fileds.png" alt="http://7xsi10.com1.z0.glb.clouddn.com/uv_handle_fileds.png"></p>
+<p>在<code>UV_STREAM_FIELDS</code>的<code>UV_STREAM_PRIVATE_FIELDS</code>定义如下:<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/UV_STREAM_PRIVATE_FIELDS.png" alt="http://7xsi10.com1.z0.glb.clouddn.com/UV_STREAM_PRIVATE_FIELDS.png"></p>
+<p>其中<code>io_watcher</code>就是我们所说的I/O观察者了，<code>connection_cb</code>将是最终C++进入js层面需要调用的，后面会详解。</p>
+<h3 id="TCPWrap-Listen"><a href="#TCPWrap-Listen" class="headerlink" title="TCPWrap::Listen"></a>TCPWrap::Listen</h3><p>这便是js层面调用的<code>TCP.listen</code><br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> TCPWrap::Listen(<span class="keyword">const</span> FunctionCallbackInfo&lt;Value&gt;&amp; args) &#123;</span><br><span class="line">  TCPWrap* wrap;</span><br><span class="line">  ASSIGN_OR_RETURN_UNWRAP(&amp;wrap,</span><br><span class="line">                          args.Holder(),</span><br><span class="line">                          args.GetReturnValue().Set(UV_EBADF));</span><br><span class="line">  <span class="keyword">int</span> backlog = args[<span class="number">0</span>]-&gt;Int32Value();</span><br><span class="line">  <span class="keyword">int</span> err = uv_listen(<span class="keyword">reinterpret_cast</span>&lt;<span class="keyword">uv_stream_t</span>*&gt;(&amp;wrap-&gt;handle_),</span><br><span class="line">                      backlog,</span><br><span class="line">                      OnConnection);</span><br><span class="line">  args.GetReturnValue().Set(err);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>我们看到这里它调用了<code>uv_listen</code>，而参数有强制转换为<code>uv_stream_t</code>的<code>uv_tcp_t</code>指针，</p>
+<p>在<code>stream.c</code>里会根据<code>handle</code>具体类型，调用不同的函数:<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">uv_listen</span><span class="params">(<span class="keyword">uv_stream_t</span>* stream, <span class="keyword">int</span> backlog, uv_connection_cb cb)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> err;</span><br><span class="line">  <span class="keyword">switch</span> (stream-&gt;type) &#123;</span><br><span class="line">  <span class="keyword">case</span> UV_TCP:</span><br><span class="line">    err = uv_tcp_listen((<span class="keyword">uv_tcp_t</span>*)stream, backlog, cb);</span><br><span class="line">    <span class="keyword">break</span>;</span><br><span class="line">  <span class="keyword">case</span> UV_NAMED_PIPE:</span><br><span class="line">    err = uv_pipe_listen((<span class="keyword">uv_pipe_t</span>*)stream, backlog, cb);</span><br><span class="line">    <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">default</span>:</span><br><span class="line">    err = -EINVAL;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (err == <span class="number">0</span>)</span><br><span class="line">    uv__handle_start(stream); <span class="comment">//会执行activehandles++</span></span><br><span class="line">  <span class="keyword">return</span> err;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里调用｀uv_tcp_listen`：<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (listen(tcp-&gt;io_watcher.fd, backlog))</span><br><span class="line">    <span class="keyword">return</span> -errno;</span><br><span class="line"></span><br><span class="line">tcp-&gt;connection_cb = cb;</span><br><span class="line">tcp-&gt;flags |= UV_HANDLE_BOUND;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* Start listening for connections. */</span></span><br><span class="line">tcp-&gt;io_watcher.cb = uv__server_io;</span><br><span class="line">uv__io_start(tcp-&gt;loop, &amp;tcp-&gt;io_watcher, POLLIN);</span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> <span class="number">0</span>;</span><br></pre></td></tr></table></figure></p>
+<p><code>uv__io_t io_watcher.cb</code>被设置为<code>uv__server_io</code>,该函数会由event loop调用，后面会详解。而<code>tcp-&gt;connection_cb = cb</code>被设置为cb,即<code>onConnection</code>。</p>
+<p><code>io_watcher</code>为<code>uv__io_t</code>类型:<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">uv__io_s</span> &#123;</span></span><br><span class="line">  uv__io_cb cb;</span><br><span class="line">  <span class="keyword">void</span>* pending_queue[<span class="number">2</span>];</span><br><span class="line">  <span class="keyword">void</span>* watcher_queue[<span class="number">2</span>];</span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">int</span> pevents;</span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">int</span> events;</span><br><span class="line">  <span class="keyword">int</span> fd;</span><br><span class="line">  UV_IO_PRIVATE_PLATFORM_FIELDS</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<p>再进入<code>uv__io_start()</code>:<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">uv__io_start</span><span class="params">(<span class="keyword">uv_loop_t</span>* loop, <span class="keyword">uv__io_t</span>* w, <span class="keyword">unsigned</span> <span class="keyword">int</span> events)</span> </span>&#123;</span><br><span class="line">  w-&gt;pevents |= events;</span><br><span class="line">  maybe_resize(loop, w-&gt;fd + <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (QUEUE_EMPTY(&amp;w-&gt;watcher_queue))</span><br><span class="line">    QUEUE_INSERT_TAIL(&amp;loop-&gt;watcher_queue, &amp;w-&gt;watcher_queue);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (loop-&gt;watchers[w-&gt;fd] == <span class="literal">NULL</span>) &#123;</span><br><span class="line">    loop-&gt;watchers[w-&gt;fd] = w;</span><br><span class="line">    loop-&gt;nfds++;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>可以看到这里，将events赋值给<code>w-&gt;pevents</code>，就是说加入到pending events里去，就是它对events事件感兴趣。这个会在后面<code>epoll_wait()</code>用到。</p>
+<p><code>uv_tcp_t</code>类型的<code>_handle</code>的<code>io_wathcer</code>就加入到了<code>_handle-&gt;loop</code>（实际上就是event loop)的<code>watcher_queue</code>里。</p>
+<p>至此，添加I/O观察者的任务就完成了，该函数执行完毕，<code>TCP.listen()</code>的调用就介绍，就会返回到js层面,去触发<code>listening</code>事件，可见，这个过程是同步执行的，那么<code>listening</code>事件真正的意义就是标志着I/O观察者成功加入到事件循环了。</p>
+<p>而要谈真正意义上的异步，还得从另一条故事线出发，那便是隐藏于背后的<code>event loop</code>。</p>
+<h2 id="故事线二：event-loop"><a href="#故事线二：event-loop" class="headerlink" title="故事线二：event loop"></a>故事线二：event loop</h2><p>还记得我上一篇文章吗？在<code>node.cc</code>的最后一个<code>inline Start()</code>里:<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="function">SealHandleScope <span class="title">seal</span><span class="params">(isolate)</span></span>;</span><br><span class="line">    <span class="keyword">bool</span> more;</span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">      v8_platform.PumpMessageLoop(isolate);</span><br><span class="line">      more = uv_run(env.event_loop(), UV_RUN_ONCE);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">      <span class="keyword">if</span> (more == <span class="literal">false</span>) &#123;</span><br><span class="line">        v8_platform.PumpMessageLoop(isolate);</span><br><span class="line">        EmitBeforeExit(&amp;env);</span><br><span class="line">        more = uv_loop_alive(env.event_loop());</span><br><span class="line">        <span class="keyword">if</span> (uv_run(env.event_loop(), UV_RUN_NOWAIT) != <span class="number">0</span>)</span><br><span class="line">          more = <span class="literal">true</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; <span class="keyword">while</span> (more == <span class="literal">true</span>);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
+<p><code>uv_run()</code>开启了event loop。</p>
+<p>然后我们进入到<code>uv_run()</code>：<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">uv_run</span><span class="params">(<span class="keyword">uv_loop_t</span>* loop, uv_run_mode mode)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> timeout;</span><br><span class="line">  <span class="keyword">int</span> r;</span><br><span class="line">  <span class="keyword">int</span> ran_pending;</span><br><span class="line"></span><br><span class="line">  r = uv__loop_alive(loop);</span><br><span class="line">  <span class="keyword">if</span> (!r)</span><br><span class="line">    uv__update_time(loop);</span><br><span class="line"></span><br><span class="line"><span class="comment">//这里就是那个被称作event loop的while loop</span></span><br><span class="line">  <span class="keyword">while</span> (r != <span class="number">0</span> &amp;&amp; loop-&gt;stop_flag == <span class="number">0</span>) &#123;</span><br><span class="line">    uv__update_time(loop);</span><br><span class="line">    uv__run_timers(loop);</span><br><span class="line">    ran_pending = uv__run_pending(loop);</span><br><span class="line">    uv__run_idle(loop);</span><br><span class="line">    uv__run_prepare(loop);</span><br><span class="line"></span><br><span class="line">    timeout = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> ((mode == UV_RUN_ONCE &amp;&amp; !ran_pending) || mode == UV_RUN_DEFAULT)</span><br><span class="line">      timeout = uv_backend_timeout(loop);</span><br><span class="line"></span><br><span class="line">    uv__io_poll(loop, timeout);</span><br><span class="line">    uv__run_check(loop);</span><br><span class="line">    uv__run_closing_handles(loop);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (mode == UV_RUN_ONCE) &#123;</span><br><span class="line">      uv__update_time(loop);</span><br><span class="line">      uv__run_timers(loop);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    r = uv__loop_alive(loop);</span><br><span class="line">    <span class="keyword">if</span> (mode == UV_RUN_ONCE || mode == UV_RUN_NOWAIT)</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (loop-&gt;stop_flag != <span class="number">0</span>)</span><br><span class="line">    loop-&gt;stop_flag = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> r;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里不断地循环，不断地判断event loop是否保持active，如果有handle存在，那么它将一直在我们背后运行。</p>
+<p>而这里与我们有关的是<code>uv__io_poll()</code>，而poll这个词正暴露了它的内部实现机制<code>epoll</code></p>
+<p>首先进入了一个循环:<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> (!QUEUE_EMPTY(&amp;loop-&gt;watcher_queue)) &#123;</span><br><span class="line">    q = QUEUE_HEAD(&amp;loop-&gt;watcher_queue);</span><br><span class="line">    QUEUE_REMOVE(q);</span><br><span class="line">    QUEUE_INIT(q);</span><br><span class="line"></span><br><span class="line">    w = QUEUE_DATA(q, <span class="keyword">uv__io_t</span>, watcher_queue);</span><br><span class="line">    e.events = w-&gt;pevents;</span><br><span class="line">    e.data = w-&gt;fd;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (w-&gt;events == <span class="number">0</span>)</span><br><span class="line">      op = UV__EPOLL_CTL_ADD;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">      op = UV__EPOLL_CTL_MOD;</span><br><span class="line">    <span class="keyword">if</span> (uv__epoll_ctl(loop-&gt;backend_fd, op, w-&gt;fd, &amp;e)) &#123;</span><br><span class="line">      <span class="keyword">if</span> (errno != EEXIST)</span><br><span class="line">        <span class="built_in">abort</span>();</span><br><span class="line"></span><br><span class="line">      assert(op == UV__EPOLL_CTL_ADD);</span><br><span class="line">        <span class="built_in">abort</span>();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    w-&gt;events = w-&gt;pevents;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
+<p>每次从观察者队列里取出队头的观察者队列，然后根据它才取出<code>w</code>(实际的<code>io_wathcer</code>)；并取出观察者感兴趣的pending events和与之绑定的<code>fd</code>。</p>
+<p>然后调用<code>epoll</code>机制三大方法之一的<code>uv__epoll_ctl</code>去注册io观察者感兴趣的pending状态的events。</p>
+<p>接着又会进去一个无限循环<code>for(;;)</code>,首先调用<code>uv__epoll_wait</code>等待上面注册的事件发生:<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">nfds = uv__epoll_wait(loop-&gt;backend_fd,</span><br><span class="line">                            events,</span><br><span class="line">                            ARRAY_SIZE(events),</span><br><span class="line">                            timeout);</span><br></pre></td></tr></table></figure></p>
+<p><code>epoll</code>机制会在该<code>fd</code>产生观察者感兴趣的事件发生后返回，收集到事件会放到<code>events</code>数组里。</p>
+<p>接着在这个循环里依次取出<code>events</code>(由epoll产生):<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; nfds; i++) &#123;</span><br><span class="line">    pe = events + i;</span><br><span class="line">    fd = pe-&gt;data;</span><br><span class="line">    w = loop-&gt;watchers[fd];</span><br><span class="line">    ...</span><br><span class="line">    w-&gt;cb(loop, w, pe-&gt;events);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>针对每个事件调用<code>w-&gt;cb(loop, w, pe-&gt;events);</code>而这个<code>cb</code>我们之前在｀uv_tcp_listen()`里进行了设置:<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tcp-&gt;io_watcher.cb = uv__server_io;</span><br></pre></td></tr></table></figure></p>
+<p>然后由于<code>timeout</code>在event loop里被设置为0，即表示立即返回，当下一次event loop来临时，根据epoll机制：</p>
+<hr>
+<p>LT模式: 当epoll_wait检测到描述符事件发生并将此事件通知应用程序，应用程序可以不立即处理该事件。下次调用epoll_wait时，会再次响应应用程序并通知此事件。</p>
+<p>这样就不用担心两次事件循环之间的时间有事件来不及处理了。</p>
+<p>这样这个与I/O有关的epoll操作结束，直到下一个event loop来临，又会去<code>取观察者-&gt;注册感兴趣的事件-&gt;找epoll询问产生的事件-&gt;执行回调</code>。</p>
+<h2 id="回调进入js层面"><a href="#回调进入js层面" class="headerlink" title="回调进入js层面"></a>回调进入js层面</h2><p>顺藤摸瓜来到<code>uv_server_io</code>:<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">uv__io_start(stream-&gt;loop, &amp;stream-&gt;io_watcher, POLLIN);</span><br><span class="line"><span class="keyword">while</span> (uv__stream_fd(stream) != <span class="number">-1</span>) &#123;</span><br><span class="line">    assert(stream-&gt;accepted_fd == <span class="number">-1</span>);</span><br><span class="line">    err = uv__accept(uv__stream_fd(stream));</span><br><span class="line">    <span class="keyword">if</span> (err &lt; <span class="number">0</span>) &#123;</span><br><span class="line">      <span class="keyword">if</span> (err == -EAGAIN || err == -EWOULDBLOCK)</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">if</span> (err == -ECONNABORTED)</span><br><span class="line">        <span class="keyword">continue</span>;  <span class="comment">/* Ignore. Nothing we can do about that. */</span></span><br><span class="line"></span><br><span class="line">      <span class="keyword">if</span> (err == -EMFILE || err == -ENFILE) &#123;</span><br><span class="line">        err = uv__emfile_trick(loop, uv__stream_fd(stream));</span><br><span class="line">        <span class="keyword">if</span> (err == -EAGAIN || err == -EWOULDBLOCK)</span><br><span class="line">          <span class="keyword">break</span>;</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      stream-&gt;connection_cb(stream, err);</span><br><span class="line">      <span class="keyword">continue</span>;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<p>可以看到在调用回调函数之前，再次调用了<code>uv__io_start()</code>，这样就可以继续监听其他连接的到来了。</p>
+<p>最后我们来看看<code>stream-&gt;connection_cb(stream,err)</code>的调用:<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">WrapType* wrap_data = <span class="keyword">static_cast</span>&lt;WrapType*&gt;(handle-&gt;data);</span><br><span class="line">wrap_data-&gt;MakeCallback(env-&gt;onconnection_string(), arraysize(argv), argv);</span><br></pre></td></tr></table></figure></p>
+<p>至此，通过在js层面通过<code>Server.handle.onconnection</code>设置的<code>onconnection</code>即这里的<code>env-&gt;onconnection_string()</code>就会被调用了。而在<code>onconnection</code>里：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> socket = <span class="keyword">new</span> Socket(&#123;</span><br><span class="line">    handle: clientHandle,</span><br><span class="line">    allowHalfOpen: self.allowHalfOpen,</span><br><span class="line">    pauseOnCreate: self.pauseOnConnect</span><br><span class="line">  &#125;);</span><br><span class="line">socket.readable = socket.writable = <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">self._connections++;</span><br><span class="line">socket.server = self;</span><br><span class="line">socket._server = self;</span><br><span class="line">...</span><br><span class="line">self.emit(<span class="string">'connection'</span>, socket);</span><br></pre></td></tr></table></figure></p>
+<p>这样我们在最表层见到的<code>connection</code>事件，才会触发，再经过http的一层封装，才会触发<code>request</code>事件。</p>
+<p>nice job!</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>可以看到，调用<code>listen</code>是一个同步过程，即会调用C++层面的<code>Listen</code>,而这个<code>Listen</code>的作用就是将io观察者加入到<code>loop-&gt;wathcer_queue</code>里，完成后才会返回。</p>
+<p>然后在V8执行js代码的背后，通过执行<code>uv_run()</code>开始<code>event loop</code>,背后的io异步，实际上是利用的<code>epoll</code>机制，里面是一个无限循环，<code>epoll_wait()</code>不断地监听<code>watcher_queue</code>里每个观察者期待的事件是否发生，如果发生，就生成<code>events</code>数组，<code>events</code>数组可能来自不同的<code>fd</code>，针对每一个<code>fd</code>分别调用它们所属观察者的回调函数。接着，进入下一个for循环。</p>
+<p>可以看到暴露给应用层的异步网络I/O，内部实现还是同步的，因为epoll这种机制虽然是非阻塞的I/O多路复用，但是需要不断地去轮询事件的产生或者休眠，相当于还是阻塞了process。不过这些都是发生在V8外的event loop内部的，v8的线程没有被阻塞。而event loop的处理方式是要求<code>epoll_wait()</code>立即返回，通过循环的方式去调用它，这就有点类似于<code>read</code>方式了。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+<div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/code/images/wechat.jpg" alt="罗峡的博客 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎扫描上面的微信公众号二维码，关注我的个人公众号：全栈前端</div>
+</div>
+
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/code/images/wechat_pay.png" alt="罗峡的博客 WeChat Pay"/>
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/code/images/ali_pay.jpg" alt="罗峡的博客 Alipay"/>
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/code/tags/异步/" rel="tag">#异步</a>
+          
+            <a href="/code/tags/event-loop/" rel="tag">#event loop</a>
+          
+            <a href="/code/tags/libuv/" rel="tag">#libuv</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/code/2017/07/24/Process初始化与模块系统形成/" rel="next" title="Process初始化与模块系统形成">
+                <i class="fa fa-chevron-left"></i> Process初始化与模块系统形成
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/code/2017/08/17/从Functors到Monad/" rel="prev" title="从Functors到Monad">
+                从Functors到Monad <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/code/images/head.jpg"
+               alt="罗峡的博客" />
+          <p class="site-author-name" itemprop="name">罗峡的博客</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/code/archives">
+              <span class="site-state-item-count">43</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/code/categories">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/code/tags">
+                <span class="site-state-item-count">85</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/code/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/laoqiren" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://luoxia.me/life" title="生活随笔" target="_blank">生活随笔</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#从js层面来到C-层面"><span class="nav-number">1.</span> <span class="nav-text">从js层面来到C++层面</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#故事线一：向event-loop观察者队列里加入观察者"><span class="nav-number">2.</span> <span class="nav-text">故事线一：向event loop观察者队列里加入观察者</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#观察者的产生"><span class="nav-number">2.1.</span> <span class="nav-text">观察者的产生</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#TCPWrap-Listen"><span class="nav-number">2.2.</span> <span class="nav-text">TCPWrap::Listen</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#故事线二：event-loop"><span class="nav-number">3.</span> <span class="nav-text">故事线二：event loop</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#回调进入js层面"><span class="nav-number">4.</span> <span class="nav-text">回调进入js层面</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">罗峡的博客</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/code/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/code/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/code/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/code/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length == 0) {
+       search_path = "search.xml";
+    }
+    var path = "/code/" + search_path;
+    // monitor main search box;
+
+    function proceedsearch() {
+      $("body").append('<div class="popoverlay">').css('overflow', 'hidden');
+      $('.popup').toggle();
+
+    }
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+    'use strict';
+    $.ajax({
+        url: path,
+        dataType: "xml",
+        async: true,
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            isfetched = true;
+            $('.popup').detach().appendTo('.header-inner');
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                var matchcounts = 0;
+                var str='<ul class=\"search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length > 1) {
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var content_index = [];
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_content = data.content.trim().replace(/<[^>]+>/g,"").toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    var index_content = -1;
+                    var first_occur = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title != '' && data_content != '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            index_content = data_content.indexOf(keyword);
+                            if( index_title < 0 && index_content < 0 ){
+                                isMatch = false;
+                            } else {
+                                if (index_content < 0) {
+                                    index_content = 0;
+                                }
+                                if (i == 0) {
+                                    first_occur = index_content;
+                                }
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        matchcounts += 1;
+                        str += "<li><a href='"+ data_url +"' class='search-result-title'>"+ data_title +"</a>";
+                        var content = data.content.trim().replace(/<[^>]+>/g,"");
+                        if (first_occur >= 0) {
+                            // cut out 100 characters
+                            var start = first_occur - 20;
+                            var end = first_occur + 80;
+                            if(start < 0){
+                                start = 0;
+                            }
+                            if(start == 0){
+                                end = 50;
+                            }
+                            if(end > content.length){
+                                end = content.length;
+                            }
+                            var match_content = content.substring(start, end);
+                            // highlight all keywords
+                            keywords.forEach(function(keyword){
+                                var regS = new RegExp(keyword, "gi");
+                                match_content = match_content.replace(regS, "<b class=\"search-keyword\">"+keyword+"</b>");
+                            });
+
+                            str += "<p class=\"search-result\">" + match_content +"...</p>"
+                        }
+                        str += "</li>";
+                    }
+                })};
+                str += "</ul>";
+                if (matchcounts == 0) { str = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>' }
+                if (keywords == "") { str = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>' }
+                $resultContent.innerHTML = str;
+            });
+            proceedsearch();
+        }
+    });}
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched == false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+
+    });
+
+    $('.popup-btn-close').click(function(e){
+      $('.popup').hide();
+      $(".popoverlay").remove();
+      $('body').css('overflow', '');
+    });
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+  </script>
+
+
+  
+
+  
+
+  
+<script type="text/javascript" async src="//push.zhanzhang.baidu.com/push.js">
+</script>
+
+
+</body>
+</html>

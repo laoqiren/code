@@ -1,0 +1,932 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/code/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/code/lib/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/code/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="RabbitMQ,AMQP,RPC," />
+
+
+
+
+
+  <link rel="alternate" href="/code/atom.xml" title="罗峡的技术博客" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/code/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="学习RabbitMQ.以Node client实现为例。 RabbitMQ是一个由erlang开发的AMQP（Advanced Message Queue ）的开源实现。目前RabbitMQ基于AMQP 0-9-1。">
+<meta name="keywords" content="RabbitMQ,AMQP,RPC">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RabbitMQ">
+<meta property="og:url" content="http://luoxia.me/code/2017/09/07/RabbitMQ/index.html">
+<meta property="og:site_name" content="罗峡的技术博客">
+<meta property="og:description" content="学习RabbitMQ.以Node client实现为例。 RabbitMQ是一个由erlang开发的AMQP（Advanced Message Queue ）的开源实现。目前RabbitMQ基于AMQP 0-9-1。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://img.blog.csdn.net/20160310091724939">
+<meta property="og:image" content="http://www.rabbitmq.com/img/tutorials/python-one.png">
+<meta property="og:image" content="http://www.rabbitmq.com/img/tutorials/python-two.png">
+<meta property="og:image" content="http://www.rabbitmq.com/img/tutorials/python-three-overall.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/list_bindings.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/fanout.png">
+<meta property="og:image" content="http://www.rabbitmq.com/img/tutorials/direct-exchange.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/direct.png">
+<meta property="og:image" content="http://www.rabbitmq.com/img/tutorials/python-five.png">
+<meta property="og:image" content="http://www.rabbitmq.com/img/tutorials/python-six.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/rpc.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/node_py.png">
+<meta property="og:updated_time" content="2017-11-16T13:10:06.485Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="RabbitMQ">
+<meta name="twitter:description" content="学习RabbitMQ.以Node client实现为例。 RabbitMQ是一个由erlang开发的AMQP（Advanced Message Queue ）的开源实现。目前RabbitMQ基于AMQP 0-9-1。">
+<meta name="twitter:image" content="http://img.blog.csdn.net/20160310091724939">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: undefined,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://luoxia.me/code/2017/09/07/RabbitMQ/"/>
+
+  <title> RabbitMQ | 罗峡的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?179492533449f84f24555d1cbf10462f";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/code/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">罗峡的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">爱技术，爱生活</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/code/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/code/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/code/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/code/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/code/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup">
+ <span class="search-icon fa fa-search"></span>
+ <input type="text" id="local-search-input">
+ <div id="local-search-result"></div>
+ <span class="popup-btn-close">close</span>
+</div>
+
+
+    </div>
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                RabbitMQ
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2017-09-07T16:15:26+08:00" content="2017-09-07">
+              2017-09-07
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/code/categories/Nodejs/" itemprop="url" rel="index">
+                    <span itemprop="name">Nodejs</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>学习RabbitMQ.以Node client实现为例。</p>
+<p>RabbitMQ是一个由erlang开发的AMQP（Advanced Message Queue ）的开源实现。目前RabbitMQ基于AMQP 0-9-1。</p>
+<p><img src="http://img.blog.csdn.net/20160310091724939" alt="http://img.blog.csdn.net/20160310091724939"></p>
+<a id="more"></a>
+<h2 id="概览"><a href="#概览" class="headerlink" title="概览"></a>概览</h2><p>Publisher和Consumer都通过Socket与RabbitMQ server连接，在Consumer与RabbitMQ server的socket连接上，建立Channel,用于多次消息传输，减少开支。每一个Consumer都有维护消息的queue(可以多个Consumer共用)，exchange用于调度消息的发布，一边Publisher发布消息到Exchange,另一边，各个queue与exchange建立联系并表达自己的兴趣，Exchange根据不同type的调度方式，将消息推送到适当的queue，对于声明了相同的queue的consumer，可以并行负载均衡的处理消息。总的来说:</p>
+<ul>
+<li>应用解耦: 两边的程序只需实现相应的接口约定，而不用关心内部细节</li>
+<li>冗余存储器: 可对消息队列和消息进行持久化，一定程度上减少Server突然挂掉带来的数据丢失</li>
+<li>可扩展: 对同一queue，可以起多个consumer并行处理，而且提供负载均衡算法</li>
+<li>消息确认: 提供ack机制，保证消息被正确处理</li>
+<li>顺序和缓冲: 队列机制保证消息处理顺序，缓冲提供性能优化</li>
+<li>异步通信: Publisher发布的消息可以不被立即处理，可在后面动态加入consumer进行处理</li>
+<li>分布式集群: 提供容灾能力和消息吞吐量</li>
+<li>语言无关: 跨语言通信</li>
+</ul>
+<p>作为一种进程间通信的方法，对比Node多进程架构，其IPC通道只是本地的进程间通信，相当于是单机集群。而RabbitMQ通过消息队列的形式完成了IPC（包括本地进程，RPC）。</p>
+<h2 id="简单的queue消息传输"><a href="#简单的queue消息传输" class="headerlink" title="简单的queue消息传输"></a>简单的queue消息传输</h2><p>一个最简单的例子是一个Producer,一个Consumer:</p>
+<p><img src="http://www.rabbitmq.com/img/tutorials/python-one.png" alt="http://www.rabbitmq.com/img/tutorials/python-one.png"></p>
+<p>因此需要为Channel断言一个明确名字的queue，通过往queue上加入消息，consumer进行处理:</p>
+<p><code>client.js (Producer):</code><br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> amqp = <span class="built_in">require</span>(<span class="string">'amqplib'</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="function"><span class="keyword">function</span> <span class="title">client</span>(<span class="params">msg</span>)</span>&#123;</span><br><span class="line">    <span class="keyword">let</span> q = <span class="string">'hello'</span>;</span><br><span class="line">    <span class="keyword">try</span>&#123;</span><br><span class="line">        <span class="keyword">let</span> conn = <span class="keyword">await</span> amqp.connect(<span class="string">'amqp://127.0.0.1'</span>);</span><br><span class="line">        <span class="keyword">let</span> ch = <span class="keyword">await</span> conn.createChannel();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">await</span> ch.assertQueue(q,&#123;<span class="attr">durable</span>:<span class="literal">false</span>&#125;); <span class="comment">//非持久化的队列断言</span></span><br><span class="line"></span><br><span class="line">        ch.sendToQueue(q,<span class="keyword">new</span> Buffer(msg));</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">"client send msg:"</span>,msg);</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">await</span> ch.close();</span><br><span class="line">        <span class="keyword">await</span> conn.close();</span><br><span class="line">    &#125; <span class="keyword">catch</span>(err)&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(err);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">let</span> msg = process.argv.slice(<span class="number">2</span>).join(<span class="string">' '</span>) || <span class="string">'hello,world.'</span>;</span><br><span class="line"></span><br><span class="line">client(msg);</span><br></pre></td></tr></table></figure></p>
+<p><code>server.js (Consumer)</code>:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">async</span> <span class="function"><span class="keyword">function</span> <span class="title">server</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="keyword">try</span>&#123;</span><br><span class="line">        <span class="keyword">let</span> conn = <span class="keyword">await</span> amqp.connect(<span class="string">'amqp://127.0.0.1'</span>);</span><br><span class="line">        process.once(<span class="string">'SIGINT'</span>,()=&gt;conn.close());</span><br><span class="line"></span><br><span class="line">        <span class="keyword">let</span> ch = <span class="keyword">await</span> conn.createChannel();</span><br><span class="line">        <span class="keyword">await</span> ch.assertQueue(<span class="string">'hello'</span>,&#123;<span class="attr">durable</span>: <span class="literal">false</span>&#125;);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">await</span> ch.consume(<span class="string">'hello'</span>,msg=&gt;&#123;</span><br><span class="line">            <span class="keyword">let</span> body = msg.content.toString();</span><br><span class="line"></span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">"server recieved:"</span>,body);</span><br><span class="line">        &#125;,&#123;<span class="attr">noAck</span>:<span class="literal">true</span>&#125;);</span><br><span class="line"></span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">"waiting for massages."</span>);</span><br><span class="line">    &#125; <span class="keyword">catch</span>(err)&#123;</span><br><span class="line">        <span class="built_in">console</span>.error(err);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">server();</span><br></pre></td></tr></table></figure></p>
+<h2 id="通过并行-amp-负载均衡的workers处理消息"><a href="#通过并行-amp-负载均衡的workers处理消息" class="headerlink" title="通过并行&amp;负载均衡的workers处理消息"></a>通过并行&amp;负载均衡的workers处理消息</h2><p>对于上面的<code>server.js</code>完全可以起多个实例，这样相当于是运行了多个worker，对于queue里的每一个消息都有多个worker可以选择，从而做到多个worker并行处理多个消息，实现负载均衡:</p>
+<p><img src="http://www.rabbitmq.com/img/tutorials/python-two.png" alt="http://www.rabbitmq.com/img/tutorials/python-two.png"></p>
+<p>在上例基础上修改后的<code>server.js</code>:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">async</span> <span class="function"><span class="keyword">function</span> <span class="title">server</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="keyword">try</span>&#123;</span><br><span class="line">        <span class="keyword">let</span> conn = <span class="keyword">await</span> amqp.connect(<span class="string">'amqp://127.0.0.1'</span>);</span><br><span class="line">        process.once(<span class="string">'SIGINT'</span>,()=&gt;conn.close());</span><br><span class="line"></span><br><span class="line">        <span class="keyword">let</span> ch = <span class="keyword">await</span> conn.createChannel();</span><br><span class="line">        <span class="keyword">await</span> ch.assertQueue(<span class="string">'hello'</span>,&#123;<span class="attr">durable</span>: <span class="literal">false</span>&#125;);</span><br><span class="line">        ch.prefetch(<span class="number">1</span>); <span class="comment">//保证worker一次只处理一个task.</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">await</span> ch.consume(<span class="string">'hello'</span>,msg=&gt;&#123;</span><br><span class="line">            <span class="keyword">let</span> body = msg.content.toString();</span><br><span class="line"></span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">"server recieved:"</span>,body);</span><br><span class="line">            <span class="keyword">let</span> secs = body.split(<span class="string">'.'</span>).length - <span class="number">1</span>;</span><br><span class="line">            setTimeout(<span class="function"><span class="params">()</span>=&gt;</span>&#123;</span><br><span class="line">                <span class="built_in">console</span>.log(<span class="string">'done'</span>);</span><br><span class="line">                ch.ack(msg);</span><br><span class="line">            &#125;,secs*<span class="number">1000</span>);</span><br><span class="line"></span><br><span class="line">        &#125;,&#123;<span class="attr">noAck</span>:<span class="literal">false</span>&#125;);</span><br><span class="line"></span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">"waiting for massages."</span>);</span><br><span class="line">    &#125; <span class="keyword">catch</span>(err)&#123;</span><br><span class="line">        <span class="built_in">console</span>.error(err);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>需要留意的几点:</p>
+<ul>
+<li><p><code>ch.prefetch(1);</code>,RabbitMQ针对消息分发的默认策略只是简单的第n个消息，发生给第func(n)个workder.这个方法可以保证每个worker一次性只处理一个消息。防止负载不均衡。</p>
+</li>
+<li><p><code>ack</code>: 开启消息确认，只有当接收到该消息的ack时，才从队列里删除该消息；若某个worker在处理消息过程中挂掉，即未发送ack，则该消息将会重新被发送给其他的worker,防止消息丢失。</p>
+</li>
+<li><p><code>durable</code>&amp;<code>persistence</code>:分别标记<code>queue</code>(在producer和consumer两边都要说明)和具体消息（<code>ch.sendToQueue(q, new Buffer(msg), {persistent: true});</code>）的持久化。RabbitMQ可能会突然挂掉，持久化可以在一定程度上保证server重启后，消息队列不丢失。</p>
+</li>
+</ul>
+<h2 id="Publish-Subscribe"><a href="#Publish-Subscribe" class="headerlink" title="Publish/Subscribe"></a>Publish/Subscribe</h2><p>之前的例子是一个消息交由一个worker处理，而这里我们想实现同一个消息分发给多个consumer，这类似于Pub/Sub模式，想想我们的<code>EventEmmiter</code>，为同一个事件（类比这里的消息），订阅多个处理器（类比这里的worker)，消息来临，每个处理器都会被执行。</p>
+<p>在这种模式中，每个<code>consumer</code>都会有一个匿名（或者说随机生成）的queue用于维护消息队列，而处于<code>producer</code>和这些<code>queue</code>之间的是<code>exchange</code>,这相当于一个调度中心，决定将<code>producer</code>产生的消息推给哪些<code>queue</code>。</p>
+<p><img src="http://www.rabbitmq.com/img/tutorials/python-three-overall.png" alt="http://www.rabbitmq.com/img/tutorials/python-three-overall.png"></p>
+<p><code>exchange</code>的调度方式有多种:<code>direct, topic, headers and fanout</code>；我们这里实现类似于事件订阅，使用<code>fanout</code>（广播）。</p>
+<p>之前的直接使用<code>sendToQueue()</code>发送消息到指定名称的queue，实际上只是一个语法糖，内部使用了默认的<code>exchange</code>来调度。</p>
+<p>查看所有<code>exchange</code>:<code>sudo rabbitmqctl list_exchanges</code></p>
+<h3 id="为每个consumer生成新的queue"><a href="#为每个consumer生成新的queue" class="headerlink" title="为每个consumer生成新的queue:"></a>为每个consumer生成新的queue:</h3><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> q = <span class="keyword">await</span> ch.assertQueue(<span class="literal">null</span>, &#123;<span class="attr">exclusive</span>: <span class="literal">true</span>&#125;);</span><br></pre></td></tr></table></figure>
+<h3 id="bindings"><a href="#bindings" class="headerlink" title="bindings"></a>bindings</h3><p>binding指的是<code>exchange</code>和<code>queue</code>间的关系，将<code>queue</code>与指定<code>exchange</code>建立关系，相当于将这个<code>queue</code>加入到了调度中心。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">await</span> ch.assertExchange(ex,<span class="string">'fanout'</span>,&#123;<span class="attr">durable</span>:<span class="literal">false</span>&#125;)</span><br><span class="line"><span class="keyword">let</span> q = <span class="keyword">await</span> ch.assertQueue(<span class="literal">null</span>, &#123;<span class="attr">exclusive</span>: <span class="literal">true</span>&#125;);</span><br><span class="line"></span><br><span class="line"><span class="keyword">await</span> ch.bindQueue(q.queue,ex,<span class="string">''</span>);</span><br></pre></td></tr></table></figure>
+<p>查看当前所有<code>binding</code>:<code>sudo rabbitmqctl list_bindings</code>:</p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/list_bindings.png" alt="http://7xsi10.com1.z0.glb.clouddn.com/list_bindings.png"></p>
+<p>完整例子:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//emit_log.js</span></span><br><span class="line"><span class="keyword">const</span> amqp = <span class="built_in">require</span>(<span class="string">'amqplib'</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="function"><span class="keyword">function</span> <span class="title">log</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="keyword">let</span> ex = <span class="string">'logs'</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">let</span> conn = <span class="keyword">await</span> amqp.connect(<span class="string">'amqp://127.0.0.1'</span>);</span><br><span class="line">        <span class="keyword">let</span> ch = <span class="keyword">await</span> conn.createChannel();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">await</span> ch.assertExchange(ex,<span class="string">'fanout'</span>,&#123;<span class="attr">durable</span>:<span class="literal">false</span>&#125;);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">let</span> msg = process.argv.slice(<span class="number">2</span>).join(<span class="string">' '</span>) || <span class="string">'info: hello,world'</span>;</span><br><span class="line">        ch.publish(ex,<span class="string">''</span>,<span class="keyword">new</span> Buffer(msg));</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">"sent:"</span>,msg);</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">await</span> ch.close();</span><br><span class="line">        <span class="keyword">await</span> conn.close();</span><br><span class="line"></span><br><span class="line">    &#125; <span class="keyword">catch</span>(err)&#123;</span><br><span class="line">        <span class="built_in">console</span>.error(err);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">log();</span><br><span class="line"></span><br><span class="line"><span class="comment">// receive_log.js</span></span><br><span class="line"><span class="keyword">async</span> <span class="function"><span class="keyword">function</span> <span class="title">receive</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="keyword">let</span> ex = <span class="string">'logs'</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">let</span> conn = <span class="keyword">await</span> amqp.connect(<span class="string">'amqp://127.0.0.1'</span>);</span><br><span class="line">        <span class="keyword">let</span> ch = <span class="keyword">await</span> conn.createChannel();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">await</span> ch.assertExchange(ex,<span class="string">'fanout'</span>,&#123;<span class="attr">durable</span>:<span class="literal">false</span>&#125;)</span><br><span class="line">        <span class="keyword">let</span> q = <span class="keyword">await</span> ch.assertQueue(<span class="literal">null</span>, &#123;<span class="attr">exclusive</span>: <span class="literal">true</span>&#125;);</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">"waiting msg in:"</span>,q.queue);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">await</span> ch.bindQueue(q.queue,ex,<span class="string">''</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">await</span> ch.consume(q.queue,msg=&gt;&#123;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">'received:'</span>,msg.content.toString())</span><br><span class="line">        &#125;,&#123;<span class="attr">noAck</span>:<span class="literal">true</span>&#125;);</span><br><span class="line"></span><br><span class="line">    &#125; <span class="keyword">catch</span>(err)&#123;</span><br><span class="line">        <span class="built_in">console</span>.error(err);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">receive();</span><br></pre></td></tr></table></figure></p>
+<p>运行实例:<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/fanout.png" alt="http://7xsi10.com1.z0.glb.clouddn.com/fanout.png"></p>
+<h2 id="Routing"><a href="#Routing" class="headerlink" title="Routing"></a>Routing</h2><p>上面的例子不够灵活，对比事件订阅，某个eventemmiter实例可以订阅不同的事件（分类），而上面的例子可以理解为粗暴的将所有的消息直接广播给所有consumer，即consumer要么对exchange上的所有消息感兴趣，要么都不感兴趣。</p>
+<p>而要表示对部分消息感兴趣，这里通过<code>direct</code> type的exchange调度方式实现。</p>
+<p><img src="http://www.rabbitmq.com/img/tutorials/direct-exchange.png" alt="http://www.rabbitmq.com/img/tutorials/direct-exchange.png"></p>
+<p>当然同一<code>routing</code>的消息可以被多个queue接收，这就类于<code>fanout</code>功能。</p>
+<p>直接上完整实例，这个例子中两个consumer分别对<code>info,warnning</code>和<code>error</code>相关的消息感兴趣，<code>producer</code>每次可以发送消息到不同路由:</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// emit_direct.js</span></span><br><span class="line"><span class="keyword">let</span> ex = <span class="string">'direct_logs'</span>;</span><br><span class="line"><span class="keyword">let</span> args = process.argv.slice(<span class="number">2</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="keyword">let</span> conn = <span class="keyword">await</span> amqp.connect(<span class="string">'amqp://127.0.0.1'</span>);</span><br><span class="line">    <span class="keyword">let</span> ch = <span class="keyword">await</span> conn.createChannel();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">await</span> ch.assertExchange(ex,<span class="string">'direct'</span>,&#123;<span class="attr">durable</span>:<span class="literal">false</span>&#125;);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> msg = args.slice(<span class="number">1</span>).join(<span class="string">' '</span>) || <span class="string">'Hello World!'</span>;</span><br><span class="line">    <span class="keyword">let</span> severity = (args.length &gt; <span class="number">0</span>) ? args[<span class="number">0</span>] : <span class="string">'info'</span>;</span><br><span class="line"></span><br><span class="line">    ch.publish(ex,severity,<span class="keyword">new</span> Buffer(msg));</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">" [x] Sent %s: '%s'"</span>, severity, msg);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">await</span> ch.close();</span><br><span class="line">    <span class="keyword">await</span> conn.close();</span><br><span class="line">&#125; <span class="keyword">catch</span>(err)&#123;</span><br><span class="line">    <span class="built_in">console</span>.error(err);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// recieve_direct.js</span></span><br><span class="line"><span class="keyword">let</span> ex = <span class="string">'direct_logs'</span>;</span><br><span class="line"><span class="keyword">let</span> args = process.argv.slice(<span class="number">2</span>);</span><br><span class="line">    </span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="keyword">let</span> conn = <span class="keyword">await</span> amqp.connect(<span class="string">'amqp://127.0.0.1'</span>);</span><br><span class="line">    <span class="keyword">let</span> ch = <span class="keyword">await</span> conn.createChannel();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">await</span> ch.assertExchange(ex,<span class="string">'direct'</span>,&#123;<span class="attr">durable</span>:<span class="literal">false</span>&#125;)</span><br><span class="line">    <span class="keyword">let</span> q = <span class="keyword">await</span> ch.assertQueue(<span class="literal">null</span>, &#123;<span class="attr">exclusive</span>: <span class="literal">true</span>&#125;);</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">"waiting msg in:"</span>,q.queue);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">await</span> args.map(<span class="function"><span class="params">arg</span>=&gt;</span>ch.bindQueue(q.queue,ex,arg));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">await</span> ch.consume(q.queue,msg=&gt;&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">" [x] %s: '%s'"</span>, msg.fields.routingKey, msg.content.toString());</span><br><span class="line">    &#125;,&#123;<span class="attr">noAck</span>:<span class="literal">true</span>&#125;);</span><br><span class="line"></span><br><span class="line">&#125; <span class="keyword">catch</span>(err)&#123;</span><br><span class="line">    <span class="built_in">console</span>.error(err);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>运行实例:<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/direct.png" alt="http://7xsi10.com1.z0.glb.clouddn.com/direct.png"></p>
+<h2 id="Topics"><a href="#Topics" class="headerlink" title="Topics"></a>Topics</h2><p>上面的例子还可以更加灵活，对于一个消息，可以从多方面去描述，然后不同的queue表达对某方面感兴趣，而对于其他方面进行忽略：</p>
+<p><img src="http://www.rabbitmq.com/img/tutorials/python-five.png" alt="http://www.rabbitmq.com/img/tutorials/python-five.png"></p>
+<p>如图，Q1表示对颜色为orange的消息感兴趣，Q2对物种是兔子，跑的慢的感兴趣，而不在乎颜色。</p>
+<p><code>*</code> 代指一个单词，<code>#</code>代指任意个单词。</p>
+<p>代码方面，与上例类似，不过是<code>exchange</code>类型为<code>topic</code>,<code>routing keys</code>格式的变化:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ch.assertExchange(ex, <span class="string">'topic'</span>, &#123;<span class="attr">durable</span>: <span class="literal">false</span>&#125;);</span><br><span class="line">ch.publish(ex, <span class="string">'anonymous.info'</span>, <span class="keyword">new</span> Buffer(msg));</span><br></pre></td></tr></table></figure></p>
+<h2 id="RPC"><a href="#RPC" class="headerlink" title="RPC"></a>RPC</h2><p>可以通过RabbitMQ实现RPC</p>
+<h3 id="callback-queue"><a href="#callback-queue" class="headerlink" title="callback queue"></a>callback queue</h3><p><code>reply_to</code>（即为回调指定队列）有两种情况，一种是针对每一个request，都创建（随机生成）一个新的queue:<br><img src="http://www.rabbitmq.com/img/tutorials/python-six.png" alt="http://www.rabbitmq.com/img/tutorials/python-six.png"><br>另一种是每个request使用同一queue（使用固定命名即可）。</p>
+<p>第二种更为高效，但是需要解决一个问题，当同时调用多个request的时候，会有多个response,如何使它们匹配。解决方案是加入<code>Correlation Id</code>，其对于每一个request都是独一无二的，每个client接收到消息后进行<code>Correlation Id</code>判断:</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">await</span> ch.consume(q.queue,msg=&gt;&#123;</span><br><span class="line">    <span class="keyword">if</span> (msg.properties.correlationId == corr) &#123;</span><br><span class="line">        <span class="comment">//...</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;,&#123;<span class="attr">noAck</span>:<span class="literal">false</span>&#125;);</span><br><span class="line"></span><br><span class="line">ch.sendToQueue(<span class="string">'rpc_server'</span>,</span><br><span class="line"><span class="keyword">new</span> Buffer(num.toString()),</span><br><span class="line">&#123; <span class="attr">correlationId</span>: corr, <span class="attr">replyTo</span>: q.queue &#125;);</span><br></pre></td></tr></table></figure>
+<p>完整实例：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// rpc_client.js</span></span><br><span class="line"><span class="keyword">async</span> <span class="function"><span class="keyword">function</span> <span class="title">client</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="keyword">let</span> args = process.argv.slice(<span class="number">2</span>);</span><br><span class="line">    <span class="keyword">let</span> corr = generateUuid();</span><br><span class="line">    <span class="keyword">let</span> num = <span class="built_in">parseInt</span>(args[<span class="number">0</span>]);</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">let</span> conn = <span class="keyword">await</span> amqp.connect(<span class="string">'amqp://127.0.0.1'</span>);</span><br><span class="line">        <span class="keyword">let</span> ch = <span class="keyword">await</span> conn.createChannel();</span><br><span class="line">        <span class="keyword">let</span> q = <span class="keyword">await</span> ch.assertQueue(<span class="string">'rpc_client'</span>,&#123;<span class="attr">exclusive</span>: <span class="literal">false</span>&#125;);</span><br><span class="line"></span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">' [x] Requesting fib(%d)'</span>, num);</span><br><span class="line">        <span class="built_in">console</span>.log(q.queue)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">await</span> ch.consume(q.queue,msg=&gt;&#123;</span><br><span class="line">            <span class="keyword">if</span> (msg.properties.correlationId == corr) &#123;</span><br><span class="line">                <span class="built_in">console</span>.log(<span class="string">' [.] Got %s'</span>, msg.content.toString());</span><br><span class="line">                ch.ack(msg)</span><br><span class="line">                setTimeout(<span class="function"><span class="params">()</span>=&gt;</span>&#123; conn.close(); process.exit(<span class="number">0</span>) &#125;, <span class="number">2500</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;,&#123;<span class="attr">noAck</span>:<span class="literal">false</span>&#125;);</span><br><span class="line"></span><br><span class="line">        ch.sendToQueue(<span class="string">'rpc_server'</span>,</span><br><span class="line">        <span class="keyword">new</span> Buffer(num.toString()),</span><br><span class="line">        &#123; <span class="attr">correlationId</span>: corr, <span class="attr">replyTo</span>: q.queue &#125;);</span><br><span class="line"></span><br><span class="line">    &#125; <span class="keyword">catch</span>(err)&#123;</span><br><span class="line">        <span class="built_in">console</span>.error(err);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">generateUuid</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">Math</span>.random().toString() +</span><br><span class="line">           <span class="built_in">Math</span>.random().toString() +</span><br><span class="line">           <span class="built_in">Math</span>.random().toString();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// rpc_server.js</span></span><br><span class="line"><span class="keyword">async</span> <span class="function"><span class="keyword">function</span> <span class="title">server</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">let</span> conn = <span class="keyword">await</span> amqp.connect(<span class="string">'amqp://127.0.0.1'</span>);</span><br><span class="line">        <span class="keyword">let</span> ch = <span class="keyword">await</span> conn.createChannel();</span><br><span class="line">        process.once(<span class="string">'SIGINT'</span>,()=&gt;conn.close());</span><br><span class="line"></span><br><span class="line">        <span class="keyword">let</span> q = <span class="keyword">await</span> ch.assertQueue(<span class="string">'rpc_server'</span>);</span><br><span class="line">        ch.prefetch(<span class="number">1</span>);</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">' [x] Awaiting RPC requests'</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">await</span> ch.consume(q.queue,msg=&gt;&#123;</span><br><span class="line">            <span class="keyword">let</span> n = <span class="built_in">parseInt</span>(msg.content.toString());</span><br><span class="line">            </span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">" [.] fib(%d)"</span>, n);</span><br><span class="line">    </span><br><span class="line">            <span class="keyword">let</span> r = fibonacci(n);</span><br><span class="line">    </span><br><span class="line">            ch.sendToQueue(msg.properties.replyTo,</span><br><span class="line">            <span class="keyword">new</span> Buffer(r.toString()),</span><br><span class="line">            &#123;<span class="attr">correlationId</span>: msg.properties.correlationId&#125;);</span><br><span class="line">    </span><br><span class="line">            ch.ack(msg);</span><br><span class="line">        &#125;,&#123;<span class="attr">noAck</span>:<span class="literal">false</span>&#125;);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    &#125; <span class="keyword">catch</span>(err) &#123;</span><br><span class="line">        <span class="built_in">console</span>.error(err);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">server();</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">fibonacci</span>(<span class="params">n</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (n == <span class="number">0</span> || n == <span class="number">1</span>)</span><br><span class="line">        <span class="keyword">return</span> n;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="keyword">return</span> fibonacci(n - <span class="number">1</span>) + fibonacci(n - <span class="number">2</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>同意可以启动多个server实例来并行进行计算任务：</p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/rpc.png" alt="http://7xsi10.com1.z0.glb.clouddn.com/rpc.png"></p>
+<p>注意点：</p>
+<ul>
+<li><code>exclusive</code>: 这里不能为true,不然会出现同时启动多个client失败;</li>
+<li><code>ack</code>:　需要开启ack，否则会出现后续的client调用永远处于等待状态。</li>
+</ul>
+<p>目前发现如果对所有client共享一个queue，多个request竟然是串行执行的，即需要前一个client关闭后，后一个client才会返回结果。经过排查，<code>server</code>端是正常接收到多个request的，理论来说应该是及时向client回复了信息的。问题出现在client这里。而对每个client使用不同的queue是没有这个问题的。</p>
+<p>待解决…</p>
+<h2 id="跨语言通信"><a href="#跨语言通信" class="headerlink" title="跨语言通信"></a>跨语言通信</h2><p><em>注：实例来自《Node.js实战》</em></p>
+<p>上面的例子都是在Node进程之间进行的，RabbitMQ本身就用于横向扩展的集群服务之间的消息通信，当然支持不同主机，不同语言服务之间的通信。</p>
+<p>一个简单的例子:<code>server.py</code>作为consumer:<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> pika</span><br><span class="line"></span><br><span class="line">connection = pika.BlockingConnection(pika.ConnectionParameters(</span><br><span class="line">    host=<span class="string">"localhost"</span></span><br><span class="line">))</span><br><span class="line"></span><br><span class="line">channel = connection.channel()</span><br><span class="line"></span><br><span class="line">channel.queue_declare(queue=<span class="string">"hello"</span>)</span><br><span class="line"><span class="keyword">print</span> <span class="string">"waiting for massage from queue hello"</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">callback</span><span class="params">(ch,method,properties,body)</span>:</span></span><br><span class="line">    <span class="keyword">print</span> <span class="string">"Received: %r"</span> % (body,)</span><br><span class="line"></span><br><span class="line">channel.basic_consume(callback,queue=<span class="string">"hello"</span>,no_ack=<span class="keyword">True</span>)</span><br><span class="line"></span><br><span class="line">channel.start_consuming()</span><br></pre></td></tr></table></figure></p>
+<p>producer还是我们之前第一个例子的<code>client.js</code>，运行结果：</p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/node_py.png" alt="http://7xsi10.com1.z0.glb.clouddn.com/node_py.png"></p>
+<h2 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h2><p>篇幅有限，这篇文章就只做一些基础的介绍，还有诸如与HTTP方案对比，RabbitMQ集群等等，后续文章进行总结。</p>
+<p>参考:</p>
+<ul>
+<li>RabbitMQ官网：<a href="http://www.rabbitmq.com/" target="_blank" rel="noopener">http://www.rabbitmq.com/</a></li>
+<li>AMQP官网: <a href="https://www.amqp.org" target="_blank" rel="noopener">https://www.amqp.org</a></li>
+<li>amqp.node: <a href="http://www.squaremobius.net/amqp.node/" target="_blank" rel="noopener">http://www.squaremobius.net/amqp.node/</a></li>
+</ul>
+
+      
+    </div>
+
+    <div>
+      
+        
+<div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/code/images/wechat.jpg" alt="罗峡的博客 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎扫描上面的微信公众号二维码，关注我的个人公众号：全栈前端</div>
+</div>
+
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/code/images/wechat_pay.png" alt="罗峡的博客 WeChat Pay"/>
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/code/images/ali_pay.jpg" alt="罗峡的博客 Alipay"/>
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/code/tags/RabbitMQ/" rel="tag">#RabbitMQ</a>
+          
+            <a href="/code/tags/AMQP/" rel="tag">#AMQP</a>
+          
+            <a href="/code/tags/RPC/" rel="tag">#RPC</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/code/2017/08/17/从Functors到Monad/" rel="next" title="从Functors到Monad">
+                <i class="fa fa-chevron-left"></i> 从Functors到Monad
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/code/2017/11/16/Koa源码解读/" rel="prev" title="Koa源码解读">
+                Koa源码解读 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/code/images/head.jpg"
+               alt="罗峡的博客" />
+          <p class="site-author-name" itemprop="name">罗峡的博客</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/code/archives">
+              <span class="site-state-item-count">43</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/code/categories">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/code/tags">
+                <span class="site-state-item-count">85</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/code/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/laoqiren" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://luoxia.me/life" title="生活随笔" target="_blank">生活随笔</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#概览"><span class="nav-number">1.</span> <span class="nav-text">概览</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#简单的queue消息传输"><span class="nav-number">2.</span> <span class="nav-text">简单的queue消息传输</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#通过并行-amp-负载均衡的workers处理消息"><span class="nav-number">3.</span> <span class="nav-text">通过并行&负载均衡的workers处理消息</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Publish-Subscribe"><span class="nav-number">4.</span> <span class="nav-text">Publish/Subscribe</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#为每个consumer生成新的queue"><span class="nav-number">4.1.</span> <span class="nav-text">为每个consumer生成新的queue:</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#bindings"><span class="nav-number">4.2.</span> <span class="nav-text">bindings</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Routing"><span class="nav-number">5.</span> <span class="nav-text">Routing</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Topics"><span class="nav-number">6.</span> <span class="nav-text">Topics</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RPC"><span class="nav-number">7.</span> <span class="nav-text">RPC</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#callback-queue"><span class="nav-number">7.1.</span> <span class="nav-text">callback queue</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#跨语言通信"><span class="nav-number">8.</span> <span class="nav-text">跨语言通信</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#其他"><span class="nav-number">9.</span> <span class="nav-text">其他</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">罗峡的博客</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/code/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/code/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/code/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/code/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length == 0) {
+       search_path = "search.xml";
+    }
+    var path = "/code/" + search_path;
+    // monitor main search box;
+
+    function proceedsearch() {
+      $("body").append('<div class="popoverlay">').css('overflow', 'hidden');
+      $('.popup').toggle();
+
+    }
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+    'use strict';
+    $.ajax({
+        url: path,
+        dataType: "xml",
+        async: true,
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            isfetched = true;
+            $('.popup').detach().appendTo('.header-inner');
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                var matchcounts = 0;
+                var str='<ul class=\"search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length > 1) {
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var content_index = [];
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_content = data.content.trim().replace(/<[^>]+>/g,"").toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    var index_content = -1;
+                    var first_occur = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title != '' && data_content != '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            index_content = data_content.indexOf(keyword);
+                            if( index_title < 0 && index_content < 0 ){
+                                isMatch = false;
+                            } else {
+                                if (index_content < 0) {
+                                    index_content = 0;
+                                }
+                                if (i == 0) {
+                                    first_occur = index_content;
+                                }
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        matchcounts += 1;
+                        str += "<li><a href='"+ data_url +"' class='search-result-title'>"+ data_title +"</a>";
+                        var content = data.content.trim().replace(/<[^>]+>/g,"");
+                        if (first_occur >= 0) {
+                            // cut out 100 characters
+                            var start = first_occur - 20;
+                            var end = first_occur + 80;
+                            if(start < 0){
+                                start = 0;
+                            }
+                            if(start == 0){
+                                end = 50;
+                            }
+                            if(end > content.length){
+                                end = content.length;
+                            }
+                            var match_content = content.substring(start, end);
+                            // highlight all keywords
+                            keywords.forEach(function(keyword){
+                                var regS = new RegExp(keyword, "gi");
+                                match_content = match_content.replace(regS, "<b class=\"search-keyword\">"+keyword+"</b>");
+                            });
+
+                            str += "<p class=\"search-result\">" + match_content +"...</p>"
+                        }
+                        str += "</li>";
+                    }
+                })};
+                str += "</ul>";
+                if (matchcounts == 0) { str = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>' }
+                if (keywords == "") { str = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>' }
+                $resultContent.innerHTML = str;
+            });
+            proceedsearch();
+        }
+    });}
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched == false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+
+    });
+
+    $('.popup-btn-close').click(function(e){
+      $('.popup').hide();
+      $(".popoverlay").remove();
+      $('body').css('overflow', '');
+    });
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+  </script>
+
+
+  
+
+  
+
+  
+<script type="text/javascript" async src="//push.zhanzhang.baidu.com/push.js">
+</script>
+
+
+</body>
+</html>

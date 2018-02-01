@@ -1,0 +1,909 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/code/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/code/lib/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/code/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="webpack,server-rendering,react,redux,react-router,同构," />
+
+
+
+
+
+  <link rel="alternate" href="/code/atom.xml" title="罗峡的技术博客" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/code/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="所谓Isomorphic应用即为前后端共用代码的同构应用。与之对应的还有Universal应用，得益于virtual DOM，使得同一套js代码可以运行在各个环境如web, 安卓/IOS,桌面应用等。 为什么要同构？SPA大大改善了用户体验，但是也存在一些问题，如SEO,首屏渲染效率问题。于是就有一种方案便是SSR即服">
+<meta name="keywords" content="webpack,server-rendering,react,redux,react-router,同构">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用React SSR构建Isomorphic应用">
+<meta property="og:url" content="http://luoxia.me/code/2017/02/07/使用React SSR构建Isomorphic应用/index.html">
+<meta property="og:site_name" content="罗峡的技术博客">
+<meta property="og:description" content="所谓Isomorphic应用即为前后端共用代码的同构应用。与之对应的还有Universal应用，得益于virtual DOM，使得同一套js代码可以运行在各个环境如web, 安卓/IOS,桌面应用等。 为什么要同构？SPA大大改善了用户体验，但是也存在一些问题，如SEO,首屏渲染效率问题。于是就有一种方案便是SSR即服务端渲染。如React的SSR,通过在server端获取初始state,返回已经">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/WBPD@L8EK306G~EE%7D4~AS%5BO.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/%60TXZ%28%6098%7DI1%5BQ%5D40RFU10MI.png">
+<meta property="og:updated_time" content="2017-11-16T13:10:06.490Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="使用React SSR构建Isomorphic应用">
+<meta name="twitter:description" content="所谓Isomorphic应用即为前后端共用代码的同构应用。与之对应的还有Universal应用，得益于virtual DOM，使得同一套js代码可以运行在各个环境如web, 安卓/IOS,桌面应用等。 为什么要同构？SPA大大改善了用户体验，但是也存在一些问题，如SEO,首屏渲染效率问题。于是就有一种方案便是SSR即服务端渲染。如React的SSR,通过在server端获取初始state,返回已经">
+<meta name="twitter:image" content="http://7xsi10.com1.z0.glb.clouddn.com/WBPD@L8EK306G~EE%7D4~AS%5BO.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: undefined,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://luoxia.me/code/2017/02/07/使用React SSR构建Isomorphic应用/"/>
+
+  <title> 使用React SSR构建Isomorphic应用 | 罗峡的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?179492533449f84f24555d1cbf10462f";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/code/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">罗峡的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">爱技术，爱生活</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/code/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/code/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/code/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/code/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/code/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup">
+ <span class="search-icon fa fa-search"></span>
+ <input type="text" id="local-search-input">
+ <div id="local-search-result"></div>
+ <span class="popup-btn-close">close</span>
+</div>
+
+
+    </div>
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                使用React SSR构建Isomorphic应用
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2017-02-07T17:18:56+08:00" content="2017-02-07">
+              2017-02-07
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/code/categories/React/" itemprop="url" rel="index">
+                    <span itemprop="name">React</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>所谓Isomorphic应用即为前后端共用代码的同构应用。与之对应的还有Universal应用，得益于virtual DOM，使得同一套js代码可以运行在各个环境如web, 安卓/IOS,桌面应用等。</p>
+<p>为什么要同构？SPA大大改善了用户体验，但是也存在一些问题，如SEO,首屏渲染效率问题。于是就有一种方案便是SSR即服务端渲染。如React的SSR,通过在server端获取初始state,返回已经含有数据的DOM结构，再交给客户端实例化React，之后客户端接手路由渲染任务，而这一部分能够共用一套代码再好不过了。</p>
+<p>文章以我的实际项目为例，分析整个应用的技术架构，总结一系列问题如服务端渲染组件时的静态资源问题等。</p>
+<p>项目运用React,redux,react-router,React SSR, express,mongoose, Ant design, webpack技术栈，欢迎star:<a href="https://github.com/laoqiren/isomorphic-redux-forum" target="_blank" rel="noopener">https://github.com/laoqiren/isomorphic-redux-forum</a></p>
+<a id="more"></a>
+<h2 id="React-SSR的好处"><a href="#React-SSR的好处" class="headerlink" title="React SSR的好处"></a>React SSR的好处</h2><ol>
+<li>利于SEO：React服务器渲染的方案使你的页面在一开始就有一个HTML DOM结构，方便Google等搜索引擎的爬虫能爬到网页的内容。</li>
+<li>提高首屏渲染的速度：服务器直接返回一个填满数据的HTML，而不是在请求了HTML后还需要异步请求首屏数据</li>
+<li>前后端都共用代码，提供开发效率</li>
+<li>摒弃Template,以组件方式组织代码</li>
+</ol>
+<h2 id="React-SSR提供的API"><a href="#React-SSR提供的API" class="headerlink" title="React SSR提供的API"></a>React SSR提供的API</h2><p>React SSR提供了一些API,可以和React-router, Redux进行配合，渲染首屏.</p>
+<h3 id="renderToString-和-renderToStaticMarkup方法用于将Virtual-DOM渲染成HTML字符串"><a href="#renderToString-和-renderToStaticMarkup方法用于将Virtual-DOM渲染成HTML字符串" class="headerlink" title="renderToString 和 renderToStaticMarkup方法用于将Virtual DOM渲染成HTML字符串"></a>renderToString 和 renderToStaticMarkup方法用于将Virtual DOM渲染成HTML字符串</h3><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> &#123;renderToString&#125; <span class="keyword">from</span> <span class="string">'react-dom/server'</span>;</span><br><span class="line"><span class="keyword">const</span> html = renderToString(</span><br><span class="line">            &lt;Provider store=&#123;store&#125;&gt;</span><br><span class="line">                &lt;RouterContext &#123;...renderProps&#125;/&gt;</span><br><span class="line">            &lt;<span class="regexp">/Provider&gt;</span></span><br><span class="line"><span class="regexp">        )</span></span><br></pre></td></tr></table></figure>
+<p>renderToString：将React Component转化为HTML字符串，生成的HTML的DOM会带有额外属性：各个DOM会有data-react-id属性，第一个DOM会有data-checksum属性。</p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/WBPD@L8EK306G~EE%7D4~AS%5BO.png" alt="图1"></p>
+<p>renderToStaticMarkup：同样是将React Component转化为HTML字符串，但是生成HTML的DOM不会有额外属性，从而节省HTML字符串的大小。</p>
+<h3 id="渲染原理"><a href="#渲染原理" class="headerlink" title="渲染原理"></a>渲染原理</h3><p>服务端渲染出来的只是静态DOM，还不能使用State, props,事件等，必须在客户端实例化React,而在客户端渲染之前会根据DOM结果和props计算组件的checksum值，然后与服务端渲染结果中的checksum进行比较，如果相同则不会重新渲染该组件，而如果不想同，则会重新渲染，并抛出错误。当没有找到checksum值时，也会重新渲染。</p>
+<p>这里需要注意一个问题，要将renderToString渲染出来的DOM用额外的div包裹起来，不然会导致checksum不同:</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;div id=<span class="string">"container"</span>&gt;<span class="xml"><span class="tag">&lt;<span class="name">div</span>&gt;</span>$&#123;html&#125;<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><span class="xml"><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span></span><br></pre></td></tr></table></figure>
+<h3 id="和Redux配合"><a href="#和Redux配合" class="headerlink" title="和Redux配合:"></a>和Redux配合:</h3><p><strong> 服务端Redux做如下工作:</strong></p>
+<p>. 为每次请求创建全新的 Redux store 实例；</p>
+<p>. 按需 dispatch 一些 action；</p>
+<p>. 从 store 中取出 state；</p>
+<p>. 把 state 一同返回给客户端。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> store = storeApp(&#123;&#125;);</span><br><span class="line"><span class="built_in">Promise</span>.all([</span><br><span class="line">    store.dispatch(selectAuthor(<span class="string">'all'</span>)),</span><br><span class="line">    store.dispatch(fetchPostsIfNeeded(<span class="string">'all'</span>))</span><br><span class="line">])</span><br><span class="line">.then(<span class="function"><span class="params">()</span>=&gt;</span>&#123;</span><br><span class="line">    <span class="keyword">const</span> html = renderToString(</span><br><span class="line">        &lt;Provider store=&#123;store&#125;&gt;</span><br><span class="line">            &lt;RouterContext &#123;...renderProps&#125;/&gt;</span><br><span class="line">        &lt;<span class="regexp">/Provider&gt;</span></span><br><span class="line"><span class="regexp">    )</span></span><br><span class="line"><span class="regexp">    const finalState = store.getState();</span></span><br><span class="line"><span class="regexp">    res.end(renderFullPage(html,finalState));</span></span><br><span class="line"><span class="regexp">&#125;)</span></span><br></pre></td></tr></table></figure>
+<p>在renderFullPage方法里将初始state挂在window上，方便客户端渲染用:</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">window</span>.__INITIAL_STATE__ = $&#123;<span class="built_in">JSON</span>.stringify(initState)&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>客户端:</strong><br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> initState = <span class="built_in">window</span>.__INITIAL_STATE__;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> store = storeApp(initState);</span><br><span class="line"></span><br><span class="line">ReactDOM.render(</span><br><span class="line">    &lt;Provider store=&#123;store&#125;&gt;</span><br><span class="line">       &lt;Router history=&#123;browserHistory&#125;&gt;</span><br><span class="line">        &#123;routesApp&#125;</span><br><span class="line">       &lt;<span class="regexp">/Router&gt;</span></span><br><span class="line"><span class="regexp">    &lt;/</span>Provider&gt;,</span><br><span class="line">    <span class="built_in">document</span>.getElementById(<span class="string">'container'</span>));</span><br></pre></td></tr></table></figure></p>
+<h3 id="与React-router配合"><a href="#与React-router配合" class="headerlink" title="与React-router配合:"></a>与React-router配合:</h3><p>使用match方法匹配路由，使用RouterContext渲染路由组件</p>
+<p>路由组件生成: routes.js:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> React <span class="keyword">from</span> <span class="string">'react'</span>;</span><br><span class="line"><span class="keyword">import</span> &#123;Route,IndexRoute&#125; <span class="keyword">from</span> <span class="string">'react-router'</span>;</span><br><span class="line"><span class="keyword">import</span> App <span class="keyword">from</span> <span class="string">'../common/components/App'</span>;</span><br><span class="line"><span class="keyword">import</span> Item <span class="keyword">from</span> <span class="string">'../common/components/Item'</span>;</span><br><span class="line"><span class="keyword">import</span> List <span class="keyword">from</span> <span class="string">'../common/components/List'</span>;</span><br><span class="line"><span class="keyword">import</span> Publish <span class="keyword">from</span> <span class="string">'../common/components/Publish'</span>;</span><br><span class="line"><span class="keyword">import</span> Space <span class="keyword">from</span> <span class="string">'../common/components/Space'</span>;</span><br><span class="line"><span class="keyword">import</span> LogIn <span class="keyword">from</span> <span class="string">'../common/components/LogIn'</span>;</span><br><span class="line"><span class="keyword">import</span> Reg <span class="keyword">from</span> <span class="string">'../common/components/Reg'</span>;</span><br><span class="line"><span class="keyword">const</span> routes = (</span><br><span class="line">    &lt;Route path=<span class="string">"/"</span> component=&#123;App&#125;&gt;</span><br><span class="line">            &lt;IndexRoute component=&#123;List&#125;/&gt;</span><br><span class="line">            &lt;Route path=<span class="string">"/item/:id"</span> component=&#123;Item&#125;/&gt;</span><br><span class="line">            &lt;Route path=<span class="string">"/space"</span> component=&#123;Space&#125;/&gt;</span><br><span class="line">            &lt;Route path=<span class="string">"/publish"</span> component=&#123;Publish&#125;/&gt;</span><br><span class="line">            &lt;Route path=<span class="string">"/logIn"</span> component=&#123;LogIn&#125;/&gt;</span><br><span class="line">            &lt;Route path=<span class="string">"/reg"</span> component=&#123;Reg&#125;/&gt;</span><br><span class="line">    &lt;<span class="regexp">/Route&gt;</span></span><br><span class="line"><span class="regexp">    );</span></span><br><span class="line"><span class="regexp"></span></span><br><span class="line"><span class="regexp">export default routes;</span></span><br></pre></td></tr></table></figure></p>
+<p>render.js:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">default</span> <span class="function"><span class="keyword">function</span> <span class="title">handleRender</span>(<span class="params">req,res</span>)</span>&#123;</span><br><span class="line">    match(&#123;<span class="attr">routes</span>:routesApp,<span class="attr">location</span>:req.url&#125;,(err,redirectLocation,renderProps)=&gt;&#123;</span><br><span class="line">        <span class="keyword">if</span>(err)&#123;</span><br><span class="line">            res.status(<span class="number">500</span>).end(<span class="string">`server error: <span class="subst">$&#123;err&#125;</span>`</span>)</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span>(redirectLocation)&#123;</span><br><span class="line">            res.redirect(redirectLocation.pathname+redirectLocation.search)</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span>(renderProps)&#123;</span><br><span class="line">            <span class="keyword">const</span> store = storeApp(&#123;&#125;);</span><br><span class="line">            <span class="built_in">Promise</span>.all([</span><br><span class="line">                store.dispatch(selectAuthor(<span class="string">'all'</span>)),</span><br><span class="line">                store.dispatch(fetchPostsIfNeeded(<span class="string">'all'</span>))</span><br><span class="line">            ])</span><br><span class="line">            .then(<span class="function"><span class="params">()</span>=&gt;</span>&#123;</span><br><span class="line">                <span class="keyword">const</span> html = renderToString(</span><br><span class="line">                    &lt;Provider store=&#123;store&#125;&gt;</span><br><span class="line">                        &lt;RouterContext &#123;...renderProps&#125;/&gt;</span><br><span class="line">                    &lt;<span class="regexp">/Provider&gt;</span></span><br><span class="line"><span class="regexp">                )</span></span><br><span class="line"><span class="regexp">                const finalState = store.getState();</span></span><br><span class="line"><span class="regexp">                res.end(renderFullPage(html,finalState));</span></span><br><span class="line"><span class="regexp">            &#125;)</span></span><br><span class="line"><span class="regexp">        &#125; else &#123;</span></span><br><span class="line"><span class="regexp">            res.status(404).end('404 not found')</span></span><br><span class="line"><span class="regexp">        &#125;</span></span><br><span class="line"><span class="regexp">    &#125;)</span></span><br><span class="line"><span class="regexp">&#125;</span></span><br></pre></td></tr></table></figure></p>
+<h2 id="实例分析"><a href="#实例分析" class="headerlink" title="实例分析"></a>实例分析</h2><h3 id="技术选型"><a href="#技术选型" class="headerlink" title="技术选型:"></a>技术选型:</h3><p>. React</p>
+<p>. Redux管理state</p>
+<p>. React-router管理前端路由</p>
+<p>. React 服务端渲染</p>
+<p>. Webpack构建</p>
+<p>. Ant design UI</p>
+<p>. Express</p>
+<p>. Mongoose操作数据库</p>
+<h3 id="项目目录结构"><a href="#项目目录结构" class="headerlink" title="项目目录结构:"></a>项目目录结构:</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">--- assests //静态资源</span><br><span class="line">--- public //开发环境的bundle文件</span><br><span class="line">--- client //客户端部分</span><br><span class="line">	--- index.js //客户端入口文件，渲染React实例</span><br><span class="line">	--- devTools.js //开发工具配置</span><br><span class="line">--- server //服务端部分</span><br><span class="line">	--- Models //操作数据库</span><br><span class="line">	--- api //提供REST API</span><br><span class="line">	--- app.js //服务器主文件</span><br><span class="line">	--- render.js //React 服务端渲染逻辑</span><br><span class="line">	--- index.js //服务器入口文件</span><br><span class="line">--- common //同构部分</span><br><span class="line">	--- components //组件</span><br><span class="line">	--- actions //Redux action</span><br><span class="line">	--- reducers //Redux reducer</span><br><span class="line">	--- configureStore.js //store生成器</span><br><span class="line">	--- routes.js //router生成器</span><br><span class="line">---webpack</span><br><span class="line">	--- run-webpack-server.js //运行webpack服务的入口文件</span><br><span class="line">	--- webpack-assests.json // webpack-isomorphic-tools生成的静态资源路径文件</span><br><span class="line">	--- webpack-dev-server.js // webpack服务器</span><br><span class="line">	--- webpack-isomorphic-tools.configuration.js //webpack-isomorphic-tools配置文件</span><br><span class="line">	--- webpack-status.json // webpack-isomorphic-tools的日志文件</span><br><span class="line">	--- webpack.config.js //webpack配置文件</span><br><span class="line"></span><br><span class="line">--- .babelrc</span><br><span class="line">--- .eslintrc</span><br><span class="line">--- .gitignore</span><br><span class="line">--- LICENSE</span><br><span class="line">--- package.json</span><br><span class="line">--- README.md</span><br></pre></td></tr></table></figure>
+<h3 id="webpack"><a href="#webpack" class="headerlink" title="webpack:"></a>webpack:</h3><p>webpack配置:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">const</span> HtmlWebpackPlugin = <span class="built_in">require</span>(<span class="string">'html-webpack-plugin'</span>);</span><br><span class="line"><span class="keyword">const</span> webpack = <span class="built_in">require</span>(<span class="string">'webpack'</span>);</span><br><span class="line"><span class="keyword">const</span> Webpack_isomorphic_tools_plugin = <span class="built_in">require</span>(<span class="string">'webpack-isomorphic-tools/plugin'</span>);</span><br><span class="line"><span class="keyword">const</span> path = <span class="built_in">require</span>(<span class="string">'path'</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> webpack_isomorphic_tools_plugin = </span><br><span class="line">  <span class="keyword">new</span> Webpack_isomorphic_tools_plugin(<span class="built_in">require</span>(<span class="string">'./webpack-isomorphic-tools-configuration'</span>))</span><br><span class="line">  .development()</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> HtmlWebpackPluginConfig = <span class="keyword">new</span> HtmlWebpackPlugin(&#123;</span><br><span class="line">    template: <span class="string">`<span class="subst">$&#123;__dirname&#125;</span>/../client/index.html`</span>,</span><br><span class="line">    filename: <span class="string">'index.html'</span>,</span><br><span class="line">    inject: <span class="literal">false</span></span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="built_in">module</span>.exports = &#123;</span><br><span class="line">    context: path.join(__dirname,<span class="string">'..'</span>),</span><br><span class="line">    entry:[</span><br><span class="line">        <span class="string">'webpack-hot-middleware/client?path=http://localhost:3001/__webpack_hmr'</span>,</span><br><span class="line">        <span class="string">'./client/index.js'</span></span><br><span class="line">    ],</span><br><span class="line">    output:&#123;</span><br><span class="line">        path: <span class="string">`<span class="subst">$&#123;__dirname&#125;</span>/../dist`</span>,</span><br><span class="line">        publicPath: <span class="string">'http://localhost:3001/public/'</span>,</span><br><span class="line">        filename: <span class="string">'[name].[hash].js'</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="built_in">module</span>: &#123;</span><br><span class="line">        loaders: [</span><br><span class="line">            &#123;</span><br><span class="line">                test:<span class="regexp">/\.jsx?$/</span>,</span><br><span class="line">                loaders: [<span class="string">"react-hot-loader"</span>,<span class="string">"babel-loader"</span>],</span><br><span class="line">                exclude: <span class="regexp">/node_modules/</span></span><br><span class="line">            &#125;,</span><br><span class="line">            &#123;</span><br><span class="line">                test:<span class="regexp">/\.css$/</span>,</span><br><span class="line">                loaders: [<span class="string">'style-loader'</span>,<span class="string">'css-loader'</span>]</span><br><span class="line">            &#125;,</span><br><span class="line">            &#123;</span><br><span class="line">                test:<span class="regexp">/\.scss$/</span>,</span><br><span class="line">                loaders: [<span class="string">'style-loader'</span>,<span class="string">'css-loader'</span>,<span class="string">'sass-loader'</span>]</span><br><span class="line">            &#125;,</span><br><span class="line">            &#123;</span><br><span class="line">                test: webpack_isomorphic_tools_plugin.regular_expression(<span class="string">'images'</span>),</span><br><span class="line">                loader: <span class="string">'url-loader?limit=10240'</span>, <span class="comment">// any image below or equal to 10K will be converted to inline base64 instead</span></span><br><span class="line">            &#125;</span><br><span class="line">        ]</span><br><span class="line">    &#125;,</span><br><span class="line">    plugins: [</span><br><span class="line">        HtmlWebpackPluginConfig,</span><br><span class="line">        webpack_isomorphic_tools_plugin,</span><br><span class="line">        <span class="keyword">new</span> webpack.HotModuleReplacementPlugin(),</span><br><span class="line">        <span class="keyword">new</span> webpack.NoEmitOnErrorsPlugin(),</span><br><span class="line">        <span class="keyword">new</span> webpack.BannerPlugin(<span class="string">"This file is created by Luo Xia"</span>)</span><br><span class="line">    ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>webpack服务: webpack-dev-server.js:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> express <span class="keyword">from</span> <span class="string">'express'</span>;</span><br><span class="line"><span class="keyword">import</span> path <span class="keyword">from</span> <span class="string">'path'</span>;</span><br><span class="line"><span class="keyword">import</span> qs <span class="keyword">from</span> <span class="string">'qs'</span>;</span><br><span class="line"><span class="keyword">import</span> webpack <span class="keyword">from</span> <span class="string">'webpack'</span>;</span><br><span class="line"><span class="keyword">import</span> webpackDevMiddleware <span class="keyword">from</span> <span class="string">'webpack-dev-middleware'</span>;</span><br><span class="line"><span class="keyword">import</span> webpackHotMiddleware <span class="keyword">from</span> <span class="string">'webpack-hot-middleware'</span>;</span><br><span class="line"><span class="keyword">import</span> webpackConfig <span class="keyword">from</span> <span class="string">'./webpack.config'</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> app = <span class="keyword">new</span> express();</span><br><span class="line"><span class="keyword">const</span> port = <span class="number">3001</span>;</span><br><span class="line"><span class="keyword">const</span> compiler = webpack(webpackConfig);</span><br><span class="line"></span><br><span class="line">compiler.plugin(<span class="string">'compilation'</span>,compilation=&gt;&#123;</span><br><span class="line">    compilation.plugin(<span class="string">'html-webpack-plugin-after-emit'</span>, (data, cb)=&gt; &#123;</span><br><span class="line">        webpackHotMiddleware(compiler).publish(&#123; <span class="attr">action</span>: <span class="string">'reload'</span> &#125;);</span><br><span class="line">        cb();</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;);</span><br><span class="line">app.use(webpackDevMiddleware(compiler,&#123;</span><br><span class="line">    noInfo:<span class="literal">true</span>,</span><br><span class="line">    publicPath: webpackConfig.output.publicPath,</span><br><span class="line">    hot: <span class="literal">true</span>,</span><br><span class="line">    stats: &#123;</span><br><span class="line">            colors: <span class="literal">true</span>,</span><br><span class="line">            chunks: <span class="literal">false</span></span><br><span class="line">        &#125;,</span><br><span class="line">     headers: &#123;</span><br><span class="line">         <span class="string">'Access-Control-Allow-Origin'</span>: <span class="string">'*'</span>,</span><br><span class="line">        <span class="string">"Access-Control-Allow-Methods"</span>:<span class="string">"PUT,POST,GET,DELETE,OPTIONS"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    historyApiFallback: <span class="literal">true</span></span><br><span class="line">&#125;));</span><br><span class="line">app.use(express.static(path.join(__dirname,<span class="string">'../dist'</span>)))</span><br><span class="line"></span><br><span class="line">app.use(webpackHotMiddleware(compiler,&#123;</span><br><span class="line">    path: <span class="string">'/__webpack_hmr'</span></span><br><span class="line">&#125;));</span><br><span class="line"></span><br><span class="line">app.use(<span class="string">'*'</span>,(req,res,next)=&gt;&#123;</span><br><span class="line">    res.header(<span class="string">"Access-Control-Allow-Origin"</span>, <span class="string">"*"</span>);</span><br><span class="line">    res.header(<span class="string">'Access-Control-Allow-Headers'</span>, <span class="string">'Content-Type, Content-Length, Authorization, Accept, X-Requested-With'</span>);</span><br><span class="line">    res.header(<span class="string">"Access-Control-Allow-Methods"</span>,<span class="string">"PUT,POST,GET,DELETE,OPTIONS"</span>);</span><br><span class="line">    next()</span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line">app.listen(port,err=&gt;&#123;</span><br><span class="line">    <span class="keyword">if</span>(err)&#123;</span><br><span class="line">        <span class="built_in">console</span>.error(err);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="built_in">console</span>.info(<span class="string">`the webpack server has been listened at port: <span class="subst">$&#123;port&#125;</span>,haha`</span>)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure></p>
+<h4 id="服务端渲染时静态资源问题"><a href="#服务端渲染时静态资源问题" class="headerlink" title="服务端渲染时静态资源问题"></a>服务端渲染时静态资源问题</h4><p>webpack可以将任意资源打包，那是在客户端，但是当其运行在服务端时，对于非js文件是无法正常import的，这里我的处理办法是webpack-isomorphic-tools</p>
+<p>在index.js里:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">require</span>(<span class="string">'babel-register'</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> Webpack_isomorphic_tools = <span class="built_in">require</span>(<span class="string">'webpack-isomorphic-tools'</span>)</span><br><span class="line"><span class="keyword">const</span> project_base_path = <span class="built_in">require</span>(<span class="string">'path'</span>).join(__dirname, <span class="string">'..'</span>)</span><br><span class="line">global.webpack_isomorphic_tools = <span class="keyword">new</span> Webpack_isomorphic_tools(<span class="built_in">require</span>(<span class="string">'../webpack/webpack-isomorphic-tools-configuration'</span>))</span><br><span class="line">    .server(project_base_path)</span><br><span class="line">    .then(<span class="function"><span class="params">()</span>=&gt;</span>&#123;</span><br><span class="line">        <span class="built_in">require</span>(<span class="string">'./app'</span>);</span><br><span class="line">    &#125;)</span><br></pre></td></tr></table></figure></p>
+<p>即在运行应用服务器时，先启动webpack-isomorphic-tools服务，它会在指定路径下生成webpack-assests.json和webpack-status.json，其中webpack-assests.json就指定了各个静态文件的路径:</p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/%60TXZ%28%6098%7DI1%5BQ%5D40RFU10MI.png" alt="图2"></p>
+<p><strong>注意</strong><br>起初我是将webpack-dev-server和应用服务器弄在一起的，这就会导致无法生成webpack-assests.json，就会导致静态资源加载失败</p>
+<h4 id="使用webpack-hot-middleware热更新问题"><a href="#使用webpack-hot-middleware热更新问题" class="headerlink" title="使用webpack-hot-middleware热更新问题"></a>使用webpack-hot-middleware热更新问题</h4><p>之前一直是使用webpack-dev-server形式试想HMR的，但是这里使用了webpack-dev-middleware和webpack-hot-middleware，会有一些区别:</p>
+<p>入口文件:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">entry:[</span><br><span class="line">        <span class="string">'webpack-hot-middleware/client?path=http://localhost:3001/__webpack_hmr'</span>,</span><br><span class="line">        <span class="string">'./client/index.js'</span></span><br><span class="line">    ]</span><br></pre></td></tr></table></figure></p>
+<p>之所以path配置为3001服务地址是因为webpack-dev-server是运行在3001端口的，然而我在开发中是用应用服务3000端口的，所以这也涉及到跨域问题，需要设置CORS头</p>
+<p>react-hot-loader:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">test:<span class="regexp">/\.jsx?$/</span>,</span><br><span class="line">loaders: [<span class="string">"react-hot-loader"</span>,<span class="string">"babel-loader"</span>],</span><br><span class="line">exclude: <span class="regexp">/node_modules/</span></span><br></pre></td></tr></table></figure></p>
+<p>注意这里别忘了exclude,不然会报错:ReactHotAPI is not a function</p>
+<p>插件:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">plugins: [</span><br><span class="line">        HtmlWebpackPluginConfig,</span><br><span class="line">        webpack_isomorphic_tools_plugin,</span><br><span class="line">        <span class="keyword">new</span> webpack.HotModuleReplacementPlugin(),</span><br><span class="line">        <span class="keyword">new</span> webpack.NoEmitOnErrorsPlugin(),</span><br><span class="line">        <span class="keyword">new</span> webpack.BannerPlugin(<span class="string">"This file is created by Luo Xia"</span>)</span><br><span class="line">    ]</span><br></pre></td></tr></table></figure></p>
+<p>指定路径:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">app.use(webpackHotMiddleware(compiler,&#123;</span><br><span class="line">    path: <span class="string">'/__webpack_hmr'</span></span><br><span class="line">&#125;));</span><br></pre></td></tr></table></figure></p>
+<p>这里不能加<a href="http://localhost:3001，否则404" target="_blank" rel="noopener">http://localhost:3001，否则404</a></p>
+<h3 id="同构部分"><a href="#同构部分" class="headerlink" title="同构部分"></a>同构部分</h3><p>和Redux一般写法没有差别，只是这里要抽象出一层store生成器和routes生成器:</p>
+<p>configureStore.js:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> &#123;createStore,applyMiddleware,compose&#125; <span class="keyword">from</span> <span class="string">'redux'</span>;</span><br><span class="line"><span class="keyword">import</span> thunkMiddleware <span class="keyword">from</span> <span class="string">'redux-thunk'</span>;</span><br><span class="line"><span class="keyword">import</span> reducerApp <span class="keyword">from</span> <span class="string">'../common/reducers/index'</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> &#123; composeWithDevTools &#125; <span class="keyword">from</span> <span class="string">'redux-devtools-extension'</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">default</span> <span class="function"><span class="keyword">function</span>(<span class="params">initState</span>)</span>&#123;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> createStore(reducerApp,initState,composeWithDevTools(</span><br><span class="line">        applyMiddleware(thunkMiddleware)</span><br><span class="line">    ))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>注意这里的redux-dev-tools部分，如果按照如下所示使用:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> composeEnhancers = <span class="built_in">window</span>.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;</span><br></pre></td></tr></table></figure></p>
+<p>这样是行不通的，因为服务端并不能使用window，所以使用模块方式引入</p>
+<p>routes.js:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> React <span class="keyword">from</span> <span class="string">'react'</span>;</span><br><span class="line"><span class="keyword">import</span> &#123;Route,IndexRoute&#125; <span class="keyword">from</span> <span class="string">'react-router'</span>;</span><br><span class="line"><span class="keyword">import</span> App <span class="keyword">from</span> <span class="string">'../common/components/App'</span>;</span><br><span class="line"><span class="keyword">import</span> Item <span class="keyword">from</span> <span class="string">'../common/components/Item'</span>;</span><br><span class="line"><span class="keyword">import</span> List <span class="keyword">from</span> <span class="string">'../common/components/List'</span>;</span><br><span class="line"><span class="keyword">import</span> Publish <span class="keyword">from</span> <span class="string">'../common/components/Publish'</span>;</span><br><span class="line"><span class="keyword">import</span> Space <span class="keyword">from</span> <span class="string">'../common/components/Space'</span>;</span><br><span class="line"><span class="keyword">import</span> LogIn <span class="keyword">from</span> <span class="string">'../common/components/LogIn'</span>;</span><br><span class="line"><span class="keyword">import</span> Reg <span class="keyword">from</span> <span class="string">'../common/components/Reg'</span>;</span><br><span class="line"><span class="keyword">const</span> routes = (</span><br><span class="line">    &lt;Route path=<span class="string">"/"</span> component=&#123;App&#125;&gt;</span><br><span class="line">            &lt;IndexRoute component=&#123;List&#125;/&gt;</span><br><span class="line">            &lt;Route path=<span class="string">"/item/:id"</span> component=&#123;Item&#125;/&gt;</span><br><span class="line">            &lt;Route path=<span class="string">"/space"</span> component=&#123;Space&#125;/&gt;</span><br><span class="line">            &lt;Route path=<span class="string">"/publish"</span> component=&#123;Publish&#125;/&gt;</span><br><span class="line">            &lt;Route path=<span class="string">"/logIn"</span> component=&#123;LogIn&#125;/&gt;</span><br><span class="line">            &lt;Route path=<span class="string">"/reg"</span> component=&#123;Reg&#125;/&gt;</span><br><span class="line">    &lt;<span class="regexp">/Route&gt;</span></span><br><span class="line"><span class="regexp">    );</span></span><br><span class="line"><span class="regexp"></span></span><br><span class="line"><span class="regexp">export default routes;</span></span><br></pre></td></tr></table></figure></p>
+<h3 id="完整的服务端渲染部分"><a href="#完整的服务端渲染部分" class="headerlink" title="完整的服务端渲染部分:"></a>完整的服务端渲染部分:</h3><p>render.js<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> &#123;renderToString&#125; <span class="keyword">from</span> <span class="string">'react-dom/server'</span>;</span><br><span class="line"><span class="keyword">import</span> qs <span class="keyword">from</span> <span class="string">'qs'</span>;</span><br><span class="line"><span class="keyword">import</span> &#123;Provider&#125; <span class="keyword">from</span> <span class="string">'react-redux'</span>;</span><br><span class="line"><span class="keyword">import</span> reducerApp <span class="keyword">from</span> <span class="string">'../common/reducers/index'</span>;</span><br><span class="line"><span class="keyword">import</span> React <span class="keyword">from</span> <span class="string">'react'</span>;</span><br><span class="line"><span class="keyword">import</span> &#123;RouterContext,match&#125; <span class="keyword">from</span> <span class="string">'react-router'</span>;</span><br><span class="line"><span class="keyword">import</span> &#123;selectAuthor,fetchPostsIfNeeded&#125; <span class="keyword">from</span> <span class="string">'../common/actions/actions'</span></span><br><span class="line"><span class="keyword">import</span> storeApp <span class="keyword">from</span> <span class="string">'../common/configStore'</span>;</span><br><span class="line"><span class="keyword">import</span> routesApp <span class="keyword">from</span> <span class="string">'../common/routes'</span>;</span><br><span class="line"><span class="keyword">import</span> fetch <span class="keyword">from</span> <span class="string">'isomorphic-fetch'</span></span><br><span class="line"><span class="keyword">import</span> fs <span class="keyword">from</span> <span class="string">'fs'</span>;</span><br><span class="line"><span class="keyword">import</span> path <span class="keyword">from</span> <span class="string">'path'</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">renderFullPage</span>(<span class="params">html,initState</span>)</span>&#123;</span><br><span class="line">    <span class="keyword">const</span> main = <span class="built_in">JSON</span>.parse(fs.readFileSync(path.join(__dirname,<span class="string">'../webpack/webpack-assets.json'</span>))).javascript.main;</span><br><span class="line">    <span class="keyword">return</span> <span class="string">`</span></span><br><span class="line"><span class="string">        &lt;!DOCTYPE html&gt;</span></span><br><span class="line"><span class="string">        &lt;html lang="en"&gt;</span></span><br><span class="line"><span class="string">        &lt;head&gt;</span></span><br><span class="line"><span class="string">            &lt;meta charset="UTF-8"&gt;</span></span><br><span class="line"><span class="string">            &lt;title&gt;react-ssr&lt;/title&gt;</span></span><br><span class="line"><span class="string">        &lt;/head&gt;</span></span><br><span class="line"><span class="string">        &lt;body&gt;</span></span><br><span class="line"><span class="string">            &lt;div id="container"&gt;&lt;div&gt;<span class="subst">$&#123;html&#125;</span>&lt;/div&gt;&lt;/div&gt;</span></span><br><span class="line"><span class="string">            &lt;script&gt;</span></span><br><span class="line"><span class="string">                window.__INITIAL_STATE__ = <span class="subst">$&#123;<span class="built_in">JSON</span>.stringify(initState)&#125;</span></span></span><br><span class="line"><span class="string">            &lt;/script&gt;</span></span><br><span class="line"><span class="string">            &lt;script src=<span class="subst">$&#123;main&#125;</span>&gt;&lt;/script&gt;</span></span><br><span class="line"><span class="string">        &lt;/body&gt;</span></span><br><span class="line"><span class="string">        &lt;/html&gt;</span></span><br><span class="line"><span class="string">    `</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">default</span> <span class="function"><span class="keyword">function</span> <span class="title">handleRender</span>(<span class="params">req,res</span>)</span>&#123;</span><br><span class="line">    match(&#123;<span class="attr">routes</span>:routesApp,<span class="attr">location</span>:req.url&#125;,(err,redirectLocation,renderProps)=&gt;&#123;</span><br><span class="line">        <span class="keyword">if</span>(err)&#123;</span><br><span class="line">            res.status(<span class="number">500</span>).end(<span class="string">`server error: <span class="subst">$&#123;err&#125;</span>`</span>)</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span>(redirectLocation)&#123;</span><br><span class="line">            res.redirect(redirectLocation.pathname+redirectLocation.search)</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span>(renderProps)&#123;</span><br><span class="line">            <span class="keyword">const</span> store = storeApp(&#123;&#125;);</span><br><span class="line">            <span class="built_in">Promise</span>.all([</span><br><span class="line">                store.dispatch(selectAuthor(<span class="string">'all'</span>)),</span><br><span class="line">                store.dispatch(fetchPostsIfNeeded(<span class="string">'all'</span>))</span><br><span class="line">            ])</span><br><span class="line">            .then(<span class="function"><span class="params">()</span>=&gt;</span>&#123;</span><br><span class="line">                <span class="keyword">const</span> html = renderToString(</span><br><span class="line">                    &lt;Provider store=&#123;store&#125;&gt;</span><br><span class="line">                        &lt;RouterContext &#123;...renderProps&#125;/&gt;</span><br><span class="line">                    &lt;<span class="regexp">/Provider&gt;</span></span><br><span class="line"><span class="regexp">                )</span></span><br><span class="line"><span class="regexp">                const finalState = store.getState();</span></span><br><span class="line"><span class="regexp">                res.end(renderFullPage(html,finalState));</span></span><br><span class="line"><span class="regexp">            &#125;)</span></span><br><span class="line"><span class="regexp">        &#125; else &#123;</span></span><br><span class="line"><span class="regexp">            res.status(404).end('404 not found')</span></span><br><span class="line"><span class="regexp">        &#125;</span></span><br><span class="line"><span class="regexp">    &#125;)</span></span><br><span class="line"><span class="regexp">&#125;</span></span><br></pre></td></tr></table></figure></p>
+<h3 id="其他部分"><a href="#其他部分" class="headerlink" title="其他部分"></a>其他部分</h3><p>sever部分除了react首屏渲染部分外，其余和我之前的项目vue-express-forum差不多，由于篇幅限制，这里就不详解了。感兴趣移步我的文章:<a href="http://luoxia.me/code/2016/11/01/JWTs%E4%B9%8B%E6%88%91%E7%9A%84%E5%89%8D%E5%90%8E%E7%AB%AF%E5%AE%8C%E5%85%A8%E5%88%86%E7%A6%BB%E5%AE%9E%E8%B7%B5/">JWTs之我的前后端完全分离实践</a>.</p>
+<p>另外开发过程中遇到了许多坑，其中有些坑都是一些依赖的版本问题。所以当遇到问题无法解决时，更改依赖版本，或许就能解决。如这个项目的node-sass，react-router使用最新版都会存在不兼容问题哦。</p>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>可见react的生态是非常丰富的，它的诞生引入了许多多新的概念，也使得JS的发展焕发蓬勃生机。这里也不得不提到Vue2.0，它也正式支持了服务端渲染。这方面还有许多东西有待研究。</p>
+<p>这个寒假也只剩下最后的10天了，珍惜时光，不负青春。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+<div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/code/images/wechat.jpg" alt="罗峡的博客 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎扫描上面的微信公众号二维码，关注我的个人公众号：全栈前端</div>
+</div>
+
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/code/images/wechat_pay.png" alt="罗峡的博客 WeChat Pay"/>
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/code/images/ali_pay.jpg" alt="罗峡的博客 Alipay"/>
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/code/tags/webpack/" rel="tag">#webpack</a>
+          
+            <a href="/code/tags/server-rendering/" rel="tag">#server-rendering</a>
+          
+            <a href="/code/tags/react/" rel="tag">#react</a>
+          
+            <a href="/code/tags/redux/" rel="tag">#redux</a>
+          
+            <a href="/code/tags/react-router/" rel="tag">#react-router</a>
+          
+            <a href="/code/tags/同构/" rel="tag">#同构</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/code/2017/01/23/WebRTC通信初探/" rel="next" title="WebRTC通信初探">
+                <i class="fa fa-chevron-left"></i> WebRTC通信初探
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/code/2017/03/09/TLS原理浅析/" rel="prev" title="TLS/SSL原理浅析">
+                TLS/SSL原理浅析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/code/images/head.jpg"
+               alt="罗峡的博客" />
+          <p class="site-author-name" itemprop="name">罗峡的博客</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/code/archives">
+              <span class="site-state-item-count">43</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/code/categories">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/code/tags">
+                <span class="site-state-item-count">85</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/code/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/laoqiren" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://luoxia.me/life" title="生活随笔" target="_blank">生活随笔</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#React-SSR的好处"><span class="nav-number">1.</span> <span class="nav-text">React SSR的好处</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#React-SSR提供的API"><span class="nav-number">2.</span> <span class="nav-text">React SSR提供的API</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#renderToString-和-renderToStaticMarkup方法用于将Virtual-DOM渲染成HTML字符串"><span class="nav-number">2.1.</span> <span class="nav-text">renderToString 和 renderToStaticMarkup方法用于将Virtual DOM渲染成HTML字符串</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#渲染原理"><span class="nav-number">2.2.</span> <span class="nav-text">渲染原理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#和Redux配合"><span class="nav-number">2.3.</span> <span class="nav-text">和Redux配合:</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#与React-router配合"><span class="nav-number">2.4.</span> <span class="nav-text">与React-router配合:</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实例分析"><span class="nav-number">3.</span> <span class="nav-text">实例分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#技术选型"><span class="nav-number">3.1.</span> <span class="nav-text">技术选型:</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#项目目录结构"><span class="nav-number">3.2.</span> <span class="nav-text">项目目录结构:</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#webpack"><span class="nav-number">3.3.</span> <span class="nav-text">webpack:</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#服务端渲染时静态资源问题"><span class="nav-number">3.3.1.</span> <span class="nav-text">服务端渲染时静态资源问题</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#使用webpack-hot-middleware热更新问题"><span class="nav-number">3.3.2.</span> <span class="nav-text">使用webpack-hot-middleware热更新问题</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#同构部分"><span class="nav-number">3.4.</span> <span class="nav-text">同构部分</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#完整的服务端渲染部分"><span class="nav-number">3.5.</span> <span class="nav-text">完整的服务端渲染部分:</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#其他部分"><span class="nav-number">3.6.</span> <span class="nav-text">其他部分</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结语"><span class="nav-number">4.</span> <span class="nav-text">结语</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">罗峡的博客</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/code/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/code/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/code/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/code/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length == 0) {
+       search_path = "search.xml";
+    }
+    var path = "/code/" + search_path;
+    // monitor main search box;
+
+    function proceedsearch() {
+      $("body").append('<div class="popoverlay">').css('overflow', 'hidden');
+      $('.popup').toggle();
+
+    }
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+    'use strict';
+    $.ajax({
+        url: path,
+        dataType: "xml",
+        async: true,
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            isfetched = true;
+            $('.popup').detach().appendTo('.header-inner');
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                var matchcounts = 0;
+                var str='<ul class=\"search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length > 1) {
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var content_index = [];
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_content = data.content.trim().replace(/<[^>]+>/g,"").toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    var index_content = -1;
+                    var first_occur = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title != '' && data_content != '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            index_content = data_content.indexOf(keyword);
+                            if( index_title < 0 && index_content < 0 ){
+                                isMatch = false;
+                            } else {
+                                if (index_content < 0) {
+                                    index_content = 0;
+                                }
+                                if (i == 0) {
+                                    first_occur = index_content;
+                                }
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        matchcounts += 1;
+                        str += "<li><a href='"+ data_url +"' class='search-result-title'>"+ data_title +"</a>";
+                        var content = data.content.trim().replace(/<[^>]+>/g,"");
+                        if (first_occur >= 0) {
+                            // cut out 100 characters
+                            var start = first_occur - 20;
+                            var end = first_occur + 80;
+                            if(start < 0){
+                                start = 0;
+                            }
+                            if(start == 0){
+                                end = 50;
+                            }
+                            if(end > content.length){
+                                end = content.length;
+                            }
+                            var match_content = content.substring(start, end);
+                            // highlight all keywords
+                            keywords.forEach(function(keyword){
+                                var regS = new RegExp(keyword, "gi");
+                                match_content = match_content.replace(regS, "<b class=\"search-keyword\">"+keyword+"</b>");
+                            });
+
+                            str += "<p class=\"search-result\">" + match_content +"...</p>"
+                        }
+                        str += "</li>";
+                    }
+                })};
+                str += "</ul>";
+                if (matchcounts == 0) { str = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>' }
+                if (keywords == "") { str = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>' }
+                $resultContent.innerHTML = str;
+            });
+            proceedsearch();
+        }
+    });}
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched == false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+
+    });
+
+    $('.popup-btn-close').click(function(e){
+      $('.popup').hide();
+      $(".popoverlay").remove();
+      $('body').css('overflow', '');
+    });
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+  </script>
+
+
+  
+
+  
+
+  
+<script type="text/javascript" async src="//push.zhanzhang.baidu.com/push.js">
+</script>
+
+
+</body>
+</html>

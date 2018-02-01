@@ -1,0 +1,915 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/code/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/code/lib/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/code/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="模块化,CommonJS,AMD,CMD,ES6 Module," />
+
+
+
+
+
+  <link rel="alternate" href="/code/atom.xml" title="罗峡的技术博客" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/code/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="之前一篇文章讲过requirejs(amd规范描述)的路径问题，这篇文章对js模块化进行总结，AMD和CMD主要用于客户端的模块化，而CommonJS是Nodejs的规范，由于它们的差异性，也延伸出来一些模块化工具，如broswerify能够让客户端书写Commonjs规范的模块化代码，达到前后端模块公用，webpac">
+<meta name="keywords" content="模块化,CommonJS,AMD,CMD,ES6 Module">
+<meta property="og:type" content="article">
+<meta property="og:title" content="js模块化规范总结篇">
+<meta property="og:url" content="http://luoxia.me/code/2016/07/23/js模块化规范总结篇/index.html">
+<meta property="og:site_name" content="罗峡的技术博客">
+<meta property="og:description" content="之前一篇文章讲过requirejs(amd规范描述)的路径问题，这篇文章对js模块化进行总结，AMD和CMD主要用于客户端的模块化，而CommonJS是Nodejs的规范，由于它们的差异性，也延伸出来一些模块化工具，如broswerify能够让客户端书写Commonjs规范的模块化代码，达到前后端模块公用，webpack支持各种规范的模块化方式，而到后来的ES2015模块化标准，它们的规范及差异就">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2017-11-16T13:10:06.488Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="js模块化规范总结篇">
+<meta name="twitter:description" content="之前一篇文章讲过requirejs(amd规范描述)的路径问题，这篇文章对js模块化进行总结，AMD和CMD主要用于客户端的模块化，而CommonJS是Nodejs的规范，由于它们的差异性，也延伸出来一些模块化工具，如broswerify能够让客户端书写Commonjs规范的模块化代码，达到前后端模块公用，webpack支持各种规范的模块化方式，而到后来的ES2015模块化标准，它们的规范及差异就">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: undefined,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://luoxia.me/code/2016/07/23/js模块化规范总结篇/"/>
+
+  <title> js模块化规范总结篇 | 罗峡的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?179492533449f84f24555d1cbf10462f";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/code/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">罗峡的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">爱技术，爱生活</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/code/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/code/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/code/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/code/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/code/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup">
+ <span class="search-icon fa fa-search"></span>
+ <input type="text" id="local-search-input">
+ <div id="local-search-result"></div>
+ <span class="popup-btn-close">close</span>
+</div>
+
+
+    </div>
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                js模块化规范总结篇
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-07-23T10:21:59+08:00" content="2016-07-23">
+              2016-07-23
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/code/categories/前端工程/" itemprop="url" rel="index">
+                    <span itemprop="name">前端工程</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>之前一篇文章讲过requirejs(amd规范描述)的路径问题，这篇文章对js模块化进行总结，AMD和CMD主要用于客户端的模块化，而CommonJS是Nodejs的规范，由于它们的差异性，也延伸出来一些模块化工具，如broswerify能够让客户端书写Commonjs规范的模块化代码，达到前后端模块公用，webpack支持各种规范的模块化方式，而到后来的ES2015模块化标准，它们的规范及差异就是本文要总结的。</p>
+<p>对于webpack的话，最近研究得比较多，我会在后面的另一篇文章中详细总结一下webpack的东西<br><a id="more"></a></p>
+<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><h4 id="模块化开发介绍-引用lovenyf’s-blog"><a href="#模块化开发介绍-引用lovenyf’s-blog" class="headerlink" title="模块化开发介绍(引用lovenyf’s blog)"></a>模块化开发介绍(引用lovenyf’s blog)</h4><p>模块化是指在解决某一个复杂问题或者一系列的杂糅问题时，依照一种分类的思维把问题进行系统性的分解以之处理。模块化是一种处理复杂系统分解为代码结构更合理，可维护性更高的可管理的模块的方式。可以想象一个巨大的系统代码，被整合优化分割成逻辑性很强的模块时，对于软件是一种何等意义的存在。对于软件行业来说：解耦软件系统的复杂性，使得不管多么大的系统，也可以将管理，开发，维护变得“有理可循”。</p>
+<p>还有一些对于模块化一些专业的定义为：模块化是软件系统的属性，这个系统被分解为一组高内聚，低耦合的模块。那么在理想状态下我们只需要完成自己部分的核心业务逻辑代码，其他方面的依赖可以通过直接加载被人已经写好模块进行使用即可。</p>
+<p>首先，既然是模块化设计，那么作为一个模块化系统所必须的能力：</p>
+<pre><code>1. 定义封装的模块。
+2. 定义新模块对其他模块的依赖。
+3. 可对其他模块的引入支持。
+</code></pre><p>模块化开发的重要性，需要我们制定模块化规范。由于js跨平台的特性，其不同的环境催生出了不同的模块化规范。</p>
+<h4 id="CommonJS规范"><a href="#CommonJS规范" class="headerlink" title="CommonJS规范"></a>CommonJS规范</h4><h5 id="模块化是如此的重要，而js这门奇葩的语言在es2015之前是没有模块的规范的，模块化在其他语言中是那么的普遍，连css也可以通过import实现模块化，伴随着开发复杂度的不断提升，js的模块化需求迫在眉睫。而Nodejs的CommonJS率先制定了js的模块化标准："><a href="#模块化是如此的重要，而js这门奇葩的语言在es2015之前是没有模块的规范的，模块化在其他语言中是那么的普遍，连css也可以通过import实现模块化，伴随着开发复杂度的不断提升，js的模块化需求迫在眉睫。而Nodejs的CommonJS率先制定了js的模块化标准：" class="headerlink" title="模块化是如此的重要，而js这门奇葩的语言在es2015之前是没有模块的规范的，模块化在其他语言中是那么的普遍，连css也可以通过import实现模块化，伴随着开发复杂度的不断提升，js的模块化需求迫在眉睫。而Nodejs的CommonJS率先制定了js的模块化标准："></a>模块化是如此的重要，而js这门奇葩的语言在es2015之前是没有模块的规范的，模块化在其他语言中是那么的普遍，连css也可以通过import实现模块化，伴随着开发复杂度的不断提升，js的模块化需求迫在眉睫。而Nodejs的CommonJS率先制定了js的模块化标准：</h5><p>三个关键字：require,exports,module</p>
+<h5 id="1-模块定义："><a href="#1-模块定义：" class="headerlink" title="1. 模块定义："></a>1. 模块定义：</h5><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// sayHello.js</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">sayHello</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">	<span class="built_in">console</span>.log(<span class="string">'hello'</span>);</span><br><span class="line">&#125;</span><br><span class="line">exports.sayHello = sayHello;</span><br></pre></td></tr></table></figure>
+<p>exports是作为模块文件唯一出口的对象,而module为全局的对象，其上有一个exports属性和全局的exports指向同一个对象，对于直接导出对象的模块，可以这样简写：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">module</span>.exports = &#123;</span><br><span class="line">	sayName()&#123;</span><br><span class="line">		<span class="built_in">console</span>.log(<span class="string">'my name is Luo Xia'</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>需要注意的是，全局的exports直接指向一个对象是不能改变Module.exports对象的，而Module.exports只要不为空，则最终出口将会忽略在全局exports对象上添加的属性和方法：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//Module.js</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">a</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">	<span class="built_in">console</span>.log(<span class="string">'a'</span>);</span><br><span class="line">&#125; </span><br><span class="line">exports.a = a;</span><br><span class="line"><span class="built_in">module</span>.exports = &#123;</span><br><span class="line">	b()&#123;</span><br><span class="line">		<span class="built_in">console</span>.log(<span class="string">'b'</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">//testM.js</span></span><br><span class="line"><span class="keyword">let</span> m = <span class="built_in">require</span>(<span class="string">"./Module"</span>);</span><br><span class="line"><span class="built_in">console</span>.log(<span class="keyword">typeof</span> m.a); <span class="comment">//undefined</span></span><br><span class="line"><span class="built_in">console</span>.log(<span class="keyword">typeof</span> m.b); <span class="comment">//function</span></span><br></pre></td></tr></table></figure></p>
+<h5 id="2-引入模块依赖"><a href="#2-引入模块依赖" class="headerlink" title="2. 引入模块依赖:"></a>2. 引入模块依赖:</h5><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">require</span>(<span class="string">'./sayHello'</span>);</span><br></pre></td></tr></table></figure>
+<p>require()传入的模块标识需要分情况，核心模块和文件模块:</p>
+<p>核心模块存在于node源码中，不用文件定位和编译，而文件模块动态加载，可以是npm安装的依赖包下的模块，也可以是自定义的模块文件，对存在于node_modules下的模块文件，不用写路径，会从子目录到顶层目录依次查找该模块文件，而对于用户自定义的不存在与node_modules下的模块，是需要些路径的。</p>
+<p><strong>加载顺序</strong>：优先从缓存加载（核心模块缓存优先于文件模块缓存）</p>
+<p><strong>文件定位</strong>： </p>
+<ol>
+<li>标识符不含扩展名，按.js,.json,.node顺序尝试自动扩展。</li>
+<li>在node_modules内的包下，识别package.json的main属性，定位该文件，而如果有错或者没有package.json文件，则将index.*文件作为该模块的文件。</li>
+</ol>
+<p><strong>模块编译</strong>:</p>
+<p>详细参考《深入浅出Nodejs》</p>
+<h4 id="AMD"><a href="#AMD" class="headerlink" title="AMD"></a>AMD</h4><h5 id="前面的CommonJS是NodeJS的规范，客户端呢？随着客户端开发越来越复杂，如果没有模块化的话，要管理互相的依赖是非常麻烦的，而AMD便是用于客户端的模块规范，可以采用同步和异步地加载方式加载模块文件。"><a href="#前面的CommonJS是NodeJS的规范，客户端呢？随着客户端开发越来越复杂，如果没有模块化的话，要管理互相的依赖是非常麻烦的，而AMD便是用于客户端的模块规范，可以采用同步和异步地加载方式加载模块文件。" class="headerlink" title="前面的CommonJS是NodeJS的规范，客户端呢？随着客户端开发越来越复杂，如果没有模块化的话，要管理互相的依赖是非常麻烦的，而AMD便是用于客户端的模块规范，可以采用同步和异步地加载方式加载模块文件。"></a>前面的CommonJS是NodeJS的规范，客户端呢？随着客户端开发越来越复杂，如果没有模块化的话，要管理互相的依赖是非常麻烦的，而AMD便是用于客户端的模块规范，可以采用同步和异步地加载方式加载模块文件。</h5><p>关键字：define,require,</p>
+<h5 id="1-模块定义-全局的define-id-dependencies-factory"><a href="#1-模块定义-全局的define-id-dependencies-factory" class="headerlink" title="1. 模块定义:全局的define( id?, dependencies?, factory );"></a>1. 模块定义:全局的define( id?, dependencies?, factory );</h5><p>其中id为模块标识符，dependencies为模块依赖的其他模块，factory为依赖加载完毕后执行的回调函数可以看出，这整个是异步方式加载的。其中id和dependencies都可以省略，factory可以是回调函数，或者js对象。</p>
+<p><strong>a</strong>. 对于独立的模块（即不依赖其他模块），省略dependencies：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">define(<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">	<span class="keyword">return</span> &#123;</span><br><span class="line">		sayHello()&#123;</span><br><span class="line">			<span class="built_in">console</span>.log(<span class="string">'hello'</span>);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure></p>
+<p><strong>b</strong>.对于依赖其他模块的模块：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">define([<span class="string">'jquery'</span>],<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">	<span class="keyword">return</span> &#123;</span><br><span class="line">		...</span><br><span class="line">	&#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure></p>
+<p><strong>c</strong>. 上述例子，如果直接返回一个对象，factory可以直接是对象的形式：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">define(&#123;</span><br><span class="line">	sayHello()&#123;</span><br><span class="line">		<span class="built_in">console</span>.log(<span class="string">'hello'</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><strong>d</strong>. AMD的作者本来是想让AMD规范不局限于CommonJS，但在后续版本也能够类似于CommonJS的写法：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">define(<span class="function"><span class="keyword">function</span>(<span class="params">require,exports,module</span>)</span>&#123;</span><br><span class="line">	<span class="built_in">require</span>(<span class="string">'...'</span>);</span><br><span class="line">	...</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure></p>
+<p>这里require不是全局的，在其内部require是同步加载模块的，除了这种写法，还可以这样：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">define([<span class="string">'require'</span>],<span class="function"><span class="keyword">function</span>(<span class="params">require</span>)</span>&#123;</span><br><span class="line">	...</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure></p>
+<p>这就导致有两种情况的require,全局和局部。这也是后面要讲的AMD与CMD的区别之一。</p>
+<h4 id="CMD"><a href="#CMD" class="headerlink" title="CMD"></a>CMD</h4><p>CMD是国内前端前辈玉伯的杰作，只怪前端领域日新月异，变化无常，正当我在写这篇文章时，seajs(CMD描述）已经结束了自己的生涯。</p>
+<h5 id="1-定义模块，类似于AMD的类似于CommonJS的写法，这样使得其和NodeJS兼容性更好。"><a href="#1-定义模块，类似于AMD的类似于CommonJS的写法，这样使得其和NodeJS兼容性更好。" class="headerlink" title="1. 定义模块，类似于AMD的类似于CommonJS的写法，这样使得其和NodeJS兼容性更好。"></a>1. 定义模块，类似于AMD的类似于CommonJS的写法，这样使得其和NodeJS兼容性更好。</h5><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">define(<span class="function"><span class="keyword">function</span>(<span class="params">require,exports,module</span>)</span>&#123;</span><br><span class="line">		...</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>define()也可以直接传入对象或者字符串:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">define(<span class="string">'this is a string'</span>);</span><br><span class="line">define(&#123;...&#125;);</span><br></pre></td></tr></table></figure></p>
+<h5 id="2-引入模块："><a href="#2-引入模块：" class="headerlink" title="2. 引入模块："></a>2. 引入模块：</h5><p>在define()的factory函数内部，requie作为局部变量使用</p>
+<p>同步加载模块:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">require</span>(<span class="string">''</span>);</span><br></pre></td></tr></table></figure></p>
+<p>异步加载：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">requie.async(id,callback?);</span><br></pre></td></tr></table></figure></p>
+<p>而对于全局加载的话，CMD的实现者Seajs提供了seajs.use()，这样不同于AMD的既有全局require,又有局部require:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">seajs.use(<span class="string">'./Module.js'</span>);<span class="comment">//阻塞加载</span></span><br><span class="line"></span><br><span class="line">seajs.use(<span class="string">'./Module.js'</span>,<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">	<span class="built_in">console</span>.log(<span class="string">'module is loaded'</span>);</span><br><span class="line">&#125;);<span class="comment">//异步加载</span></span><br></pre></td></tr></table></figure></p>
+<h4 id="AMD与CMD区别：-引用自玉伯本人）"><a href="#AMD与CMD区别：-引用自玉伯本人）" class="headerlink" title="AMD与CMD区别：(引用自玉伯本人）"></a>AMD与CMD区别：(引用自玉伯本人）</h4><ol>
+<li>对于依赖的模块，AMD 是提前执行，CMD 是延迟执行。不过 RequireJS 从 2.0 开始，也改成可以延迟执行（根据写法不同，处理方式不同）。CMD 推崇 as lazy as possible.</li>
+</ol>
+<ol>
+<li>CMD 推崇依赖就近，AMD 推崇依赖前置。</li>
+</ol>
+<ol>
+<li><p>AMD 的 API 默认是一个当多个用，CMD 的 API 严格区分，推崇职责单一。比如 AMD 里，require 分全局 require 和局部 require，都叫 require。CMD 里，没有全局 require，而是根据模块系统的完备性，提供 seajs.use 来实现模块系统的加载启动。CMD 里，每个 API 都简单纯粹。</p>
+</li>
+<li><p>参考<a href="https://github.com/seajs/seajs/issues/277" target="_blank" rel="noopener">https://github.com/seajs/seajs/issues/277</a></p>
+</li>
+</ol>
+<h4 id="browserify-让客户端使用CommonJS规范写法，让客户端可以使用强大的npm生态系统："><a href="#browserify-让客户端使用CommonJS规范写法，让客户端可以使用强大的npm生态系统：" class="headerlink" title="browserify:让客户端使用CommonJS规范写法，让客户端可以使用强大的npm生态系统："></a>browserify:让客户端使用CommonJS规范写法，让客户端可以使用强大的npm生态系统：</h4><p>borowserify运行用户之间书写符号CommonJS规范的模块定义，然后经由browserify打包成可之间在浏览器运行的bundle文件：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">Module.js:</span><br><span class="line"><span class="keyword">let</span> $ = <span class="built_in">require</span>(<span class="string">'jquery'</span>);</span><br><span class="line"><span class="built_in">module</span>.exports = &#123;</span><br><span class="line">	sayName()&#123;</span><br><span class="line">		<span class="built_in">console</span>.log(<span class="string">'my name is LuoXia'</span>);</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// main.js:</span></span><br><span class="line"><span class="keyword">let</span> &#123;sayName&#125; = <span class="built_in">require</span>(<span class="string">'./Module.js'</span>);</span><br><span class="line">sayName();</span><br></pre></td></tr></table></figure></p>
+<p>然后：</p>
+<pre><code>$ browserify main.js &gt; bundle.js
+</code></pre><p>就可以把main.js及其依赖模块打包到bundle.js，浏览器引入就是了。详细使用方法参考browserify官方文档。</p>
+<h4 id="拥抱ES2015-Module规范"><a href="#拥抱ES2015-Module规范" class="headerlink" title="拥抱ES2015 Module规范"></a>拥抱ES2015 Module规范</h4><p>刀耕火种的年代已久过去，工业化时代已久到了，而es语言规范本身也在不断进步，前面讲述的种种规范都是”野生”的，当模块化话题被带到官方规范，前后端共用一套规范，让开发成本变得更低。</p>
+<p>关键字：export, import</p>
+<h5 id="定义模块："><a href="#定义模块：" class="headerlink" title="定义模块："></a>定义模块：</h5><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// profile.js</span></span><br><span class="line"><span class="keyword">var</span> firstName = <span class="string">'Michael'</span>;</span><br><span class="line"><span class="keyword">var</span> lastName = <span class="string">'Jackson'</span>;</span><br><span class="line"><span class="keyword">var</span> year = <span class="number">1958</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> &#123;firstName, lastName, year&#125;;</span><br></pre></td></tr></table></figure>
+<p>这里export后面并不是对象，而是表示出口的一系列值，可以用as关键字进行重命名：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span>&#123;firstName <span class="keyword">as</span> name&#125;<span class="comment">//对外提供name</span></span><br></pre></td></tr></table></figure></p>
+<p>注意：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 报错</span></span><br><span class="line"><span class="keyword">export</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 报错</span></span><br><span class="line"><span class="keyword">var</span> m = <span class="number">1</span>;</span><br><span class="line"><span class="keyword">export</span> m;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 报错</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">f</span>(<span class="params"></span>) </span>&#123;&#125;</span><br><span class="line"><span class="keyword">export</span> f;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 正确</span></span><br><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">f</span>(<span class="params"></span>) </span>&#123;&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 正确</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">f</span>(<span class="params"></span>) </span>&#123;&#125;</span><br><span class="line"><span class="keyword">export</span> &#123;f&#125;;</span><br></pre></td></tr></table></figure></p>
+<h5 id="引用模块："><a href="#引用模块：" class="headerlink" title="引用模块："></a>引用模块：</h5><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> &#123;firstName, lastName, year&#125; <span class="keyword">from</span> <span class="string">'./profile'</span>;</span><br></pre></td></tr></table></figure>
+<p>{}内部的变量名需与profile.js模块中的出口变量名一致，顺序没关系。也可以用as重命名：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> &#123;firstName <span class="keyword">as</span> name, lastName, year&#125; <span class="keyword">from</span> <span class="string">'./profile'</span>;</span><br></pre></td></tr></table></figure></p>
+<p>如果在一个模块之中，先输入后输出同一个模块，import语句可以与export语句写在一起。<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> &#123; es6 <span class="keyword">as</span> <span class="keyword">default</span> &#125; <span class="keyword">from</span> <span class="string">'./someModule'</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 等同于</span></span><br><span class="line"><span class="keyword">import</span> &#123; es6 &#125; <span class="keyword">from</span> <span class="string">'./someModule'</span>;</span><br><span class="line"><span class="keyword">export</span> <span class="keyword">default</span> es6;</span><br></pre></td></tr></table></figure></p>
+<p>整体加载：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> * <span class="keyword">as</span> about <span class="keyword">from</span> <span class="string">'./profile'</span>;</span><br><span class="line"><span class="built_in">console</span>.log(about.firstName);</span><br></pre></td></tr></table></figure></p>
+<p>只执行，无入口：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> <span class="string">'./someModule'</span>;</span><br></pre></td></tr></table></figure></p>
+<p>默认输出：export default</p>
+<p>有时候我们并不知道模块的API，但提供默认输出，这样就可以直接获取默认输出了。<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// export-default.js</span></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">default</span> <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="string">'foo'</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这时通过import不需要{}因为只有一个变量：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> lala <span class="keyword">from</span> <span class="string">'./export-default'</span>;</span><br></pre></td></tr></table></figure></p>
+<p>这样我们使用一些库，框架的时候会非常方便：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> $ <span class="keyword">from</span> <span class="string">'jquery'</span>;</span><br><span class="line"><span class="keyword">import</span> React <span class="keyword">from</span> <span class="string">'react'</span>;</span><br><span class="line"><span class="keyword">import</span> ReactDOM <span class="keyword">from</span> <span class="string">'react-dom'</span>;</span><br></pre></td></tr></table></figure></p>
+<h4 id="ES6-Module与CommonJS对比："><a href="#ES6-Module与CommonJS对比：" class="headerlink" title="ES6 Module与CommonJS对比："></a>ES6 Module与CommonJS对比：</h4><h5 id="1-CommonJS的模块是对象，而es6的模块不是对象，是编译时执行的，使得编译时就能够确定依赖关系和输入输出的变量（软一峰前辈原文）"><a href="#1-CommonJS的模块是对象，而es6的模块不是对象，是编译时执行的，使得编译时就能够确定依赖关系和输入输出的变量（软一峰前辈原文）" class="headerlink" title="1. CommonJS的模块是对象，而es6的模块不是对象，是编译时执行的，使得编译时就能够确定依赖关系和输入输出的变量（软一峰前辈原文）"></a>1. CommonJS的模块是对象，而es6的模块不是对象，是编译时执行的，使得编译时就能够确定依赖关系和输入输出的变量（软一峰前辈原文）</h5><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// CommonJS模块</span></span><br><span class="line"><span class="keyword">let</span> &#123; stat, exists, readFile &#125; = <span class="built_in">require</span>(<span class="string">'fs'</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 等同于</span></span><br><span class="line"><span class="keyword">let</span> _fs = <span class="built_in">require</span>(<span class="string">'fs'</span>);</span><br><span class="line"><span class="keyword">let</span> stat = _fs.stat, exists = _fs.exists, readfile = _fs.readfile;</span><br></pre></td></tr></table></figure>
+<p>上面代码的实质是整体加载fs模块（即加载fs的所有方法），生成一个对象（_fs），然后再从这个对象上面读取3个方法。这种加载称为“运行时加载”，因为只有运行时才能得到这个对象，导致完全没办法在编译时做“静态优化”。</p>
+<p>ES6模块不是对象，而是通过export命令显式指定输出的代码，输入时也采用静态命令的形式。<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ES6模块</span></span><br><span class="line"><span class="keyword">import</span> &#123; stat, exists, readFile &#125; <span class="keyword">from</span> <span class="string">'fs'</span>;</span><br></pre></td></tr></table></figure></p>
+<p>上面代码的实质是从fs模块加载3个方法，其他方法不加载。这种加载称为“编译时加载”，即ES6可以在编译时就完成模块加载，效率要比CommonJS模块的加载方式高。当然，这也导致了没法引用ES6模块本身，因为它不是对象。</p>
+<h5 id="2-模块加载实质不同"><a href="#2-模块加载实质不同" class="headerlink" title="2. 模块加载实质不同"></a>2. 模块加载实质不同</h5><p>CommonJS加载的模块是对值的拷贝，而ES6 Module是对值的引用，这样模块定义文件内部变量的变化会实时反映到依赖文件，而CommonJS不同。<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// lib.js</span></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">let</span> counter = <span class="number">3</span>;</span><br><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">incCounter</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  counter++;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// main.js</span></span><br><span class="line"><span class="keyword">import</span> &#123; counter, incCounter &#125; <span class="keyword">from</span> <span class="string">'./lib'</span>;</span><br><span class="line"><span class="built_in">console</span>.log(counter); <span class="comment">// 3</span></span><br><span class="line">incCounter();</span><br><span class="line"><span class="built_in">console</span>.log(counter); <span class="comment">// 4</span></span><br><span class="line"><span class="comment">//模块定义文件的变量counter的变化能够实时反映</span></span><br></pre></td></tr></table></figure></p>
+<h5 id="3-模块的循环加载处理方式不同："><a href="#3-模块的循环加载处理方式不同：" class="headerlink" title="3. 模块的循环加载处理方式不同："></a>3. 模块的循环加载处理方式不同：</h5><p>循环加载：两个脚本互相依赖<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// a.js</span></span><br><span class="line"><span class="keyword">var</span> b = <span class="built_in">require</span>(<span class="string">'b'</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// b.js</span></span><br><span class="line"><span class="keyword">var</span> a = <span class="built_in">require</span>(<span class="string">'a'</span>);</span><br></pre></td></tr></table></figure></p>
+<p>这部分内容在这里不讲了，详情参考《es6入门2》相关内容。</p>
+<h4 id="不同的规范有它自己的适用场景，相同的是对模块化开发的追求，作为工程化开发的一部分，模块化开发不仅包括了js的模块化，还包括css-html模板之类的模块化，本文对一系列的标准进行了总结和对比，希望能够传播模块化开发思想，然后让开发变得更高效。"><a href="#不同的规范有它自己的适用场景，相同的是对模块化开发的追求，作为工程化开发的一部分，模块化开发不仅包括了js的模块化，还包括css-html模板之类的模块化，本文对一系列的标准进行了总结和对比，希望能够传播模块化开发思想，然后让开发变得更高效。" class="headerlink" title="不同的规范有它自己的适用场景，相同的是对模块化开发的追求，作为工程化开发的一部分，模块化开发不仅包括了js的模块化，还包括css,html模板之类的模块化，本文对一系列的标准进行了总结和对比，希望能够传播模块化开发思想，然后让开发变得更高效。"></a>不同的规范有它自己的适用场景，相同的是对模块化开发的追求，作为工程化开发的一部分，模块化开发不仅包括了js的模块化，还包括css,html模板之类的模块化，本文对一系列的标准进行了总结和对比，希望能够传播模块化开发思想，然后让开发变得更高效。</h4><h6 id="webpack作为一款新兴的模块化管理和打包工具，其视任意文件都为模块，并打包成bundle文件，相比于browserify更加强大，后面的文章我会对我在实践当中webpack的使用进行总结，将组件化开发，模块化开发，自动化构建结合，探索高效的开发之道。"><a href="#webpack作为一款新兴的模块化管理和打包工具，其视任意文件都为模块，并打包成bundle文件，相比于browserify更加强大，后面的文章我会对我在实践当中webpack的使用进行总结，将组件化开发，模块化开发，自动化构建结合，探索高效的开发之道。" class="headerlink" title="webpack作为一款新兴的模块化管理和打包工具，其视任意文件都为模块，并打包成bundle文件，相比于browserify更加强大，后面的文章我会对我在实践当中webpack的使用进行总结，将组件化开发，模块化开发，自动化构建结合，探索高效的开发之道。"></a>webpack作为一款新兴的模块化管理和打包工具，其视任意文件都为模块，并打包成bundle文件，相比于browserify更加强大，后面的文章我会对我在实践当中webpack的使用进行总结，将组件化开发，模块化开发，自动化构建结合，探索高效的开发之道。</h6>
+      
+    </div>
+
+    <div>
+      
+        
+<div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/code/images/wechat.jpg" alt="罗峡的博客 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎扫描上面的微信公众号二维码，关注我的个人公众号：全栈前端</div>
+</div>
+
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/code/images/wechat_pay.png" alt="罗峡的博客 WeChat Pay"/>
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/code/images/ali_pay.jpg" alt="罗峡的博客 Alipay"/>
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/code/tags/模块化/" rel="tag">#模块化</a>
+          
+            <a href="/code/tags/CommonJS/" rel="tag">#CommonJS</a>
+          
+            <a href="/code/tags/AMD/" rel="tag">#AMD</a>
+          
+            <a href="/code/tags/CMD/" rel="tag">#CMD</a>
+          
+            <a href="/code/tags/ES6-Module/" rel="tag">#ES6 Module</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/code/2016/07/13/js对象的深入理解/" rel="next" title="js对象的深入理解">
+                <i class="fa fa-chevron-left"></i> js对象的深入理解
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/code/2016/07/25/webpack构建方案/" rel="prev" title="webpack构建方案">
+                webpack构建方案 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/code/images/head.jpg"
+               alt="罗峡的博客" />
+          <p class="site-author-name" itemprop="name">罗峡的博客</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/code/archives">
+              <span class="site-state-item-count">43</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/code/categories">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/code/tags">
+                <span class="site-state-item-count">85</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/code/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/laoqiren" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://luoxia.me/life" title="生活随笔" target="_blank">生活随笔</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#模块化开发介绍-引用lovenyf’s-blog"><span class="nav-number">1.1.</span> <span class="nav-text">模块化开发介绍(引用lovenyf’s blog)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CommonJS规范"><span class="nav-number">1.2.</span> <span class="nav-text">CommonJS规范</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#模块化是如此的重要，而js这门奇葩的语言在es2015之前是没有模块的规范的，模块化在其他语言中是那么的普遍，连css也可以通过import实现模块化，伴随着开发复杂度的不断提升，js的模块化需求迫在眉睫。而Nodejs的CommonJS率先制定了js的模块化标准："><span class="nav-number">1.2.1.</span> <span class="nav-text">模块化是如此的重要，而js这门奇葩的语言在es2015之前是没有模块的规范的，模块化在其他语言中是那么的普遍，连css也可以通过import实现模块化，伴随着开发复杂度的不断提升，js的模块化需求迫在眉睫。而Nodejs的CommonJS率先制定了js的模块化标准：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-模块定义："><span class="nav-number">1.2.2.</span> <span class="nav-text">1. 模块定义：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-引入模块依赖"><span class="nav-number">1.2.3.</span> <span class="nav-text">2. 引入模块依赖:</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AMD"><span class="nav-number">1.3.</span> <span class="nav-text">AMD</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#前面的CommonJS是NodeJS的规范，客户端呢？随着客户端开发越来越复杂，如果没有模块化的话，要管理互相的依赖是非常麻烦的，而AMD便是用于客户端的模块规范，可以采用同步和异步地加载方式加载模块文件。"><span class="nav-number">1.3.1.</span> <span class="nav-text">前面的CommonJS是NodeJS的规范，客户端呢？随着客户端开发越来越复杂，如果没有模块化的话，要管理互相的依赖是非常麻烦的，而AMD便是用于客户端的模块规范，可以采用同步和异步地加载方式加载模块文件。</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-模块定义-全局的define-id-dependencies-factory"><span class="nav-number">1.3.2.</span> <span class="nav-text">1. 模块定义:全局的define( id?, dependencies?, factory );</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CMD"><span class="nav-number">1.4.</span> <span class="nav-text">CMD</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-定义模块，类似于AMD的类似于CommonJS的写法，这样使得其和NodeJS兼容性更好。"><span class="nav-number">1.4.1.</span> <span class="nav-text">1. 定义模块，类似于AMD的类似于CommonJS的写法，这样使得其和NodeJS兼容性更好。</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-引入模块："><span class="nav-number">1.4.2.</span> <span class="nav-text">2. 引入模块：</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AMD与CMD区别：-引用自玉伯本人）"><span class="nav-number">1.5.</span> <span class="nav-text">AMD与CMD区别：(引用自玉伯本人）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#browserify-让客户端使用CommonJS规范写法，让客户端可以使用强大的npm生态系统："><span class="nav-number">1.6.</span> <span class="nav-text">browserify:让客户端使用CommonJS规范写法，让客户端可以使用强大的npm生态系统：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#拥抱ES2015-Module规范"><span class="nav-number">1.7.</span> <span class="nav-text">拥抱ES2015 Module规范</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#定义模块："><span class="nav-number">1.7.1.</span> <span class="nav-text">定义模块：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#引用模块："><span class="nav-number">1.7.2.</span> <span class="nav-text">引用模块：</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ES6-Module与CommonJS对比："><span class="nav-number">1.8.</span> <span class="nav-text">ES6 Module与CommonJS对比：</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-CommonJS的模块是对象，而es6的模块不是对象，是编译时执行的，使得编译时就能够确定依赖关系和输入输出的变量（软一峰前辈原文）"><span class="nav-number">1.8.1.</span> <span class="nav-text">1. CommonJS的模块是对象，而es6的模块不是对象，是编译时执行的，使得编译时就能够确定依赖关系和输入输出的变量（软一峰前辈原文）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-模块加载实质不同"><span class="nav-number">1.8.2.</span> <span class="nav-text">2. 模块加载实质不同</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-模块的循环加载处理方式不同："><span class="nav-number">1.8.3.</span> <span class="nav-text">3. 模块的循环加载处理方式不同：</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#不同的规范有它自己的适用场景，相同的是对模块化开发的追求，作为工程化开发的一部分，模块化开发不仅包括了js的模块化，还包括css-html模板之类的模块化，本文对一系列的标准进行了总结和对比，希望能够传播模块化开发思想，然后让开发变得更高效。"><span class="nav-number">1.9.</span> <span class="nav-text">不同的规范有它自己的适用场景，相同的是对模块化开发的追求，作为工程化开发的一部分，模块化开发不仅包括了js的模块化，还包括css,html模板之类的模块化，本文对一系列的标准进行了总结和对比，希望能够传播模块化开发思想，然后让开发变得更高效。</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#webpack作为一款新兴的模块化管理和打包工具，其视任意文件都为模块，并打包成bundle文件，相比于browserify更加强大，后面的文章我会对我在实践当中webpack的使用进行总结，将组件化开发，模块化开发，自动化构建结合，探索高效的开发之道。"><span class="nav-number">1.9.0.1.</span> <span class="nav-text">webpack作为一款新兴的模块化管理和打包工具，其视任意文件都为模块，并打包成bundle文件，相比于browserify更加强大，后面的文章我会对我在实践当中webpack的使用进行总结，将组件化开发，模块化开发，自动化构建结合，探索高效的开发之道。</span></a></li></ol></li></ol></li></ol></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">罗峡的博客</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/code/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/code/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/code/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/code/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length == 0) {
+       search_path = "search.xml";
+    }
+    var path = "/code/" + search_path;
+    // monitor main search box;
+
+    function proceedsearch() {
+      $("body").append('<div class="popoverlay">').css('overflow', 'hidden');
+      $('.popup').toggle();
+
+    }
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+    'use strict';
+    $.ajax({
+        url: path,
+        dataType: "xml",
+        async: true,
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            isfetched = true;
+            $('.popup').detach().appendTo('.header-inner');
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                var matchcounts = 0;
+                var str='<ul class=\"search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length > 1) {
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var content_index = [];
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_content = data.content.trim().replace(/<[^>]+>/g,"").toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    var index_content = -1;
+                    var first_occur = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title != '' && data_content != '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            index_content = data_content.indexOf(keyword);
+                            if( index_title < 0 && index_content < 0 ){
+                                isMatch = false;
+                            } else {
+                                if (index_content < 0) {
+                                    index_content = 0;
+                                }
+                                if (i == 0) {
+                                    first_occur = index_content;
+                                }
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        matchcounts += 1;
+                        str += "<li><a href='"+ data_url +"' class='search-result-title'>"+ data_title +"</a>";
+                        var content = data.content.trim().replace(/<[^>]+>/g,"");
+                        if (first_occur >= 0) {
+                            // cut out 100 characters
+                            var start = first_occur - 20;
+                            var end = first_occur + 80;
+                            if(start < 0){
+                                start = 0;
+                            }
+                            if(start == 0){
+                                end = 50;
+                            }
+                            if(end > content.length){
+                                end = content.length;
+                            }
+                            var match_content = content.substring(start, end);
+                            // highlight all keywords
+                            keywords.forEach(function(keyword){
+                                var regS = new RegExp(keyword, "gi");
+                                match_content = match_content.replace(regS, "<b class=\"search-keyword\">"+keyword+"</b>");
+                            });
+
+                            str += "<p class=\"search-result\">" + match_content +"...</p>"
+                        }
+                        str += "</li>";
+                    }
+                })};
+                str += "</ul>";
+                if (matchcounts == 0) { str = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>' }
+                if (keywords == "") { str = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>' }
+                $resultContent.innerHTML = str;
+            });
+            proceedsearch();
+        }
+    });}
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched == false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+
+    });
+
+    $('.popup-btn-close').click(function(e){
+      $('.popup').hide();
+      $(".popoverlay").remove();
+      $('body').css('overflow', '');
+    });
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+  </script>
+
+
+  
+
+  
+
+  
+<script type="text/javascript" async src="//push.zhanzhang.baidu.com/push.js">
+</script>
+
+
+</body>
+</html>

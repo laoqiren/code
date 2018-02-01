@@ -1,0 +1,926 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/code/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/code/lib/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/code/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="数据推送,即时通信," />
+
+
+
+
+
+  <link rel="alternate" href="/code/atom.xml" title="罗峡的技术博客" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/code/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="数据推送业务场景非常之多，如股票信息实时推送，赛事实时直播，IM（即时）通信如QQ,WeChat等。 在6月份我发表过一篇关于socket.io的文章，当时介绍过：  Socket.IO除了支持WebSocket通讯协议外，还支持许多种轮询（Polling）机制以及其它实时通信方式，并封装成了通用的接口，并且在服务端实">
+<meta name="keywords" content="数据推送,即时通信">
+<meta property="og:type" content="article">
+<meta property="og:title" content="数据推送业务解决方案">
+<meta property="og:url" content="http://luoxia.me/code/2016/10/16/数据推送业务解决方案/index.html">
+<meta property="og:site_name" content="罗峡的技术博客">
+<meta property="og:description" content="数据推送业务场景非常之多，如股票信息实时推送，赛事实时直播，IM（即时）通信如QQ,WeChat等。 在6月份我发表过一篇关于socket.io的文章，当时介绍过：  Socket.IO除了支持WebSocket通讯协议外，还支持许多种轮询（Polling）机制以及其它实时通信方式，并封装成了通用的接口，并且在服务端实现了这些实时机制的相应代码。Socket.IO实现的Polling通信机制包括A">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/longPollingClient.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/LongPolling.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/HttpStream.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/irame.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/sseClient.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/sse.png">
+<meta property="og:updated_time" content="2017-11-16T13:10:06.492Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="数据推送业务解决方案">
+<meta name="twitter:description" content="数据推送业务场景非常之多，如股票信息实时推送，赛事实时直播，IM（即时）通信如QQ,WeChat等。 在6月份我发表过一篇关于socket.io的文章，当时介绍过：  Socket.IO除了支持WebSocket通讯协议外，还支持许多种轮询（Polling）机制以及其它实时通信方式，并封装成了通用的接口，并且在服务端实现了这些实时机制的相应代码。Socket.IO实现的Polling通信机制包括A">
+<meta name="twitter:image" content="http://7xsi10.com1.z0.glb.clouddn.com/longPollingClient.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: undefined,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://luoxia.me/code/2016/10/16/数据推送业务解决方案/"/>
+
+  <title> 数据推送业务解决方案 | 罗峡的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?179492533449f84f24555d1cbf10462f";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/code/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">罗峡的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">爱技术，爱生活</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/code/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/code/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/code/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/code/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/code/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup">
+ <span class="search-icon fa fa-search"></span>
+ <input type="text" id="local-search-input">
+ <div id="local-search-result"></div>
+ <span class="popup-btn-close">close</span>
+</div>
+
+
+    </div>
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                数据推送业务解决方案
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-10-16T12:50:59+08:00" content="2016-10-16">
+              2016-10-16
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/code/categories/HTML5/" itemprop="url" rel="index">
+                    <span itemprop="name">HTML5</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>数据推送业务场景非常之多，如股票信息实时推送，赛事实时直播，IM（即时）通信如QQ,WeChat等。</p>
+<p>在6月份我发表过一篇关于socket.io的文章，当时介绍过：</p>
+<blockquote>
+<p>Socket.IO除了支持WebSocket通讯协议外，还支持许多种轮询（Polling）机制以及其它实时通信方式，并封装成了通用的接口，并且在服务端实现了这些实时机制的相应代码。Socket.IO实现的Polling通信机制包括Adobe Flash Socket、AJAX长轮询、AJAX multipart streaming、持久Iframe、JSONP轮询等。Socket.IO能够根据浏览器对通讯机制的支持情况自动地选择最佳的方式来实现网络实时应用。</p>
+</blockquote>
+<p>WebSocket通信协议非常棒，但是有一些场景，WebSocket这种方案不是最佳的。而且考虑到兼容性的问题，在浏览器不支持WebSocket的情况下，需要通过hack，利用其它解决方案来解决问题。</p>
+<p>所以，对于不同的应用场景，需要从各方面考虑，诸如成本，兼容，用户体验等，来选择最佳解决方案。</p>
+<p><strong>文章目录:</strong>（整个发展过程为数据拉取到数据推送，再到全双工通信）</p>
+<ol>
+<li>简单粗暴的短轮询（数据拉取）</li>
+<li>进化的长轮询（long Polling)</li>
+<li>HTTP流</li>
+<li>Iframe流</li>
+<li>SSE（服务器推送事件)</li>
+<li>SSE与WebSocket对比分析</li>
+<li>适用场景分析</li>
+</ol>
+<a id="more"></a>
+<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>B/S架构与C/S架构的一大不同点就是多态设备的通讯方式，传统的C/S架构通过Socket便可轻松进行实时通讯，但是B/S架构就需要经过服务器一层来实现。</p>
+<p>Web世界在不断变化，技术也在不断进步。从最初的用户体验极差的定时刷新方式，到数据拉取，到服务器推送，再到全双工通信。。。</p>
+<h3 id="简单粗暴的短轮询（数据拉取）"><a href="#简单粗暴的短轮询（数据拉取）" class="headerlink" title="简单粗暴的短轮询（数据拉取）:"></a>简单粗暴的短轮询（数据拉取）:</h3><p>所谓短轮询，即客户端定时向服务器发送异步请求，获取数据，不管服务端数据有没有变化，客户端都会发起请求，来更新view。</p>
+<p>可见方式太多无谓的浪费，也不能确保数据的即时性。其技术实现非常简单。这里不详解。</p>
+<h3 id="进化的长轮询-long-Polling"><a href="#进化的长轮询-long-Polling" class="headerlink" title="进化的长轮询(long Polling)"></a>进化的长轮询(long Polling)</h3><p>长轮询与短轮询不一样的是，客户端发送请求后，服务端不会立即返回数据，连接不会立即断开，而是服务端数据有更新时，才将数据发送到客户端，客户端再端口连接，然后客户端又立即产生新的连接，如此反复，从而获取最新数据。</p>
+<h4 id="技术实现"><a href="#技术实现" class="headerlink" title="技术实现"></a>技术实现</h4><p><strong>客户端:</strong><br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">getNewData</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="keyword">var</span> xhr = <span class="keyword">new</span> XMLHttpRequest();</span><br><span class="line">    xhr.open(<span class="string">'get'</span>,<span class="string">'http://localhost:8088/'</span>);</span><br><span class="line">    xhr.onreadystatechange = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(xhr.readyState == <span class="number">4</span>)&#123;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">"新数据:"</span> + xhr.response);</span><br><span class="line">            getNewData();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    xhr.send(<span class="literal">null</span>)</span><br><span class="line">&#125;</span><br><span class="line">getNewData();</span><br></pre></td></tr></table></figure></p>
+<p><strong>服务端node</strong>:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> http = <span class="built_in">require</span>(<span class="string">'http'</span>);</span><br><span class="line"><span class="keyword">const</span> urlLib = <span class="built_in">require</span>(<span class="string">'url'</span>);</span><br><span class="line">http.createServer(<span class="function"><span class="keyword">function</span>(<span class="params">req,res</span>)</span>&#123;</span><br><span class="line">    <span class="keyword">var</span> parms = urlLib.parse(req.url,<span class="literal">true</span>);</span><br><span class="line">    <span class="keyword">if</span>(parms.pathname === <span class="string">'/'</span>)&#123;</span><br><span class="line">        res.writeHeader(<span class="number">200</span>,&#123;</span><br><span class="line">            <span class="string">'Access-Control-Allow-Origin'</span>:<span class="string">'*'</span>,<span class="string">'Access-Control-Allow-Method'</span>:<span class="string">'GET,POST'</span></span><br><span class="line">        &#125;);</span><br><span class="line">        setInterval(<span class="function"><span class="params">()</span>=&gt;</span>sendData(res),<span class="number">2000</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;).listen(<span class="number">8088</span>);</span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">sendData</span>(<span class="params">res</span>)</span>&#123;</span><br><span class="line">    <span class="keyword">var</span> randomNum=<span class="built_in">Math</span>.floor(<span class="number">10</span>*<span class="built_in">Math</span>.random());</span><br><span class="line">    <span class="keyword">if</span>(randomNum&gt;=<span class="number">0</span>&amp;&amp;randomNum&lt;=<span class="number">5</span>)&#123;</span><br><span class="line">        res.end(<span class="keyword">new</span> <span class="built_in">Date</span>().toLocaleString());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="built_in">console</span>.log(<span class="string">'server on 8088'</span>);</span><br></pre></td></tr></table></figure></p>
+<p>我们在接受到数据后，再次调用函数自身，这样可以做到不断地建立新连接。</p>
+<p><strong>效果</strong></p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/longPollingClient.png" alt=""></p>
+<p><strong>查看请求情况</strong></p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/LongPolling.png" alt=""></p>
+<p>一个连接断开后，就有新的连接产生。</p>
+<p><strong>不足</strong></p>
+<p>不断发起请求的消耗</p>
+<h3 id="HTTP流"><a href="#HTTP流" class="headerlink" title="HTTP流:"></a>HTTP流:</h3><p>HTTP流，即HTTP长连接，客户端与服务端只有单一的一条http连接，服务端数据通过流的方式不断地发送到客户端，而客户端通过监听xhr对象的readystatechage事件，获取数据。</p>
+<p><strong>注意要设置http响应MIME类型为”multipart/mixed”,不然是无法通过片段形式读取数据的。</strong></p>
+<h4 id="技术实现-1"><a href="#技术实现-1" class="headerlink" title="技术实现"></a>技术实现</h4><p><strong>客户端</strong><br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> received = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">var</span> xhr = <span class="keyword">new</span> XMLHttpRequest();</span><br><span class="line">xhr.open(<span class="string">'get'</span>,<span class="string">'http://localhost:8088/'</span>);</span><br><span class="line">xhr.onreadystatechange = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="keyword">var</span> result;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'state changed'</span>)</span><br><span class="line">    <span class="keyword">if</span>(xhr.readyState == <span class="number">3</span>)&#123;</span><br><span class="line">        result = xhr.response.substring(received);</span><br><span class="line">        received += result.length;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">'接受到数据：'</span> + result);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">xhr.send(<span class="literal">null</span>)</span><br></pre></td></tr></table></figure></p>
+<p><strong>服务端node</strong><br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">http.createServer(<span class="function"><span class="keyword">function</span>(<span class="params">req,res</span>)</span>&#123;</span><br><span class="line">    <span class="keyword">var</span> parms = urlLib.parse(req.url,<span class="literal">true</span>);</span><br><span class="line">    <span class="keyword">if</span>(parms.pathname === <span class="string">'/'</span>)&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">'connect'</span>)</span><br><span class="line">        res.writeHead(<span class="number">200</span>,&#123;<span class="string">'Access-Control-Allow-Origin'</span>:<span class="string">'*'</span>,<span class="string">'Access-Control-Allow-Method'</span>:<span class="string">'GET,POST'</span>,<span class="string">'Content-Type'</span>:<span class="string">'multipart/mixed'</span>&#125;);</span><br><span class="line">        setInterval(<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">            res.write(<span class="string">'hello'</span>);</span><br><span class="line">        &#125;,<span class="number">1000</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;).listen(<span class="number">8088</span>);</span><br></pre></td></tr></table></figure></p>
+<p><strong>效果如图</strong></p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/HttpStream.png" alt=""></p>
+<p><strong>不足</strong></p>
+<p>服务器维持长连接的资源消耗，且浏览器对于长连接数有限制</p>
+<h3 id="Iframe流"><a href="#Iframe流" class="headerlink" title="Iframe流"></a>Iframe流</h3><p>在IE的低版本浏览器中，是不支持在readystate变化为4之前读取response对象的，所以就没办法使用Http流,另一种解决方案是利用Iframe作为桥梁来解决：</p>
+<p><strong>客户端</strong></p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">process</span>(<span class="params">data</span>)</span>&#123;</span><br><span class="line">       <span class="built_in">console</span>.log(<span class="string">"接受到新数据:"</span> + data);</span><br><span class="line">   &#125;</span><br><span class="line"><span class="built_in">window</span>.onmessage = <span class="function"><span class="keyword">function</span>(<span class="params">event</span>)</span>&#123;</span><br><span class="line">   process(event.data);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">var</span> dataStream = <span class="function"><span class="keyword">function</span> (<span class="params">url</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">var</span> ifr = <span class="built_in">document</span>.createElement(<span class="string">"iframe"</span>),timer;</span><br><span class="line">    ifr.src = url;</span><br><span class="line">    <span class="built_in">document</span>.getElementById(<span class="string">"container"</span>).appendChild(ifr);</span><br><span class="line">&#125;;</span><br><span class="line">dataStream(<span class="string">"http://localhost:8088/"</span>);</span><br></pre></td></tr></table></figure>
+<p><strong>服务端</strong></p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">http.createServer(<span class="function"><span class="keyword">function</span>(<span class="params">req,res</span>)</span>&#123;</span><br><span class="line">    <span class="keyword">var</span> parms = urlLib.parse(req.url,<span class="literal">true</span>);</span><br><span class="line">    <span class="keyword">if</span>(parms.pathname === <span class="string">'/'</span>)&#123;</span><br><span class="line">        res.writeHeader(<span class="number">200</span>,&#123;</span><br><span class="line">            <span class="string">'Access-Control-Allow-Origin'</span>:<span class="string">'*'</span>,<span class="string">'Access-Control-Allow-Method'</span>:<span class="string">'GET,POST'</span>,</span><br><span class="line">            <span class="string">'Content-Type'</span>:<span class="string">'text/html'</span></span><br><span class="line">        &#125;);</span><br><span class="line">        <span class="keyword">var</span> timer=setInterval(<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">            sendDate(timer,res);</span><br><span class="line">        &#125;,<span class="number">2000</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;).listen(<span class="number">8088</span>);</span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">sendDate</span>(<span class="params">timer,res</span>)</span>&#123;</span><br><span class="line">    <span class="keyword">var</span> randomNum=<span class="built_in">Math</span>.floor(<span class="number">10000</span>*<span class="built_in">Math</span>.random());</span><br><span class="line">    res.write(<span class="string">"&lt;script type=\"text/javascript\"&gt;parent.postMessage('"</span> + <span class="string">"data:"</span> + randomNum.toString() + <span class="string">"',\"*\")&lt;/script&gt;"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>注意</strong></p>
+<p>我们不能直接在返回的script中去调用irame parent的process方法，而是应该使用HTML5 XDM(跨文档消息传递)来传递信息，不然会被浏览器阻止的:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SecurityError: Blocked a frame with origin &quot;http://www.&lt;domain&gt;.com&quot; from accessing a cross-origin frame.</span><br></pre></td></tr></table></figure></p>
+<p><strong>效果</strong></p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/irame.png" alt=""></p>
+<p><strong>不足</strong></p>
+<p>标签页会一直处于加载状态，影响用户体验,这个是有解决方案的，如HTML file数据流，在这里不详解。</p>
+<h3 id="SSE-服务器推送事件"><a href="#SSE-服务器推送事件" class="headerlink" title="SSE(服务器推送事件)"></a>SSE(服务器推送事件)</h3><p>服务器器推送事件是HTML5新技术，有更好的易用性和可兼容性。大部分主流浏览器都已经支持，IE这货，垃圾，都不想说了。国内居然还有许多人使用这玩意儿，人家微软自己都抛弃了。</p>
+<p>劝君退IE，保平安。</p>
+<p>SSE是完全的服务端推送，并没有把客户端向服务端发送数据包含在内，但是这一部分我们可以通过ajax或者Fetch API来实现，这也是它与WebSocket的不同点之一。</p>
+<p>SSE会在连接意外断开时自动重连。</p>
+<h4 id="技术实现-2"><a href="#技术实现-2" class="headerlink" title="技术实现"></a>技术实现</h4><p><strong>客户端</strong><br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> source = <span class="keyword">new</span> EventSource(<span class="string">"http://localhost:8088/"</span>);</span><br><span class="line">	source.onmessage = <span class="function"><span class="keyword">function</span>(<span class="params">event</span>)</span>&#123;</span><br><span class="line">	    <span class="built_in">console</span>.log(<span class="string">"接受到数据:"</span> + event.data);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><strong>服务端</strong><br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">http.createServer(<span class="function"><span class="keyword">function</span>(<span class="params">req,res</span>)</span>&#123;</span><br><span class="line">    <span class="keyword">var</span> parms = urlLib.parse(req.url,<span class="literal">true</span>);</span><br><span class="line">    <span class="keyword">if</span>(parms.pathname === <span class="string">'/'</span>)&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(req.headers);</span><br><span class="line">        res.writeHeader(<span class="number">200</span>,&#123;</span><br><span class="line">            <span class="string">'Access-Control-Allow-Origin'</span>:<span class="string">'*'</span>,<span class="string">'Access-Control-Allow-Method'</span>:<span class="string">'GET,POST'</span></span><br><span class="line">        ,<span class="string">'Content-Type'</span>:<span class="string">'text/event-stream'</span>&#125;);</span><br><span class="line">        setInterval(<span class="function"><span class="params">()</span>=&gt;</span>&#123;</span><br><span class="line">            res.write(<span class="string">"id :"</span> + count++ + <span class="string">'\n'</span>);</span><br><span class="line">            res.write(<span class="string">"data: "</span> + <span class="keyword">new</span> <span class="built_in">Date</span>().toLocaleDateString() + <span class="string">' '</span> + count + <span class="string">'\n\n'</span>);</span><br><span class="line">        &#125;,<span class="number">2000</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;).listen(<span class="number">8088</span>);</span><br></pre></td></tr></table></figure></p>
+<p><strong>效果</strong></p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/sseClient.png" alt=""></p>
+<p><strong>注意</strong></p>
+<p>. 返回数据MIME类型必须为”text/event-stream”</p>
+<p>. 注意数据格式要符号标准:</p>
+<p>多个数据之间空行隔开，为确保连接断开后数据的有序性，加入id，这样在连接断开时，客户端请求头会有特殊的头信息”Last-Event-ID”,便于服务器知道下一步应该触发那个事件。</p>
+<p>并不是所有浏览器都支持SSE：以下是浏览器支持情况:</p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/sse.png" alt=""></p>
+<h3 id="SSE与WebSocket对比"><a href="#SSE与WebSocket对比" class="headerlink" title="SSE与WebSocket对比:"></a>SSE与WebSocket对比:</h3><p><strong>浏览器支持程度</strong></p>
+<p>可见，两者支持程度差不多</p>
+<p><strong>SSE优势</strong><br>WebSocket是与http同一级别的引用层通信协议，其复杂度比SSE要高;且WebSockets需要服务器支持，即SSE存在’基础设施优势’;</p>
+<p><strong>WebSocket优势</strong><br>但是对于二进制数据来说，WebSocket是二进制协议，SSE为文本协议，对于二进制数据的传输，WebSockets更适合。</p>
+<p>而WebSockets最大的优势是其是全双工通信的，可以很方便的实现两端的自由交流。</p>
+<h3 id="适用场景分析"><a href="#适用场景分析" class="headerlink" title="适用场景分析:"></a>适用场景分析:</h3><p>不同的场景，适宜不同解决方案。并不是每一个场景都适合数据推送方式。</p>
+<ol>
+<li><p>如果服务端推送数据够频繁，就用数据推送，对于推送频率太低，例如几分钟一个这种，直接用数据拉取的方式更好，这样可以减少服务器资源占用。</p>
+</li>
+<li><p>客户端发送数据频率：如果发送频率大于1次/秒，甚至更频繁，WebSocket更适合</p>
+</li>
+<li><p>是否需要二进制数据交流，如果有大量二进制数据需要传输，用WebSocket</p>
+</li>
+<li><p>如果大部分用户是移动用户，用数据推送</p>
+</li>
+<li><p>其他</p>
+</li>
+</ol>
+<h3 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h3><p>可见，开发的难点，不在于具体技术细节，而在于当面对多个解决方案时，如何选择与特定场景更匹配的方式。这需要我们考虑到许多问题。这些问题会涉及到整个工程的方方面面。甚至还有你的信仰。</p>
+<p><strong>Web，让世界更美好。</strong></p>
+
+      
+    </div>
+
+    <div>
+      
+        
+<div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/code/images/wechat.jpg" alt="罗峡的博客 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎扫描上面的微信公众号二维码，关注我的个人公众号：全栈前端</div>
+</div>
+
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/code/images/wechat_pay.png" alt="罗峡的博客 WeChat Pay"/>
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/code/images/ali_pay.jpg" alt="罗峡的博客 Alipay"/>
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/code/tags/数据推送/" rel="tag">#数据推送</a>
+          
+            <a href="/code/tags/即时通信/" rel="tag">#即时通信</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/code/2016/10/04/Redux管理复杂应用数据逻辑/" rel="next" title="Redux管理复杂应用数据逻辑">
+                <i class="fa fa-chevron-left"></i> Redux管理复杂应用数据逻辑
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/code/2016/11/01/JWTs之我的前后端完全分离实践/" rel="prev" title="JWTs之我的前后端完全分离实践">
+                JWTs之我的前后端完全分离实践 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/code/images/head.jpg"
+               alt="罗峡的博客" />
+          <p class="site-author-name" itemprop="name">罗峡的博客</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/code/archives">
+              <span class="site-state-item-count">43</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/code/categories">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/code/tags">
+                <span class="site-state-item-count">85</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/code/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/laoqiren" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://luoxia.me/life" title="生活随笔" target="_blank">生活随笔</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#简单粗暴的短轮询（数据拉取）"><span class="nav-number">2.</span> <span class="nav-text">简单粗暴的短轮询（数据拉取）:</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#进化的长轮询-long-Polling"><span class="nav-number">3.</span> <span class="nav-text">进化的长轮询(long Polling)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#技术实现"><span class="nav-number">3.1.</span> <span class="nav-text">技术实现</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#HTTP流"><span class="nav-number">4.</span> <span class="nav-text">HTTP流:</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#技术实现-1"><span class="nav-number">4.1.</span> <span class="nav-text">技术实现</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Iframe流"><span class="nav-number">5.</span> <span class="nav-text">Iframe流</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SSE-服务器推送事件"><span class="nav-number">6.</span> <span class="nav-text">SSE(服务器推送事件)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#技术实现-2"><span class="nav-number">6.1.</span> <span class="nav-text">技术实现</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SSE与WebSocket对比"><span class="nav-number">7.</span> <span class="nav-text">SSE与WebSocket对比:</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#适用场景分析"><span class="nav-number">8.</span> <span class="nav-text">适用场景分析:</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#结语"><span class="nav-number">9.</span> <span class="nav-text">结语</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">罗峡的博客</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/code/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/code/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/code/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/code/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length == 0) {
+       search_path = "search.xml";
+    }
+    var path = "/code/" + search_path;
+    // monitor main search box;
+
+    function proceedsearch() {
+      $("body").append('<div class="popoverlay">').css('overflow', 'hidden');
+      $('.popup').toggle();
+
+    }
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+    'use strict';
+    $.ajax({
+        url: path,
+        dataType: "xml",
+        async: true,
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            isfetched = true;
+            $('.popup').detach().appendTo('.header-inner');
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                var matchcounts = 0;
+                var str='<ul class=\"search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length > 1) {
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var content_index = [];
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_content = data.content.trim().replace(/<[^>]+>/g,"").toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    var index_content = -1;
+                    var first_occur = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title != '' && data_content != '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            index_content = data_content.indexOf(keyword);
+                            if( index_title < 0 && index_content < 0 ){
+                                isMatch = false;
+                            } else {
+                                if (index_content < 0) {
+                                    index_content = 0;
+                                }
+                                if (i == 0) {
+                                    first_occur = index_content;
+                                }
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        matchcounts += 1;
+                        str += "<li><a href='"+ data_url +"' class='search-result-title'>"+ data_title +"</a>";
+                        var content = data.content.trim().replace(/<[^>]+>/g,"");
+                        if (first_occur >= 0) {
+                            // cut out 100 characters
+                            var start = first_occur - 20;
+                            var end = first_occur + 80;
+                            if(start < 0){
+                                start = 0;
+                            }
+                            if(start == 0){
+                                end = 50;
+                            }
+                            if(end > content.length){
+                                end = content.length;
+                            }
+                            var match_content = content.substring(start, end);
+                            // highlight all keywords
+                            keywords.forEach(function(keyword){
+                                var regS = new RegExp(keyword, "gi");
+                                match_content = match_content.replace(regS, "<b class=\"search-keyword\">"+keyword+"</b>");
+                            });
+
+                            str += "<p class=\"search-result\">" + match_content +"...</p>"
+                        }
+                        str += "</li>";
+                    }
+                })};
+                str += "</ul>";
+                if (matchcounts == 0) { str = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>' }
+                if (keywords == "") { str = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>' }
+                $resultContent.innerHTML = str;
+            });
+            proceedsearch();
+        }
+    });}
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched == false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+
+    });
+
+    $('.popup-btn-close').click(function(e){
+      $('.popup').hide();
+      $(".popoverlay").remove();
+      $('body').css('overflow', '');
+    });
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+  </script>
+
+
+  
+
+  
+
+  
+<script type="text/javascript" async src="//push.zhanzhang.baidu.com/push.js">
+</script>
+
+
+</body>
+</html>

@@ -1,0 +1,900 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/code/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/code/lib/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/code/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="HTTPS,TLS,Web安全," />
+
+
+
+
+
+  <link rel="alternate" href="/code/atom.xml" title="罗峡的技术博客" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/code/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="做人做事，安全很重要，这纷繁复杂的Web世界亦如此。你肯定不希望你在网络上的通讯被别人窥探，篡改。 SSL/TLS正是担负保护我们传输数据的角色。在这里分享我关于HTTPS有关学习总结，系列包括原理分析，实战部署，安全问题等。(图片来源网络)">
+<meta name="keywords" content="HTTPS,TLS,Web安全">
+<meta property="og:type" content="article">
+<meta property="og:title" content="TLS&#x2F;SSL原理浅析">
+<meta property="og:url" content="http://luoxia.me/code/2017/03/09/TLS原理浅析/index.html">
+<meta property="og:site_name" content="罗峡的技术博客">
+<meta property="og:description" content="做人做事，安全很重要，这纷繁复杂的Web世界亦如此。你肯定不希望你在网络上的通讯被别人窥探，篡改。 SSL/TLS正是担负保护我们传输数据的角色。在这里分享我关于HTTPS有关学习总结，系列包括原理分析，实战部署，安全问题等。(图片来源网络)">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://blog.cloudflare.com/content/images/2014/Sep/ssl_handshake_diffie_hellman.jpg">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/client.jpg">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/serverSayHello.jpg">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/clientExchange.jpg">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/sessionID.jpg">
+<meta property="og:updated_time" content="2017-11-16T13:10:06.486Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="TLS&#x2F;SSL原理浅析">
+<meta name="twitter:description" content="做人做事，安全很重要，这纷繁复杂的Web世界亦如此。你肯定不希望你在网络上的通讯被别人窥探，篡改。 SSL/TLS正是担负保护我们传输数据的角色。在这里分享我关于HTTPS有关学习总结，系列包括原理分析，实战部署，安全问题等。(图片来源网络)">
+<meta name="twitter:image" content="https://blog.cloudflare.com/content/images/2014/Sep/ssl_handshake_diffie_hellman.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: undefined,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://luoxia.me/code/2017/03/09/TLS原理浅析/"/>
+
+  <title> TLS/SSL原理浅析 | 罗峡的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?179492533449f84f24555d1cbf10462f";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/code/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">罗峡的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">爱技术，爱生活</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/code/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/code/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/code/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/code/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/code/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup">
+ <span class="search-icon fa fa-search"></span>
+ <input type="text" id="local-search-input">
+ <div id="local-search-result"></div>
+ <span class="popup-btn-close">close</span>
+</div>
+
+
+    </div>
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                TLS/SSL原理浅析
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2017-03-09T16:40:19+08:00" content="2017-03-09">
+              2017-03-09
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/code/categories/Web安全/" itemprop="url" rel="index">
+                    <span itemprop="name">Web安全</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>做人做事，安全很重要，这纷繁复杂的Web世界亦如此。你肯定不希望你在网络上的通讯被别人窥探，篡改。</p>
+<p>SSL/TLS正是担负保护我们传输数据的角色。在这里分享我关于HTTPS有关学习总结，系列包括原理分析，实战部署，安全问题等。<br><img src="https://blog.cloudflare.com/content/images/2014/Sep/ssl_handshake_diffie_hellman.jpg" alt="">(图片来源网络)<br><a id="more"></a></p>
+<h1 id="从宏观来看TLS协议"><a href="#从宏观来看TLS协议" class="headerlink" title="从宏观来看TLS协议"></a>从宏观来看TLS协议</h1><h3 id="OSI模型"><a href="#OSI模型" class="headerlink" title="OSI模型"></a>OSI模型</h3><p>TLS/SSL传输层安全协议位于OSI七层模型中的表示层，用于数据表示，转换和加密。下层为TCP/IP层，上层通过ALPN(应用层协议协商)扩展建立不同的应用层协议。</p>
+<h3 id="实现方式"><a href="#实现方式" class="headerlink" title="实现方式"></a>实现方式</h3><p>TLS由记录协议实现（record protocol)实现，其上又有四个子协议： 握手协议（handshake protocol),密钥规格变更协议(change cipher spec protocol),应用数据协议(application data protocol)和警报协议(alert protocol)</p>
+<ol>
+<li>记录协议保证数据的完整性和安全性（MAC和加密)</li>
+<li>握手协议保证身份验证</li>
+</ol>
+<h1 id="数字签名原理"><a href="#数字签名原理" class="headerlink" title="数字签名原理"></a>数字签名原理</h1><p>数字签名可以保证数据的完整性，这在我们后面进行证书验证要用到，这在我们进行数字签名需要用到RSA加密算法（非对称加密）</p>
+<p>假设两个同学A,B，A要发送文件给B:</p>
+<p>A用散列函数算法计算file的hash值如SHA256算法，可以保证不同的文档不一样的hash值，加入一些元素据（如哈希算法）进行编码，然后用自己的私钥进行加密编码数据，形成数字签名，加入到file中，发送给B。</p>
+<p>B收到file后，用相同hash算法计算文件的hash值，用A的公钥解密，解码得到文档中的hash值，将两个hash值进行对比，如果两者相同，就能’确认’file来自A且没有经过更改。</p>
+<p>可见这种签名方法结合了hash和RSA用私钥加密数据的方式。</p>
+<p>但是这里还有一个问题，B如何确保得到的公钥是来自A的？这就是我们后面要讲的公钥证书(certificate)了。</p>
+<h1 id="身份验证"><a href="#身份验证" class="headerlink" title="身份验证"></a>身份验证</h1><p>身份验证用来保证数据发送给指定的目标了，这个和TSL握手协议中的密钥交换部分紧密联系。</p>
+<p>身份验证主要用RSA算法，还是上面的A,B，A发送数据给B,A为了保证将数据发送给B,A用B的公钥加密数据，然后B拿到后用自己的私钥解密。这样就相当于身份验证了。但是RSA有个问题就是前向保密性问题，如果B的私钥被别人获取，那么A和B之前所有的交流都透露出去了。所以我们在进行密钥交换时，一般用DH方式，采用ECDH Params和RSA结合的方式。</p>
+<h1 id="握手协议过程详解"><a href="#握手协议过程详解" class="headerlink" title="握手协议过程详解"></a>握手协议过程详解</h1><p>这里以我对github抓包数据为例进行分析。</p>
+<h3 id="ClientHello"><a href="#ClientHello" class="headerlink" title="ClientHello"></a>ClientHello</h3><p>客户端将功能和首选项发送给服务器，如协议版本，随机数（客户端Random,这个会用于后面生成premaster key 即预主钥)，Session ID可以用于恢复会话，Cipher Suites表示能够接受的密码套件，Compression压缩，Extensions扩展</p>
+<p>抓包：<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/client.jpg" alt="clientHello"><br>第一次Session ID为空表明客户端不想恢复之前的会话</p>
+<h3 id="ServerHello"><a href="#ServerHello" class="headerlink" title="ServerHello"></a>ServerHello</h3><p>服务器选择一些参数，返回给客户端，如选择的密码套件，扩展，另外还要发送Random(服务端random,与上面的client random都要参与生成预密钥)<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/serverSayHello.jpg" alt="serverHello"></p>
+<p>我们可以看到SessionTickets扩展（可以用于恢复会话）和ALPN扩展（之前提过），图中还可以看到这次握手选择的套件：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256</span><br></pre></td></tr></table></figure></p>
+<p>表示使用ECDHE密钥交换方式，用RSA算法进行身份验证，AES加密算法用于对称加密，128表示加密强度，GCM表示加密模式，SHA256用于生成MAC或PRF</p>
+<h3 id="Certificate"><a href="#Certificate" class="headerlink" title="Certificate"></a>Certificate</h3><p>服务器发送自己的证书。证书可以用于服务端和客户端的相互验证，然后提供服务端的publick key给客户端，用于后面密钥交换的身份验证工具。</p>
+<p><strong>我们来看看客户端拿到证书后都干了什么：</strong></p>
+<ol>
+<li><p>客户端存有证书颁发机构（CA）的公钥，然后这个证书会经过CA签名（就是在上面我讲的数字签名），客户端用CA的公钥解密证书，确保证书来自该CA</p>
+</li>
+<li><p>从解密的证书中拿到服务端的公钥，客户端用这个公钥去解密证书，如果解密成功，说明这个证书是指定服务端发过来的。</p>
+</li>
+</ol>
+<h3 id="ServerkeyExchange"><a href="#ServerkeyExchange" class="headerlink" title="ServerkeyExchange"></a>ServerkeyExchange</h3><p>服务端发送用于密钥交换的额外数据，如选择DH交换算法时，这个阶段会带上DH Server Params,如文章首页图所示一样。</p>
+<h3 id="ServerHelloDone"><a href="#ServerHelloDone" class="headerlink" title="ServerHelloDone"></a>ServerHelloDone</h3><p>服务端表明握手信息发送结束。</p>
+<p><strong>上面的三个Certificate,ServerkeyExchange,ServerHelloDone实际上是一次性发送的</strong></p>
+<h3 id="ClientKeyExchange"><a href="#ClientKeyExchange" class="headerlink" title="ClientKeyExchange"></a>ClientKeyExchange</h3><p>客户端发送密钥交换所需要的客户端信息，如ECDH交换算法中，会携带DH Client Params,如文章首页图所示。<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/clientExchange.jpg" alt="clientExchange"></p>
+<p><strong>在这里我们来分析密钥交换的具体过程（这里以ECDH交换方式为例）：</strong></p>
+<ol>
+<li>服务端在SeverKeyExchange中包含了后面会用到的DH Server Params</li>
+<li><p>客户端在验证服务端的证书后，发送DH Client Params</p>
+</li>
+<li><p>这个时候客户端和服务端都有了两个DH Params,就可以生成Premaster secret了</p>
+</li>
+<li><p>两端使用DH Params加上两个随机数（两个Hello发送的Random)，就可以生成master secret了</p>
+</li>
+<li><p>两端再根据master secret加上两个随机数就可以生成Key了</p>
+</li>
+</ol>
+<p>主密钥生成：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">master_secret = PRF(premaster,&quot;master secret&quot;,ClientHello.random,ServerHello.random)</span><br></pre></td></tr></table></figure></p>
+<p>最终Key生成：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">key_blok = PRF(master_secret, &quot;key expansion&quot;,server_random+client_random)</span><br></pre></td></tr></table></figure></p>
+<p>nice!</p>
+<h3 id="ChangeCipherSpec"><a href="#ChangeCipherSpec" class="headerlink" title="ChangeCipherSpec"></a>ChangeCipherSpec</h3><p>表明已经生成Key，客户端和服务端在生成好密钥后，就可以开始使用对称加密技术用生成的Key进行加密传输数据了。</p>
+<h1 id="其他细节"><a href="#其他细节" class="headerlink" title="其他细节"></a>其他细节</h1><h3 id="服务端要求客户端身份验证"><a href="#服务端要求客户端身份验证" class="headerlink" title="服务端要求客户端身份验证"></a>服务端要求客户端身份验证</h3><p>再ServerKeyExchange后再发送CertificateRequest请求，客户端就得和server一样发送自己的证书</p>
+<h3 id="会话恢复"><a href="#会话恢复" class="headerlink" title="会话恢复"></a>会话恢复</h3><p><strong>Session ID</strong><br>之前在ClientHello提到的Session ID派上用场了，首次握手它是空的，表明不想恢复之前的会话，之后的握手，可以将Session ID放如Session ID参数，如果服务端愿意恢复，就带上相同的Session ID,然后使用之前协商的主密钥生成新的Key,再进行加密传输数据。</p>
+<p><strong>session ticket</strong><br>作为一种扩展引入的一种新的会话恢复机制。<br>服务器取出所有会话数据进行加密，以票证方式返回客户端，接下来客户端将票证提交回server验证解密来恢复会话。但是规格也允许客户端像上面一样发送Session ID,服务端还是的回复同样的值。</p>
+<p>我们在第一次访问github后不久再去访问看看，抓包：<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/sessionID.jpg" alt="sessionID"></p>
+<p>会发现后面握手就简单的几步：ClientHello, ServerHello,Server标识完成，Client标识完成</p>
+<p>会话恢复可以减少时间，减少资源消耗。</p>
+<h1 id="结束语"><a href="#结束语" class="headerlink" title="结束语"></a>结束语</h1><p>文章是我结合一些文章和书籍和自己的理解后总结的，欢迎讨论。接下来还会从实战部署，安全问题等方面进一步总结HTTPS。</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>数字签名:<a href="http://www.youdzone.com/signature.html" target="_blank" rel="noopener">http://www.youdzone.com/signature.html</a></p>
+<p>TLS握手: <a href="https://blog.cloudflare.com/keyless-ssl-the-nitty-gritty-technical-details/" target="_blank" rel="noopener">https://blog.cloudflare.com/keyless-ssl-the-nitty-gritty-technical-details/</a></p>
+
+      
+    </div>
+
+    <div>
+      
+        
+<div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/code/images/wechat.jpg" alt="罗峡的博客 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎扫描上面的微信公众号二维码，关注我的个人公众号：全栈前端</div>
+</div>
+
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/code/images/wechat_pay.png" alt="罗峡的博客 WeChat Pay"/>
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/code/images/ali_pay.jpg" alt="罗峡的博客 Alipay"/>
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/code/tags/HTTPS/" rel="tag">#HTTPS</a>
+          
+            <a href="/code/tags/TLS/" rel="tag">#TLS</a>
+          
+            <a href="/code/tags/Web安全/" rel="tag">#Web安全</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/code/2017/02/07/使用React SSR构建Isomorphic应用/" rel="next" title="使用React SSR构建Isomorphic应用">
+                <i class="fa fa-chevron-left"></i> 使用React SSR构建Isomorphic应用
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/code/2017/03/13/Let-s-Encrypt/" rel="prev" title="Let's Encrypt">
+                Let's Encrypt <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/code/images/head.jpg"
+               alt="罗峡的博客" />
+          <p class="site-author-name" itemprop="name">罗峡的博客</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/code/archives">
+              <span class="site-state-item-count">43</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/code/categories">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/code/tags">
+                <span class="site-state-item-count">85</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/code/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/laoqiren" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://luoxia.me/life" title="生活随笔" target="_blank">生活随笔</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#从宏观来看TLS协议"><span class="nav-number">1.</span> <span class="nav-text">从宏观来看TLS协议</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#OSI模型"><span class="nav-number">1.0.1.</span> <span class="nav-text">OSI模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#实现方式"><span class="nav-number">1.0.2.</span> <span class="nav-text">实现方式</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#数字签名原理"><span class="nav-number">2.</span> <span class="nav-text">数字签名原理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#身份验证"><span class="nav-number">3.</span> <span class="nav-text">身份验证</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#握手协议过程详解"><span class="nav-number">4.</span> <span class="nav-text">握手协议过程详解</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ClientHello"><span class="nav-number">4.0.1.</span> <span class="nav-text">ClientHello</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ServerHello"><span class="nav-number">4.0.2.</span> <span class="nav-text">ServerHello</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Certificate"><span class="nav-number">4.0.3.</span> <span class="nav-text">Certificate</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ServerkeyExchange"><span class="nav-number">4.0.4.</span> <span class="nav-text">ServerkeyExchange</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ServerHelloDone"><span class="nav-number">4.0.5.</span> <span class="nav-text">ServerHelloDone</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ClientKeyExchange"><span class="nav-number">4.0.6.</span> <span class="nav-text">ClientKeyExchange</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ChangeCipherSpec"><span class="nav-number">4.0.7.</span> <span class="nav-text">ChangeCipherSpec</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#其他细节"><span class="nav-number">5.</span> <span class="nav-text">其他细节</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#服务端要求客户端身份验证"><span class="nav-number">5.0.1.</span> <span class="nav-text">服务端要求客户端身份验证</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#会话恢复"><span class="nav-number">5.0.2.</span> <span class="nav-text">会话恢复</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#结束语"><span class="nav-number">6.</span> <span class="nav-text">结束语</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">6.0.1.</span> <span class="nav-text">参考资料</span></a></li></ol></li></ol></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">罗峡的博客</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/code/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/code/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/code/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/code/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length == 0) {
+       search_path = "search.xml";
+    }
+    var path = "/code/" + search_path;
+    // monitor main search box;
+
+    function proceedsearch() {
+      $("body").append('<div class="popoverlay">').css('overflow', 'hidden');
+      $('.popup').toggle();
+
+    }
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+    'use strict';
+    $.ajax({
+        url: path,
+        dataType: "xml",
+        async: true,
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            isfetched = true;
+            $('.popup').detach().appendTo('.header-inner');
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                var matchcounts = 0;
+                var str='<ul class=\"search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length > 1) {
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var content_index = [];
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_content = data.content.trim().replace(/<[^>]+>/g,"").toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    var index_content = -1;
+                    var first_occur = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title != '' && data_content != '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            index_content = data_content.indexOf(keyword);
+                            if( index_title < 0 && index_content < 0 ){
+                                isMatch = false;
+                            } else {
+                                if (index_content < 0) {
+                                    index_content = 0;
+                                }
+                                if (i == 0) {
+                                    first_occur = index_content;
+                                }
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        matchcounts += 1;
+                        str += "<li><a href='"+ data_url +"' class='search-result-title'>"+ data_title +"</a>";
+                        var content = data.content.trim().replace(/<[^>]+>/g,"");
+                        if (first_occur >= 0) {
+                            // cut out 100 characters
+                            var start = first_occur - 20;
+                            var end = first_occur + 80;
+                            if(start < 0){
+                                start = 0;
+                            }
+                            if(start == 0){
+                                end = 50;
+                            }
+                            if(end > content.length){
+                                end = content.length;
+                            }
+                            var match_content = content.substring(start, end);
+                            // highlight all keywords
+                            keywords.forEach(function(keyword){
+                                var regS = new RegExp(keyword, "gi");
+                                match_content = match_content.replace(regS, "<b class=\"search-keyword\">"+keyword+"</b>");
+                            });
+
+                            str += "<p class=\"search-result\">" + match_content +"...</p>"
+                        }
+                        str += "</li>";
+                    }
+                })};
+                str += "</ul>";
+                if (matchcounts == 0) { str = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>' }
+                if (keywords == "") { str = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>' }
+                $resultContent.innerHTML = str;
+            });
+            proceedsearch();
+        }
+    });}
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched == false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+
+    });
+
+    $('.popup-btn-close').click(function(e){
+      $('.popup').hide();
+      $(".popoverlay").remove();
+      $('body').css('overflow', '');
+    });
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+  </script>
+
+
+  
+
+  
+
+  
+<script type="text/javascript" async src="//push.zhanzhang.baidu.com/push.js">
+</script>
+
+
+</body>
+</html>

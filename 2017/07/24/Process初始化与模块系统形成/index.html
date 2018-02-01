@@ -1,0 +1,884 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/code/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/code/lib/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/code/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="process,v8,模块系统," />
+
+
+
+
+
+  <link rel="alternate" href="/code/atom.xml" title="罗峡的技术博客" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/code/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="当我们运行node app.js的时候都发生了什么？process的初始化，模块系统的形成，C/C++与js的结合等等。从源头出发，探索背后的奥秘。">
+<meta name="keywords" content="process,v8,模块系统">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Process初始化与模块系统形成">
+<meta property="og:url" content="http://luoxia.me/code/2017/07/24/Process初始化与模块系统形成/index.html">
+<meta property="og:site_name" content="罗峡的技术博客">
+<meta property="og:description" content="当我们运行node app.js的时候都发生了什么？process的初始化，模块系统的形成，C/C++与js的结合等等。从源头出发，探索背后的奥秘。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/setupProcessObject.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/node_natives.h.bootstrap.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/node_natives.h.natives.png">
+<meta property="og:updated_time" content="2017-11-16T13:10:06.485Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Process初始化与模块系统形成">
+<meta name="twitter:description" content="当我们运行node app.js的时候都发生了什么？process的初始化，模块系统的形成，C/C++与js的结合等等。从源头出发，探索背后的奥秘。">
+<meta name="twitter:image" content="http://7xsi10.com1.z0.glb.clouddn.com/setupProcessObject.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: undefined,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://luoxia.me/code/2017/07/24/Process初始化与模块系统形成/"/>
+
+  <title> Process初始化与模块系统形成 | 罗峡的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?179492533449f84f24555d1cbf10462f";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/code/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">罗峡的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">爱技术，爱生活</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/code/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/code/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/code/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/code/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/code/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup">
+ <span class="search-icon fa fa-search"></span>
+ <input type="text" id="local-search-input">
+ <div id="local-search-result"></div>
+ <span class="popup-btn-close">close</span>
+</div>
+
+
+    </div>
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Process初始化与模块系统形成
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2017-07-24T18:44:54+08:00" content="2017-07-24">
+              2017-07-24
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/code/categories/Nodejs/" itemprop="url" rel="index">
+                    <span itemprop="name">Nodejs</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>当我们运行<code>node app.js</code>的时候都发生了什么？<code>process</code>的初始化，模块系统的形成，C/C++与js的结合等等。从源头出发，探索背后的奥秘。<br><a id="more"></a></p>
+<h2 id="启动及初始化操作"><a href="#启动及初始化操作" class="headerlink" title="启动及初始化操作"></a>启动及初始化操作</h2><p><code>node_main.cc</code>是node的入口，根据操作系统做一些初始化工作，最后调用<code>node::Start()</code></p>
+<p>在<code>node.cc</code>里定义了<code>Start()</code>,做了一些初始化platform,V8初始化，libuv event loop创建等工作，然后调用第一个<code>inline Start()</code>:<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> exit_code =</span><br><span class="line">    Start(uv_default_loop(), argc, argv, exec_argc, exec_argv);</span><br></pre></td></tr></table></figure></p>
+<p>在在第一个<code>inline Start()</code>里，起一个V8实例，并调用最后一个<code>inline Start()</code>:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Isolate* <span class="keyword">const</span> isolate = Isolate::New(params);</span><br><span class="line">...</span><br><span class="line">exit_code = Start(isolate, &amp;isolate_data, argc, argv, exec_argc, exec_argv);</span><br></pre></td></tr></table></figure>
+<p>接着在最后一个Start()里，初始化context,新建一个env，env用于将<code>libuv</code>和<code>v8</code>结合在一起:<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">HandleScope <span class="title">handle_scope</span><span class="params">(isolate)</span></span>;</span><br><span class="line"> Local&lt;Context&gt; context = Context::New(isolate);</span><br><span class="line"> Context::<span class="function">Scope <span class="title">context_scope</span><span class="params">(context)</span></span>;</span><br><span class="line"> <span class="function">Environment <span class="title">env</span><span class="params">(isolate_data, context)</span></span>;</span><br><span class="line"> ...</span><br><span class="line"> env.Start(argc, argv, exec_argc, exec_argv, v8_is_profiling);</span><br></pre></td></tr></table></figure></p>
+<p>这里调用了<code>env.Start();</code>，<code>env.Start()</code>定义在<code>env.cc</code>里,该方法里面调用了<code>SetupProcessObject(this, argc, argv, exec_argc, exec_argv);</code>，而该方法又定义在<code>node.cc</code>里，定义了<code>process</code>的一些属性和方法(其中包括了<code>process.binding()</code>用于C/C++模块机制，后面详解):</p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/setupProcessObject.png" alt="http://7xsi10.com1.z0.glb.clouddn.com/setupProcessObject.png"></p>
+<p>最后一个<code>inline Start()</code>还进入了一个while循环处理<code>libuv</code>事件:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">do</span> &#123;</span><br><span class="line">      v8_platform.PumpMessageLoop(isolate);</span><br><span class="line">      more = uv_run(env.event_loop(), UV_RUN_ONCE);</span><br><span class="line"></span><br><span class="line">      <span class="keyword">if</span> (more == <span class="literal">false</span>) &#123;</span><br><span class="line">        v8_platform.PumpMessageLoop(isolate);</span><br><span class="line">        EmitBeforeExit(&amp;env);</span><br><span class="line">        more = uv_loop_alive(env.event_loop());</span><br><span class="line">        <span class="keyword">if</span> (uv_run(env.event_loop(), UV_RUN_NOWAIT) != <span class="number">0</span>)</span><br><span class="line">          more = <span class="literal">true</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; <span class="keyword">while</span> (more == <span class="literal">true</span>);</span><br></pre></td></tr></table></figure>
+<p>另外还调用了<code>LoadEnvironment(&amp;env);</code>:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Local&lt;String&gt; script_name = FIXED_ONE_BYTE_STRING(env-&gt;isolate(),</span><br><span class="line">                                                    <span class="string">"bootstrap_node.js"</span>);</span><br><span class="line">Local&lt;Value&gt; f_value = ExecuteString(env, MainSource(env), script_name);</span><br></pre></td></tr></table></figure>
+<p>其中<code>MainSource(env)</code>:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Local&lt;String&gt; MainSource(Environment* env) &#123;</span><br><span class="line">  <span class="keyword">return</span> String::NewFromUtf8(</span><br><span class="line">      env-&gt;isolate(),</span><br><span class="line">      <span class="keyword">reinterpret_cast</span>&lt;<span class="keyword">const</span> <span class="keyword">char</span>*&gt;(internal_bootstrap_node_native),</span><br><span class="line">      NewStringType::kNormal,</span><br><span class="line">      <span class="keyword">sizeof</span>(internal_bootstrap_node_native)).ToLocalChecked();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>而这里的<code>internal_bootstrap_node_native</code>由<code>node_natives.h</code>定义，这个头文件是由<code>js2c.py</code>工具生成的，将所有native模块都编译到C++数组里:</p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/node_natives.h.bootstrap.png" alt="http://7xsi10.com1.z0.glb.clouddn.com/node_natives.h.bootstrap.png"><br>执行<code>bootstrap_node.js</code>的匿名函数并传入<code>process</code>对象,<code>process</code>对象通过<code>env-&gt;process_object()</code>获得：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line">Local&lt;Function&gt; f = Local&lt;Function&gt;::Cast(f_value);</span><br><span class="line">...</span><br><span class="line">Local&lt;Value&gt; arg = env-&gt;process_object();</span><br><span class="line">f-&gt;Call(Null(env-&gt;isolate()), <span class="number">1</span>, &amp;arg);</span><br></pre></td></tr></table></figure>
+<p>在<code>bootstrap_node.js</code>初始化了一些process方法和属性，global变量，模块机制等。</p>
+<h2 id="执行一个js文件"><a href="#执行一个js文件" class="headerlink" title="执行一个js文件"></a>执行一个js文件</h2><p>为了说明一个运行一个js文件发生了什么，先说明一下模块系统的初始化</p>
+<h3 id="模块系统形成"><a href="#模块系统形成" class="headerlink" title="模块系统形成"></a>模块系统形成</h3><h4 id="process-binding-C-C-内建模块"><a href="#process-binding-C-C-内建模块" class="headerlink" title="process.binding() C/C++内建模块"></a>process.binding() C/C++内建模块</h4><p>上面我们说在程序启动后会在<code>SetupProcessObject()</code>里为<code>process</code>对象绑定一些方法，其中就包括<code>process.binding</code>:<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (cache-&gt;Has(env-&gt;context(), <span class="keyword">module</span>).FromJust()) &#123;</span><br><span class="line">    exports = cache-&gt;Get(<span class="keyword">module</span>)-&gt;ToObject(env-&gt;isolate());</span><br><span class="line">    args.GetReturnValue().Set(exports);</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">node_module* mod = get_builtin_module(*module_v);</span><br><span class="line"><span class="keyword">if</span> (mod != <span class="literal">nullptr</span>) &#123;</span><br><span class="line">    exports = Object::New(env-&gt;isolate());</span><br><span class="line">    CHECK_EQ(mod-&gt;nm_register_func, <span class="literal">nullptr</span>);</span><br><span class="line">    CHECK_NE(mod-&gt;nm_context_register_func, <span class="literal">nullptr</span>);</span><br><span class="line">    Local&lt;Value&gt; unused = Undefined(env-&gt;isolate());</span><br><span class="line">    mod-&gt;nm_context_register_func(exports, unused,</span><br><span class="line">        env-&gt;context(), mod-&gt;nm_priv);</span><br><span class="line">    cache-&gt;Set(<span class="keyword">module</span>, exports);</span><br><span class="line">&#125; <span class="keyword">else</span> <span class="keyword">if</span> ...</span><br></pre></td></tr></table></figure></p>
+<p>其中<code>get_builtin_module(*module_v);</code>在<code>modlist_builtin</code>链表中获取模块。同样用了缓存机制。那么这些C/C++模块是怎么放到链表上面去的呢？答案是通过<code>NODE_MODULE_CONTEXT_AWARE_BUILTIN</code>，比如<code>zlib</code>调用了<code>NODE_MODULE_CONTEXT_AWARE_BUILTIN(zlib, node::InitZlib)</code>来将该模块加入到上边儿的链表中。</p>
+<p>我们在<code>node.h</code>看到了这个宏定义:<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> NODE_MODULE_CONTEXT_AWARE_BUILTIN(modname, regfunc)           \</span></span><br><span class="line">  NODE_MODULE_CONTEXT_AWARE_X(modname, regfunc, <span class="literal">NULL</span>, NM_F_BUILTIN)</span><br></pre></td></tr></table></figure></p>
+<p>而<code>NODE_MODULE_CONTEXT_AWARE_X</code>最终会调用<code>node.cc</code>里定义的<code>node_module_register(&amp;_module);</code>将C/C++模块加入到<code>modlist_builtin</code>链表中，供<code>get_builtin_module()</code>使用。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">extern</span> <span class="string">"C"</span> <span class="function"><span class="keyword">void</span> <span class="title">node_module_register</span><span class="params">(<span class="keyword">void</span>* m)</span> </span>&#123;</span><br><span class="line">  <span class="class"><span class="keyword">struct</span> <span class="title">node_module</span>* <span class="title">mp</span> = <span class="title">reinterpret_cast</span>&lt;struct node_module*&gt;(<span class="title">m</span>);</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (mp-&gt;nm_flags &amp; NM_F_BUILTIN) &#123;</span><br><span class="line">    mp-&gt;nm_link = modlist_builtin;</span><br><span class="line">    modlist_builtin = mp;</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (!node_is_initialized) &#123;</span><br><span class="line">    mp-&gt;nm_flags = NM_F_LINKED;</span><br><span class="line">    mp-&gt;nm_link = modlist_linked;</span><br><span class="line">    modlist_linked = mp;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    modpending = mp;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="native-js模块"><a href="#native-js模块" class="headerlink" title="native js模块"></a>native js模块</h4><p>在<code>bootstrap_node.js</code>里：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">NativeModule._source = process.binding(<span class="string">'natives'</span>);</span><br><span class="line">NativeModule._cache = &#123;&#125;;</span><br></pre></td></tr></table></figure></p>
+<p>当调用<code>process.binding(&#39;natives&#39;);</code>的时候，<code>node.cc</code>:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!<span class="built_in">strcmp</span>(*module_v, <span class="string">"natives"</span>)) &#123;</span><br><span class="line">    exports = Object::New(env-&gt;isolate());</span><br><span class="line">    DefineJavaScript(env, exports);</span><br><span class="line">    cache-&gt;Set(<span class="keyword">module</span>, exports);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在<code>src/node_javascript.cc</code>中关于<code>DefineJavaScript()</code>:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">DefineJavaScript</span><span class="params">(Environment* env, Local&lt;Object&gt; target)</span> </span>&#123;</span><br><span class="line">  HandleScope scope(env-&gt;isolate());</span><br><span class="line"></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">auto</span> native : natives) &#123;</span><br><span class="line">    <span class="keyword">if</span> (native.source != internal_bootstrap_node_native) &#123;</span><br><span class="line">      Local&lt;String&gt; name = String::NewFromUtf8(env-&gt;isolate(), native.name);</span><br><span class="line">      Local&lt;String&gt; source =</span><br><span class="line">          String::NewFromUtf8(</span><br><span class="line">              env-&gt;isolate(), <span class="keyword">reinterpret_cast</span>&lt;<span class="keyword">const</span> <span class="keyword">char</span>*&gt;(native.source),</span><br><span class="line">              NewStringType::kNormal, native.source_len).ToLocalChecked();</span><br><span class="line">      target-&gt;Set(name, source);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>而上面的<code>natives</code>就是在<code>node_natives.h</code>里边儿定义的：</p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/node_natives.h.natives.png" alt="http://7xsi10.com1.z0.glb.clouddn.com/node_natives.h.natives.png"></p>
+<p>对于<code>require</code>同样使用了cache机制:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> cached = NativeModule.getCached(id);</span><br><span class="line">    <span class="keyword">if</span> (cached &amp;&amp; (cached.loaded || cached.loading)) &#123;</span><br><span class="line">      <span class="keyword">return</span> cached.exports;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<p>最终调用<code>compile()</code>方法:<br>对源码用<code>wrapper</code>进行了包装:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> source = NativeModule.getSource(<span class="keyword">this</span>.id);</span><br><span class="line">source = NativeModule.wrap(source);</span><br></pre></td></tr></table></figure></p>
+<p>然后在vm里执行，并传入一些包装后匿名函数需要的参数:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> fn = runInThisContext(source, &#123;</span><br><span class="line">    filename: <span class="keyword">this</span>.filename,</span><br><span class="line">    lineOffset: <span class="number">0</span>,</span><br><span class="line">    displayErrors: <span class="literal">true</span></span><br><span class="line">&#125;);</span><br><span class="line">fn(<span class="keyword">this</span>.exports, NativeModule.require, <span class="keyword">this</span>, <span class="keyword">this</span>.filename);</span><br></pre></td></tr></table></figure></p>
+<p>这样我们就可以来理解执行一个文件的过程:</p>
+<h3 id="执行一个js文件（文件模块）"><a href="#执行一个js文件（文件模块）" class="headerlink" title="执行一个js文件（文件模块）"></a>执行一个js文件（文件模块）</h3><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> path = NativeModule.require(<span class="string">'path'</span>);</span><br><span class="line">process.argv[<span class="number">1</span>] = path.resolve(process.argv[<span class="number">1</span>]);</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> Module = NativeModule.require(<span class="string">'module'</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (process._syntax_check_only != <span class="literal">null</span>) &#123;</span><br><span class="line">    <span class="keyword">const</span> fs = NativeModule.require(<span class="string">'fs'</span>);</span><br><span class="line">    <span class="keyword">const</span> filename = Module._resolveFilename(process.argv[<span class="number">1</span>]);</span><br><span class="line">    <span class="keyword">var</span> source = fs.readFileSync(filename, <span class="string">'utf-8'</span>);</span><br><span class="line">    checkScriptSyntax(source, filename);</span><br><span class="line">    process.exit(<span class="number">0</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">preloadModules();</span><br><span class="line">Module.runMain();</span><br></pre></td></tr></table></figure>
+<p>同步读取执行的js文件,<code>lib/module.js</code>中的<code>runMain()</code>:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Module.runMain = <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  Module._load(process.argv[<span class="number">1</span>], <span class="literal">null</span>, <span class="literal">true</span>);</span><br><span class="line">  process._tickCallback();</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<p>Module._load:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">Module._load = <span class="function"><span class="keyword">function</span>(<span class="params">request, parent, isMain</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (parent) &#123;</span><br><span class="line">    debug(<span class="string">'Module._load REQUEST %s parent: %s'</span>, request, parent.id);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">var</span> filename = Module._resolveFilename(request, parent, isMain);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">var</span> cachedModule = Module._cache[filename];</span><br><span class="line">  <span class="keyword">if</span> (cachedModule) &#123;</span><br><span class="line">    <span class="keyword">return</span> cachedModule.exports;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (NativeModule.nonInternalExists(filename)) &#123;</span><br><span class="line">    debug(<span class="string">'load native module %s'</span>, request);</span><br><span class="line">    <span class="keyword">return</span> NativeModule.require(filename);</span><br><span class="line">  &#125; <span class="comment">//如果在native模块里找到就调用NativeModule的require机制</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">var</span> <span class="built_in">module</span> = <span class="keyword">new</span> Module(filename, parent);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (isMain) &#123;</span><br><span class="line">    process.mainModule = <span class="built_in">module</span>;</span><br><span class="line">    <span class="built_in">module</span>.id = <span class="string">'.'</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  Module._cache[filename] = <span class="built_in">module</span>;</span><br><span class="line"></span><br><span class="line">  tryModuleLoad(<span class="built_in">module</span>, filename);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">module</span>.exports;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<p><code>Module._resolveFilename()</code>经过一系列的查找机制（包括后缀扩展，包查找等）后，得到一个合适的<code>filename</code>，<code>tryModuleLoad()</code>里会调用<code>Module.load()</code>:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> extension = path.extname(filename) || <span class="string">'.js'</span>;</span><br><span class="line"><span class="keyword">if</span> (!Module._extensions[extension]) extension = <span class="string">'.js'</span>;</span><br><span class="line">Module._extensions[extension](<span class="keyword">this</span>, filename);</span><br><span class="line"><span class="keyword">this</span>.loaded = <span class="literal">true</span>;</span><br></pre></td></tr></table></figure></p>
+<p>对于js文件调用<code>_compile()</code>方法:</p>
+<p>同样进行了包装（包装方法和内容和NativeModule相同)，并传入自己的参数在vm里执行代码:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">content = internalModule.stripShebang(content);</span><br><span class="line"><span class="keyword">var</span> wrapper = Module.wrap(content);</span><br><span class="line"><span class="keyword">var</span> compiledWrapper = vm.runInThisContext(wrapper, &#123;</span><br><span class="line">    filename: filename,</span><br><span class="line">    lineOffset: <span class="number">0</span>,</span><br><span class="line">    displayErrors: <span class="literal">true</span></span><br><span class="line">&#125;);</span><br><span class="line">...</span><br><span class="line">result = inspectorWrapper(compiledWrapper, <span class="keyword">this</span>.exports, <span class="keyword">this</span>.exports,</span><br><span class="line"><span class="built_in">require</span>, <span class="keyword">this</span>, filename, dirname);</span><br></pre></td></tr></table></figure></p>
+<p>而传入的<code>require</code>就是传入的<code>Module.prototype.require()</code>:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Module.prototype.require = <span class="function"><span class="keyword">function</span>(<span class="params">path</span>) </span>&#123;</span><br><span class="line">  assert(path, <span class="string">'missing path'</span>);</span><br><span class="line">  assert(<span class="keyword">typeof</span> path === <span class="string">'string'</span>, <span class="string">'path must be a string'</span>);</span><br><span class="line">  <span class="keyword">return</span> Module._load(path, <span class="keyword">this</span>, <span class="comment">/* isMain */</span> <span class="literal">false</span>);</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<p>可见最终又是走<code>_load</code>。这其实是文件模块（第三方和自定义模块）的加载方式，而用node执行一个js文件，实际上用到的也就是这种文件模块的机制，不过多了一系列的启动操作。</p>
+<p>可以分析得到，执行一个js文件时，会去初始化<code>process</code>，其中包括定义了<code>process.binding()</code>方法来定义<code>C/C++</code>模块机制，然后会去执行一个native模块即<code>bootstrap_node.js</code>，它的代码放在了<code>node_natives.h</code>里，从那里读取code array,在C++层面运行即调用了<code>bootstrap_node.js</code>的匿名函数并传入<code>process</code>对象，在<code>bootstrap_node.js</code>里，定义了native js模块机制，即通过<code>process.binding(&#39;natives)</code>得到<code>node_natives.h</code>里的<code>natives</code>数组，包含了所有native模块的代码数组。然后对于执行一个js文件，调用原生模块<code>module</code>，去执行<code>Module.runMain()</code>，而这个操作不过是由<code>module</code>定义的文件模块机制罢了。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>文章从node启动到一个js文件的执行的角度去分析内部原理，详细解释了与<code>process</code>对象有关和模块系统的形成。而对于其他细节诸如<code>libuv event loop</code>机制还需要深究，会在后面的文章中进行总结。欢迎讨论。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+<div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/code/images/wechat.jpg" alt="罗峡的博客 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎扫描上面的微信公众号二维码，关注我的个人公众号：全栈前端</div>
+</div>
+
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/code/images/wechat_pay.png" alt="罗峡的博客 WeChat Pay"/>
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/code/images/ali_pay.jpg" alt="罗峡的博客 Alipay"/>
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/code/tags/process/" rel="tag">#process</a>
+          
+            <a href="/code/tags/v8/" rel="tag">#v8</a>
+          
+            <a href="/code/tags/模块系统/" rel="tag">#模块系统</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/code/2017/07/16/聊聊Agent&Proxy/" rel="next" title="聊聊Agent/Proxy">
+                <i class="fa fa-chevron-left"></i> 聊聊Agent/Proxy
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/code/2017/07/27/libuv网络IO机制/" rel="prev" title="libuv网络I/O机制">
+                libuv网络I/O机制 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/code/images/head.jpg"
+               alt="罗峡的博客" />
+          <p class="site-author-name" itemprop="name">罗峡的博客</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/code/archives">
+              <span class="site-state-item-count">43</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/code/categories">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/code/tags">
+                <span class="site-state-item-count">85</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/code/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/laoqiren" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://luoxia.me/life" title="生活随笔" target="_blank">生活随笔</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#启动及初始化操作"><span class="nav-number">1.</span> <span class="nav-text">启动及初始化操作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#执行一个js文件"><span class="nav-number">2.</span> <span class="nav-text">执行一个js文件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#模块系统形成"><span class="nav-number">2.1.</span> <span class="nav-text">模块系统形成</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#process-binding-C-C-内建模块"><span class="nav-number">2.1.1.</span> <span class="nav-text">process.binding() C/C++内建模块</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#native-js模块"><span class="nav-number">2.1.2.</span> <span class="nav-text">native js模块</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#执行一个js文件（文件模块）"><span class="nav-number">2.2.</span> <span class="nav-text">执行一个js文件（文件模块）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">罗峡的博客</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/code/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/code/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/code/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/code/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length == 0) {
+       search_path = "search.xml";
+    }
+    var path = "/code/" + search_path;
+    // monitor main search box;
+
+    function proceedsearch() {
+      $("body").append('<div class="popoverlay">').css('overflow', 'hidden');
+      $('.popup').toggle();
+
+    }
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+    'use strict';
+    $.ajax({
+        url: path,
+        dataType: "xml",
+        async: true,
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            isfetched = true;
+            $('.popup').detach().appendTo('.header-inner');
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                var matchcounts = 0;
+                var str='<ul class=\"search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length > 1) {
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var content_index = [];
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_content = data.content.trim().replace(/<[^>]+>/g,"").toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    var index_content = -1;
+                    var first_occur = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title != '' && data_content != '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            index_content = data_content.indexOf(keyword);
+                            if( index_title < 0 && index_content < 0 ){
+                                isMatch = false;
+                            } else {
+                                if (index_content < 0) {
+                                    index_content = 0;
+                                }
+                                if (i == 0) {
+                                    first_occur = index_content;
+                                }
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        matchcounts += 1;
+                        str += "<li><a href='"+ data_url +"' class='search-result-title'>"+ data_title +"</a>";
+                        var content = data.content.trim().replace(/<[^>]+>/g,"");
+                        if (first_occur >= 0) {
+                            // cut out 100 characters
+                            var start = first_occur - 20;
+                            var end = first_occur + 80;
+                            if(start < 0){
+                                start = 0;
+                            }
+                            if(start == 0){
+                                end = 50;
+                            }
+                            if(end > content.length){
+                                end = content.length;
+                            }
+                            var match_content = content.substring(start, end);
+                            // highlight all keywords
+                            keywords.forEach(function(keyword){
+                                var regS = new RegExp(keyword, "gi");
+                                match_content = match_content.replace(regS, "<b class=\"search-keyword\">"+keyword+"</b>");
+                            });
+
+                            str += "<p class=\"search-result\">" + match_content +"...</p>"
+                        }
+                        str += "</li>";
+                    }
+                })};
+                str += "</ul>";
+                if (matchcounts == 0) { str = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>' }
+                if (keywords == "") { str = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>' }
+                $resultContent.innerHTML = str;
+            });
+            proceedsearch();
+        }
+    });}
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched == false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+
+    });
+
+    $('.popup-btn-close').click(function(e){
+      $('.popup').hide();
+      $(".popoverlay").remove();
+      $('body').css('overflow', '');
+    });
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+  </script>
+
+
+  
+
+  
+
+  
+<script type="text/javascript" async src="//push.zhanzhang.baidu.com/push.js">
+</script>
+
+
+</body>
+</html>

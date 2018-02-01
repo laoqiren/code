@@ -1,0 +1,904 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/code/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/code/lib/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/code/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="nodejs,ajax,跨域," />
+
+
+
+
+
+  <link rel="alternate" href="/code/atom.xml" title="罗峡的技术博客" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/code/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="由于出于安全方面的考虑，JavaScript有着跨源策略的限制，也就是某个域的网页只能对同域进行访问。本文记录几种跨域实现及我自己的实践。 本文总结以下方式实现跨域通信： 代理服务器 图像Ping iframe技术（iframe+document.domain;iframe+location.hash) window.">
+<meta name="keywords" content="nodejs,ajax,跨域">
+<meta property="og:type" content="article">
+<meta property="og:title" content="跨域通信总结">
+<meta property="og:url" content="http://luoxia.me/code/2016/05/19/跨域通信总结/index.html">
+<meta property="og:site_name" content="罗峡的技术博客">
+<meta property="og:description" content="由于出于安全方面的考虑，JavaScript有着跨源策略的限制，也就是某个域的网页只能对同域进行访问。本文记录几种跨域实现及我自己的实践。 本文总结以下方式实现跨域通信： 代理服务器 图像Ping iframe技术（iframe+document.domain;iframe+location.hash) window.name HTML5跨文档消息传递(XDM) JSONP CORS(跨站资源共享">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/jsonp.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/luoxia.png">
+<meta property="og:updated_time" content="2017-11-16T13:10:06.493Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="跨域通信总结">
+<meta name="twitter:description" content="由于出于安全方面的考虑，JavaScript有着跨源策略的限制，也就是某个域的网页只能对同域进行访问。本文记录几种跨域实现及我自己的实践。 本文总结以下方式实现跨域通信： 代理服务器 图像Ping iframe技术（iframe+document.domain;iframe+location.hash) window.name HTML5跨文档消息传递(XDM) JSONP CORS(跨站资源共享">
+<meta name="twitter:image" content="http://7xsi10.com1.z0.glb.clouddn.com/jsonp.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: undefined,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://luoxia.me/code/2016/05/19/跨域通信总结/"/>
+
+  <title> 跨域通信总结 | 罗峡的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?179492533449f84f24555d1cbf10462f";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/code/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">罗峡的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">爱技术，爱生活</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/code/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/code/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/code/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/code/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/code/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup">
+ <span class="search-icon fa fa-search"></span>
+ <input type="text" id="local-search-input">
+ <div id="local-search-result"></div>
+ <span class="popup-btn-close">close</span>
+</div>
+
+
+    </div>
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                跨域通信总结
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-05-19T23:01:53+08:00" content="2016-05-19">
+              2016-05-19
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/code/categories/JavaScript/" itemprop="url" rel="index">
+                    <span itemprop="name">JavaScript</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>由于出于安全方面的考虑，JavaScript有着跨源策略的限制，也就是某个域的网页只能对同域进行访问。本文记录几种跨域实现及我自己的实践。</p>
+<h4 id="本文总结以下方式实现跨域通信："><a href="#本文总结以下方式实现跨域通信：" class="headerlink" title="本文总结以下方式实现跨域通信："></a>本文总结以下方式实现跨域通信：</h4><ol>
+<li>代理服务器</li>
+<li>图像Ping</li>
+<li>iframe技术（iframe+document.domain;iframe+location.hash)</li>
+<li>window.name</li>
+<li>HTML5跨文档消息传递(XDM)</li>
+<li>JSONP</li>
+<li>CORS(跨站资源共享)<a id="more"></a>
+<h3 id="1-代理"><a href="#1-代理" class="headerlink" title="1. 代理"></a>1. 代理</h3></li>
+</ol>
+<p>所谓代理，就是用后台技术实现代理服务器，前端访问代理服务器，代理服务器向实际服务器发起请求，拿到数据再返回给前端。 例如一个网站有两个服务器www.Chongqing.com和www.Hangzhou.com，在杭州的话想访问重庆服务器的资源，先直接访问杭州服务器，杭州服务器再从重庆服务器拉取数据最后返回给杭州的user-agent.</p>
+<h3 id="2-图像ping"><a href="#2-图像ping" class="headerlink" title="2. 图像ping"></a>2. 图像ping</h3><h4 id="虽然js有同源现在，但是，在html里有几个元素可以没有限制的访问任何网站的内容，比如-img-iframe-script-，哈哈哈哈哈哈，那么，就可以利用这一点实现跨域咯。"><a href="#虽然js有同源现在，但是，在html里有几个元素可以没有限制的访问任何网站的内容，比如-img-iframe-script-，哈哈哈哈哈哈，那么，就可以利用这一点实现跨域咯。" class="headerlink" title="虽然js有同源现在，但是，在html里有几个元素可以没有限制的访问任何网站的内容，比如 img,iframe,script  ，哈哈哈哈哈哈，那么，就可以利用这一点实现跨域咯。"></a>虽然js有同源现在，但是，在html里有几个元素可以没有限制的访问任何网站的内容，比如 img,iframe,script  ，哈哈哈哈哈哈，那么，就可以利用这一点实现跨域咯。</h4><p>图像ping用于客户端和服务端进行单向的简单的通信,只能发送get请求，无法访问服务器响应文本，在这里不详解；<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> img = <span class="keyword">new</span> Image();</span><br><span class="line">img.src = <span class="string">'http://www.luoxia520.com?name=luoxia'</span>;</span><br></pre></td></tr></table></figure></p>
+<h3 id="3-iframe"><a href="#3-iframe" class="headerlink" title="3. iframe"></a>3. iframe</h3><h4 id="iframe-document-domain"><a href="#iframe-document-domain" class="headerlink" title="iframe+document.domain:"></a>iframe+document.domain:</h4><p>对于来自同一域名下的不同子域名，可以通过设置document.domain为相同值来实现跨域通信：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//www.luoxia520.com和p2p.luoxia520.com</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//在两者的index.html下设置:</span></span><br><span class="line"><span class="built_in">document</span>.domain = <span class="string">'luoxia520.com'</span>;</span><br></pre></td></tr></table></figure></p>
+<p>然后就可以通过內建iframe操作异域的对象了:</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//www.luoxia520.com</span></span><br><span class="line"><span class="keyword">var</span> ifr = <span class="built_in">document</span>.createElement(<span class="string">'iframe'</span>);</span><br><span class="line">ifr.src = <span class="string">'prp.luoxia520.com'</span>;</span><br><span class="line">ifr.syle.display = <span class="string">'none'</span>;</span><br><span class="line"><span class="built_in">document</span>.body.appendChild(ifr);</span><br><span class="line"><span class="keyword">var</span> otherDoc = ifr.contentDocument||ifr.contentWindow.document;</span><br><span class="line"><span class="comment">//其他操作</span></span><br></pre></td></tr></table></figure>
+<h4 id="location-hash和iframe"><a href="#location-hash和iframe" class="headerlink" title="location.hash和iframe:"></a>location.hash和iframe:</h4><p>location.hash值表示url地址的哈希值，如www.luoxia520.com#luoxia中#luoxia就是hash，改变某个网页的hash并不会刷新页面，我们可以在异域的iframe中直接改变ifame拥有者的hash值，但是有些浏览器是不允许异域的iframe改变其parent的hash的，我们可以增加一个代理的网页，这个网页和父级框架是同域的，然后这个代理框架就可以修改父级的hash了：</p>
+<p>发送方www.baidu.com/index.html:</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    parent.location.hash = <span class="string">'somedata'</span>;</span><br><span class="line">&#125; <span class="keyword">catch</span> (e) &#123;</span><br><span class="line">    <span class="comment">// ie、chrome的安全机制无法修改parent.location.hash，</span></span><br><span class="line">    <span class="comment">// 所以要利用一个中间的cnblogs域下的代理iframe</span></span><br><span class="line">    <span class="keyword">var</span> ifrproxy = <span class="built_in">document</span>.createElement(<span class="string">'iframe'</span>);</span><br><span class="line">    ifrproxy.style.display = <span class="string">'none'</span>;</span><br><span class="line">    ifrproxy.src = <span class="string">'www.luoxia520.com/proxy.html#somedata'</span>;    <span class="comment">// 注意该文件在"a.com"域下</span></span><br><span class="line">    <span class="built_in">document</span>.body.appendChild(ifrproxy);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>接受方www.luoxia520.com:</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"> <span class="keyword">var</span> ifr = <span class="built_in">document</span>.createElement(<span class="string">'iframe'</span>);</span><br><span class="line">    ifr.style.display = <span class="string">'none'</span>;</span><br><span class="line">    ifr.src = <span class="string">'htttp://www.baidu.com'</span>;</span><br><span class="line">    <span class="built_in">document</span>.body.appendChild(ifr);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">checkHash</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">var</span> data = location.hash ? location.hash.substring(<span class="number">1</span>) : <span class="string">''</span>;</span><br><span class="line">        <span class="keyword">if</span> (<span class="built_in">console</span>.log) &#123;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">'Now the data is '</span>+data);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">catch</span>(e) &#123;&#125;;</span><br><span class="line">&#125;</span><br><span class="line">setInterval(checkHash, <span class="number">2000</span>);</span><br></pre></td></tr></table></figure>
+<p>代理方www.luoxia520.com/proxy.html:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//因为parent.parent和自身属于同一个域，所以可以改变其location.hash的值</span></span><br><span class="line">parent.parent.location.hash = self.location.hash.substring(<span class="number">1</span>);</span><br></pre></td></tr></table></figure></p>
+<h3 id="4-window-name"><a href="#4-window-name" class="headerlink" title="4. window.name:"></a>4. window.name:</h3><p>window下有一个全局的name属性，出于安全方面考虑，某个页面只能访问与其同域下的网页的window.name属性。</p>
+<p>对于一个框架，当其加载某个页面时，这个页面的window.name属性会报错在这个frame下，现在当它加载另一个页面时，这个时候frame保存的windwo.name属性将不会发生变化。</p>
+<p>利用上述原理，我们可以在将某个页面的iframe的src指向异域的页面，获取到其window.name后，我们再将iframe的src指向一个同源的‘代理’页面，这样我们就可以访问到这个window.name了：</p>
+<p>发送消息:www.baidu.com:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">&lt;script type=<span class="string">"text/javascript"</span>&gt;</span><br><span class="line">    <span class="built_in">window</span>.name = <span class="string">'I was there!'</span>;    <span class="comment">// 这里是要传输的数据，大小一般为2M，IE和firefox下可以大至32M左右</span></span><br><span class="line">                                     <span class="comment">// 数据格式可以自定义，如json、字符串</span></span><br><span class="line">&lt;<span class="regexp">/script&gt;</span></span><br></pre></td></tr></table></figure></p>
+<p>接受消息:www.luoxia520.com/index.html</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">&lt;script type=<span class="string">"text/javascript"</span>&gt;</span><br><span class="line">    <span class="keyword">var</span> state = <span class="number">0</span>, </span><br><span class="line">    iframe = <span class="built_in">document</span>.createElement(<span class="string">'iframe'</span>),</span><br><span class="line">    loadfn = <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (state === <span class="number">1</span>) &#123;</span><br><span class="line">            <span class="keyword">var</span> data = iframe.contentWindow.name;    <span class="comment">// 读取数据</span></span><br><span class="line">            alert(data);    <span class="comment">//弹出'I was there!'</span></span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (state === <span class="number">0</span>) &#123;</span><br><span class="line">            state = <span class="number">1</span>;</span><br><span class="line">            iframe.contentWindow.location = <span class="string">"http://www.luoxia520.com/proxy.html"</span>;    <span class="comment">// 设置的代理文件</span></span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;;</span><br><span class="line">    iframe.src = <span class="string">'http://b.com/data.html'</span>;</span><br><span class="line">    iframe.onload  = loadfn;</span><br><span class="line">    <span class="built_in">document</span>.body.appendChild(iframe);</span><br><span class="line">&lt;<span class="regexp">/script&gt;</span></span><br></pre></td></tr></table></figure>
+<h3 id="5-HTML5跨文档消息传递-XDM"><a href="#5-HTML5跨文档消息传递-XDM" class="headerlink" title="5.HTML5跨文档消息传递(XDM):"></a>5.HTML5跨文档消息传递(XDM):</h3><p>跨文档消息传递是HTML5提供的用于网页文档之间互相接收和发送消息的功能</p>
+<p><strong>发送消息</strong><br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">otherWindow.postMessage(message,targetOrigin);</span><br><span class="line"><span class="comment">//message可以是字符串，js对象可通过转换成json字符串的形式传递</span></span><br></pre></td></tr></table></figure></p>
+<p>otherWindow是指包含其他页面的内联框架的contentWindow,targetOrigin是规定接受方页面必须来自于哪个域，*表示允许所以域，如果满足要求，则会向内联框架内的页面发送message<br><strong>接收信息</strong></p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">window</span>.addEventListener(<span class="string">'message'</span>,<span class="function"><span class="keyword">function</span>(<span class="params">event</span>)</span>&#123;...&#125;,<span class="literal">false</span>);</span><br></pre></td></tr></table></figure>
+<p>这里window是内联框架指向的页面的window对象，message事件的回调函数的event对象参数有三个属性：data(数据）,origin(发送方的域），source(发送方的window对象代理），这个source只是发送方window的代理，只用于调用postMessage方法，用于向发送方回复消息。</p>
+<h3 id="6-JSONP"><a href="#6-JSONP" class="headerlink" title="6. JSONP"></a>6. JSONP</h3><h4 id="啥是JSONP-JSON-with-padding（参数式json-，实际上是对json的一种应用方法，将json数据传给回调函数，JSONP是通过script元素设计的，如下："><a href="#啥是JSONP-JSON-with-padding（参数式json-，实际上是对json的一种应用方法，将json数据传给回调函数，JSONP是通过script元素设计的，如下：" class="headerlink" title="啥是JSONP? JSON with padding（参数式json)，实际上是对json的一种应用方法，将json数据传给回调函数，JSONP是通过script元素设计的，如下："></a>啥是JSONP? JSON with padding（参数式json)，实际上是对json的一种应用方法，将json数据传给回调函数，JSONP是通过script元素设计的，如下：</h4><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&lt;script src=<span class="string">'www.luoxia520.com/blog/?callback=callback'</span>&gt;<span class="xml"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span></span><br><span class="line">&lt;script&gt;</span><br><span class="line">	<span class="function"><span class="keyword">function</span> <span class="title">callback</span>(<span class="params">data</span>)</span>&#123;</span><br><span class="line">		<span class="built_in">console</span>.log(data.name);</span><br><span class="line">	&#125;</span><br><span class="line">&lt;<span class="regexp">/script&gt;</span></span><br></pre></td></tr></table></figure>
+<p>这里通过script可加载任意域内容的特点对异域进行强求，查询字符串包含callback参数，服务器传回的是可执行的js代码，即对于的callback(data)调用。当然服务端代码也要响应的更改。下面介绍。</p>
+<h3 id="这里以jquery的ajax为例"><a href="#这里以jquery的ajax为例" class="headerlink" title="这里以jquery的ajax为例:"></a>这里以jquery的ajax为例:</h3><ol>
+<li><p>前端ajax请求代码: testJsonp.html</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">$(<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        $.ajax(&#123;</span><br><span class="line">            dataType: <span class="string">'jsonp'</span>,</span><br><span class="line">            url: <span class="string">'http://localhost:8088'</span>,</span><br><span class="line">            type:<span class="string">'get'</span>,</span><br><span class="line">            success: <span class="function"><span class="keyword">function</span>(<span class="params">data</span>)</span>&#123;</span><br><span class="line">                   $(<span class="string">'#name'</span>).text(data);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line"> &#125;);</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>用Nodejs实现得异域服务器代码:</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> http = <span class="built_in">require</span>(<span class="string">'http'</span>);</span><br><span class="line"><span class="keyword">var</span> urlLib = <span class="built_in">require</span>(<span class="string">'url'</span>);</span><br><span class="line"><span class="keyword">var</span> data = &#123;<span class="attr">name</span>:<span class="string">'luoxia'</span>,<span class="attr">year</span>:<span class="number">18</span>&#125;;</span><br><span class="line">http.createServer(<span class="function"><span class="keyword">function</span>(<span class="params">req,res</span>)</span>&#123;</span><br><span class="line">    <span class="keyword">var</span> parms = urlLib.parse(req.url,<span class="literal">true</span>);</span><br><span class="line">    <span class="keyword">var</span> str = parms.query.callback + <span class="string">'('</span> + <span class="built_in">JSON</span>.stringify(data) +<span class="string">')'</span>;</span><br><span class="line">    res.end(str);</span><br><span class="line">&#125;).listen(<span class="number">8088</span>);</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>jquery的ajax也是利用script的原理，只不过只要设置了dataType为jsonp的话，就自动回发送jsonp请求，我们可以看到testJsonp.html请求的URL:<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/jsonp.png" alt="jsonp"><br>看到了吧，自动加上了callback查询字符串，callback的值是动态生成的，当然也可以指定其值，没啥影响，还有，前面的callback这个，也可以改的，通过jsonp属性指定，当然这是细节。</p>
+<p>nodejs通过查询callback值，即回调函数名，然后返回传递了json数据的可执行js字符串。</p>
+<p>最后成功地实现了跨域，哈哈哈哈哈哈哈哈。<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/luoxia.png" alt="luoxia"></p>
+<h5 id="jsonp只能发送get请求。"><a href="#jsonp只能发送get请求。" class="headerlink" title="jsonp只能发送get请求。"></a>jsonp只能发送get请求。</h5><p>当然这里开始遇到了个问题，console老是报错</p>
+<pre><code>Failed to load resource: net::ERR_CACHE_MISS
+</code></pre><p>，好大一半天不知道咋解决，后面在论坛的悠悠建议下，给ajax请求url加了个协议，丫的，成了。。。或许无法自动补全吧，细节啊。。。。</p>
+<h3 id="7-CORS"><a href="#7-CORS" class="headerlink" title="7. CORS"></a>7. CORS</h3><h5 id="CORS即跨源资源共享，是W3C的草案，定义了必要时浏览器和异域服务器该如何进行跨域的沟通。CORS与JSONP相比，无疑更为先进、方便和可靠。"><a href="#CORS即跨源资源共享，是W3C的草案，定义了必要时浏览器和异域服务器该如何进行跨域的沟通。CORS与JSONP相比，无疑更为先进、方便和可靠。" class="headerlink" title="CORS即跨源资源共享，是W3C的草案，定义了必要时浏览器和异域服务器该如何进行跨域的沟通。CORS与JSONP相比，无疑更为先进、方便和可靠。"></a>CORS即跨源资源共享，是W3C的草案，定义了必要时浏览器和异域服务器该如何进行跨域的沟通。CORS与JSONP相比，无疑更为先进、方便和可靠。</h5><ol>
+<li><p>JSONP只能实现GET请求，而CORS支持所有类型的HTTP请求。</p>
+</li>
+<li><p>使用CORS，开发者可以使用普通的XMLHttpRequest发起请求和获得数据，比起JSONP有更好的错误处理。</p>
+</li>
+<li><p>JSONP主要被老的浏览器支持，它们往往不支持CORS，而绝大多数现代浏览器都已经支持了CORS</p>
+</li>
+</ol>
+<p>要求请求头加入<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Origin: host:port</span><br></pre></td></tr></table></figure></p>
+<p>响应头必须加入和请求头同样host:port的响应信息:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Access-Control-Allow-Origin: host:port</span><br></pre></td></tr></table></figure></p>
+<p>IE8以下的就别想了,IE8，IE9可以通过XDR实现，反正我觉得，垃圾IE,现在微软自己都放弃治疗了。。。。。。</p>
+<p>来具体看看实现例子，还是jquery的ajax:</p>
+<p>前端testCORS.html:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">$(<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        $.ajax(&#123;</span><br><span class="line">            url: <span class="string">'http://localhost:8088'</span>,</span><br><span class="line">            type:<span class="string">'get'</span>,</span><br><span class="line">            success: <span class="function"><span class="keyword">function</span>(<span class="params">data</span>)</span>&#123;</span><br><span class="line">                   $(<span class="string">'#name'</span>).text(<span class="built_in">JSON</span>.parse(data).name);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line"> &#125;);</span><br></pre></td></tr></table></figure></p>
+<p>Node： CORS.js<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> http = <span class="built_in">require</span>(<span class="string">'http'</span>);</span><br><span class="line"><span class="comment">//var urlLib = require('url');</span></span><br><span class="line"><span class="keyword">var</span> data = &#123;<span class="attr">name</span>:<span class="string">'luoxia'</span>,<span class="attr">year</span>:<span class="number">18</span>&#125;;</span><br><span class="line">http.createServer(<span class="function"><span class="keyword">function</span>(<span class="params">req,res</span>)</span>&#123;</span><br><span class="line">    <span class="keyword">var</span> parms = urlLib.parse(req.url,<span class="literal">true</span>);</span><br><span class="line">    res.writeHead(<span class="number">200</span>,&#123;<span class="string">'Access-Control-Allow-Origin'</span>:<span class="string">'*'</span>,<span class="string">'Access-Control-Allow-Method'</span>:<span class="string">'GET,POST'</span>&#125;);</span><br><span class="line">    res.end(<span class="built_in">JSON</span>.stringify(data));</span><br><span class="line">&#125;).listen(<span class="number">8088</span>);</span><br></pre></td></tr></table></figure></p>
+<p>这里Access-Control-Allow-Origin可以设置为*代表允许说有域，当然也可以写具体的url。<br>最终是没问题的：</p>
+<p>CORS一定程度上缓解了CSRF,XSS等安全问题。</p>
+<p>明天就5.20，国际计量节！单身狗过国际计量节，new对象去了。。。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+<div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/code/images/wechat.jpg" alt="罗峡的博客 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎扫描上面的微信公众号二维码，关注我的个人公众号：全栈前端</div>
+</div>
+
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/code/images/wechat_pay.png" alt="罗峡的博客 WeChat Pay"/>
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/code/images/ali_pay.jpg" alt="罗峡的博客 Alipay"/>
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/code/tags/nodejs/" rel="tag">#nodejs</a>
+          
+            <a href="/code/tags/ajax/" rel="tag">#ajax</a>
+          
+            <a href="/code/tags/跨域/" rel="tag">#跨域</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/code/2016/05/07/requireJS/" rel="next" title="requireJS">
+                <i class="fa fa-chevron-left"></i> requireJS
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/code/2016/06/01/基于socket-io的聊天应用/" rel="prev" title="基于socket.io的聊天应用">
+                基于socket.io的聊天应用 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/code/images/head.jpg"
+               alt="罗峡的博客" />
+          <p class="site-author-name" itemprop="name">罗峡的博客</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/code/archives">
+              <span class="site-state-item-count">43</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/code/categories">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/code/tags">
+                <span class="site-state-item-count">85</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/code/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/laoqiren" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://luoxia.me/life" title="生活随笔" target="_blank">生活随笔</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#本文总结以下方式实现跨域通信："><span class="nav-number">1.</span> <span class="nav-text">本文总结以下方式实现跨域通信：</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-代理"><span class="nav-number"></span> <span class="nav-text">1. 代理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-图像ping"><span class="nav-number"></span> <span class="nav-text">2. 图像ping</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#虽然js有同源现在，但是，在html里有几个元素可以没有限制的访问任何网站的内容，比如-img-iframe-script-，哈哈哈哈哈哈，那么，就可以利用这一点实现跨域咯。"><span class="nav-number">1.</span> <span class="nav-text">虽然js有同源现在，但是，在html里有几个元素可以没有限制的访问任何网站的内容，比如 img,iframe,script  ，哈哈哈哈哈哈，那么，就可以利用这一点实现跨域咯。</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-iframe"><span class="nav-number"></span> <span class="nav-text">3. iframe</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#iframe-document-domain"><span class="nav-number">1.</span> <span class="nav-text">iframe+document.domain:</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#location-hash和iframe"><span class="nav-number">2.</span> <span class="nav-text">location.hash和iframe:</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-window-name"><span class="nav-number"></span> <span class="nav-text">4. window.name:</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-HTML5跨文档消息传递-XDM"><span class="nav-number"></span> <span class="nav-text">5.HTML5跨文档消息传递(XDM):</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-JSONP"><span class="nav-number"></span> <span class="nav-text">6. JSONP</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#啥是JSONP-JSON-with-padding（参数式json-，实际上是对json的一种应用方法，将json数据传给回调函数，JSONP是通过script元素设计的，如下："><span class="nav-number">1.</span> <span class="nav-text">啥是JSONP? JSON with padding（参数式json)，实际上是对json的一种应用方法，将json数据传给回调函数，JSONP是通过script元素设计的，如下：</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#这里以jquery的ajax为例"><span class="nav-number"></span> <span class="nav-text">这里以jquery的ajax为例:</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#jsonp只能发送get请求。"><span class="nav-number">0.1.</span> <span class="nav-text">jsonp只能发送get请求。</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-CORS"><span class="nav-number"></span> <span class="nav-text">7. CORS</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#CORS即跨源资源共享，是W3C的草案，定义了必要时浏览器和异域服务器该如何进行跨域的沟通。CORS与JSONP相比，无疑更为先进、方便和可靠。"><span class="nav-number">0.1.</span> <span class="nav-text">CORS即跨源资源共享，是W3C的草案，定义了必要时浏览器和异域服务器该如何进行跨域的沟通。CORS与JSONP相比，无疑更为先进、方便和可靠。</span></a></li></ol></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">罗峡的博客</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/code/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/code/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/code/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/code/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length == 0) {
+       search_path = "search.xml";
+    }
+    var path = "/code/" + search_path;
+    // monitor main search box;
+
+    function proceedsearch() {
+      $("body").append('<div class="popoverlay">').css('overflow', 'hidden');
+      $('.popup').toggle();
+
+    }
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+    'use strict';
+    $.ajax({
+        url: path,
+        dataType: "xml",
+        async: true,
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            isfetched = true;
+            $('.popup').detach().appendTo('.header-inner');
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                var matchcounts = 0;
+                var str='<ul class=\"search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length > 1) {
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var content_index = [];
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_content = data.content.trim().replace(/<[^>]+>/g,"").toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    var index_content = -1;
+                    var first_occur = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title != '' && data_content != '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            index_content = data_content.indexOf(keyword);
+                            if( index_title < 0 && index_content < 0 ){
+                                isMatch = false;
+                            } else {
+                                if (index_content < 0) {
+                                    index_content = 0;
+                                }
+                                if (i == 0) {
+                                    first_occur = index_content;
+                                }
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        matchcounts += 1;
+                        str += "<li><a href='"+ data_url +"' class='search-result-title'>"+ data_title +"</a>";
+                        var content = data.content.trim().replace(/<[^>]+>/g,"");
+                        if (first_occur >= 0) {
+                            // cut out 100 characters
+                            var start = first_occur - 20;
+                            var end = first_occur + 80;
+                            if(start < 0){
+                                start = 0;
+                            }
+                            if(start == 0){
+                                end = 50;
+                            }
+                            if(end > content.length){
+                                end = content.length;
+                            }
+                            var match_content = content.substring(start, end);
+                            // highlight all keywords
+                            keywords.forEach(function(keyword){
+                                var regS = new RegExp(keyword, "gi");
+                                match_content = match_content.replace(regS, "<b class=\"search-keyword\">"+keyword+"</b>");
+                            });
+
+                            str += "<p class=\"search-result\">" + match_content +"...</p>"
+                        }
+                        str += "</li>";
+                    }
+                })};
+                str += "</ul>";
+                if (matchcounts == 0) { str = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>' }
+                if (keywords == "") { str = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>' }
+                $resultContent.innerHTML = str;
+            });
+            proceedsearch();
+        }
+    });}
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched == false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+
+    });
+
+    $('.popup-btn-close').click(function(e){
+      $('.popup').hide();
+      $(".popoverlay").remove();
+      $('body').css('overflow', '');
+    });
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+  </script>
+
+
+  
+
+  
+
+  
+<script type="text/javascript" async src="//push.zhanzhang.baidu.com/push.js">
+</script>
+
+
+</body>
+</html>

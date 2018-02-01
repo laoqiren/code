@@ -1,0 +1,879 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/code/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/code/lib/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/code/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="buffer,stream," />
+
+
+
+
+
+  <link rel="alternate" href="/code/atom.xml" title="罗峡的技术博客" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/code/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="这篇文章将开启我的Node源码解读系列，结合源码和官方文档，探索其背后的原理。首先想谈谈Stream这强大而又容易误解的功能，文章主要从Buffer/Stream与内存分配的关系角度来分析。">
+<meta name="keywords" content="buffer,stream">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Buffer&#x2F;Stream与内存管理">
+<meta property="og:url" content="http://luoxia.me/code/2017/06/29/Buffer-Stream与内存管理/index.html">
+<meta property="og:site_name" content="罗峡的技术博客">
+<meta property="og:description" content="这篇文章将开启我的Node源码解读系列，结合源码和官方文档，探索其背后的原理。首先想谈谈Stream这强大而又容易误解的功能，文章主要从Buffer/Stream与内存分配的关系角度来分析。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/memory.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/f9a3e300-9b20-11e4-9e14-a6938b3327f0.png">
+<meta property="og:updated_time" content="2017-11-16T13:10:06.483Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Buffer&#x2F;Stream与内存管理">
+<meta name="twitter:description" content="这篇文章将开启我的Node源码解读系列，结合源码和官方文档，探索其背后的原理。首先想谈谈Stream这强大而又容易误解的功能，文章主要从Buffer/Stream与内存分配的关系角度来分析。">
+<meta name="twitter:image" content="http://7xsi10.com1.z0.glb.clouddn.com/memory.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: undefined,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://luoxia.me/code/2017/06/29/Buffer-Stream与内存管理/"/>
+
+  <title> Buffer/Stream与内存管理 | 罗峡的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?179492533449f84f24555d1cbf10462f";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/code/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">罗峡的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">爱技术，爱生活</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/code/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/code/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/code/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/code/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/code/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup">
+ <span class="search-icon fa fa-search"></span>
+ <input type="text" id="local-search-input">
+ <div id="local-search-result"></div>
+ <span class="popup-btn-close">close</span>
+</div>
+
+
+    </div>
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Buffer/Stream与内存管理
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2017-06-29T21:40:28+08:00" content="2017-06-29">
+              2017-06-29
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/code/categories/Nodejs/" itemprop="url" rel="index">
+                    <span itemprop="name">Nodejs</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>这篇文章将开启我的Node源码解读系列，结合源码和官方文档，探索其背后的原理。首先想谈谈Stream这强大而又容易误解的功能，文章主要从Buffer/Stream与内存分配的关系角度来分析。</p>
+<a id="more"></a>
+<h1 id="Buffer"><a href="#Buffer" class="headerlink" title="Buffer"></a>Buffer</h1><h2 id="单次分配大小限制"><a href="#单次分配大小限制" class="headerlink" title="单次分配大小限制"></a>单次分配大小限制</h2><p>一次性分配Buffer的大小限制(src/node_buffer.h)：<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">unsigned</span> <span class="keyword">int</span> kMaxLength =</span><br><span class="line">    <span class="keyword">sizeof</span>(<span class="keyword">int32_t</span>) == <span class="keyword">sizeof</span>(<span class="keyword">intptr_t</span>) ? <span class="number">0x3fffffff</span> : <span class="number">0x7fffffff</span>;</span><br></pre></td></tr></table></figure></p>
+<p><code>Buffer.from(), Buffer.alloc(),　Buffer.allocUnsafe()</code>这些用于构造Buffer对象的方法分配内存前都会检查size参数:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">assertSize</span>(<span class="params">size</span>) </span>&#123;</span><br><span class="line">...</span><br><span class="line">  <span class="keyword">else</span> <span class="keyword">if</span> (size &gt; binding.kMaxLength) &#123;</span><br><span class="line">    err = <span class="keyword">new</span> <span class="built_in">RangeError</span>(<span class="string">'"size" argument must not be larger '</span> +</span><br><span class="line">                         <span class="string">'than '</span> + binding.kMaxLength);</span><br><span class="line">  &#125;</span><br><span class="line">...</span><br></pre></td></tr></table></figure></p>
+<h2 id="C-直接分配策略"><a href="#C-直接分配策略" class="headerlink" title="C++直接分配策略"></a>C++直接分配策略</h2><p>由C++直接分配内存，实际上是由ArrayBuffer分配内存，在此基础上建立Uint8Array的View,Buffer继承该View。</p>
+<p><strong>Buffer.alloc()</strong><br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">Buffer.alloc = <span class="function"><span class="keyword">function</span>(<span class="params">size, fill, encoding</span>) </span>&#123;</span><br><span class="line">  assertSize(size);</span><br><span class="line">  <span class="keyword">if</span> (size &gt; <span class="number">0</span> &amp;&amp; fill !== <span class="literal">undefined</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">typeof</span> encoding !== <span class="string">'string'</span>)</span><br><span class="line">      encoding = <span class="literal">undefined</span>;</span><br><span class="line">    <span class="keyword">return</span> createUnsafeBuffer(size).fill(fill, encoding);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> FastBuffer(size);</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">createUnsafeBuffer</span>(<span class="params">size</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> FastBuffer(createUnsafeArrayBuffer(size));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">createUnsafeArrayBuffer</span>(<span class="params">size</span>) </span>&#123;</span><br><span class="line">  zeroFill[<span class="number">0</span>] = <span class="number">0</span>;<span class="comment">//设定C++默认填充策略为不填充</span></span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="built_in">ArrayBuffer</span>(size);</span><br><span class="line">  &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    zeroFill[<span class="number">0</span>] = <span class="number">1</span>;　<span class="comment">//分配完后，恢复填充策略</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">FastBuffer</span> <span class="keyword">extends</span> <span class="title">Uint8Array</span> </span>&#123;</span><br><span class="line">  <span class="keyword">constructor</span>(arg1, arg2, arg3) &#123;</span><br><span class="line">    <span class="keyword">super</span>(arg1, arg2, arg3);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><strong>Buffer.allocUnSafeSlow（）</strong><br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Buffer.allocUnsafeSlow = <span class="function"><span class="keyword">function</span>(<span class="params">size</span>) </span>&#123;</span><br><span class="line">  assertSize(size);</span><br><span class="line">  <span class="keyword">return</span> createUnsafeBuffer(size);</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<p><strong>Buffer.from(ArrayBuffer)</strong><br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">return</span> <span class="keyword">new</span> FastBuffer(obj, byteOffset, length);</span><br></pre></td></tr></table></figure></p>
+<p>可见alloc()没指定填充和from(ArrayBuffer)都不经过createUnsafeBuffer()，就不会有默认填充策略的改变，就直接使用ES　ArrayBuffer的默认行为（即默认字节值为0),保证安全性。</p>
+<h3 id="slab与C-直接分配结合"><a href="#slab与C-直接分配结合" class="headerlink" title="slab与C++直接分配结合"></a>slab与C++直接分配结合</h3><p><strong>Buffer.from(String)</strong>:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">if</span> (length &gt;= (Buffer.poolSize &gt;&gt;&gt; <span class="number">1</span>))</span><br><span class="line">  <span class="keyword">return</span> binding.createFromString(string, encoding);</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (length &gt; (poolSize - poolOffset))</span><br><span class="line">  createPool();</span><br><span class="line"><span class="keyword">var</span> b = <span class="keyword">new</span> FastBuffer(allocPool, poolOffset, length);</span><br><span class="line"><span class="keyword">const</span> actual = b.write(string, encoding);</span><br><span class="line"><span class="keyword">if</span> (actual !== length) &#123;</span><br><span class="line">  <span class="comment">// byteLength() may overestimate. That's a rare case, though.</span></span><br><span class="line">  b = <span class="keyword">new</span> FastBuffer(allocPool, poolOffset, actual);</span><br><span class="line">&#125;</span><br><span class="line">poolOffset += actual;</span><br><span class="line">alignPool();</span><br><span class="line"><span class="keyword">return</span> b;</span><br></pre></td></tr></table></figure></p>
+<p>  当字符串长度大于等于poolSize/2时，C++直接分配内存;反之则采用slab分配策略，即从pool里通过slice方式共享pool的一部分内存，剩余的再给其他Buffer用。</p>
+<p>  这里的poolSize默认值有设置:<br>  <figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Buffer.poolSize = <span class="number">8</span> * <span class="number">1024</span>;</span><br></pre></td></tr></table></figure></p>
+<p>当然这只是在Buffer类里而已，后面分析的Stream类就会有不同的poolSize,而不同stream实现又会有差别。</p>
+<p><strong>Buffer.from(Array/Buffer/TypedArray)</strong>和<strong>Buffer.allocUnsafe()</strong>：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">allocate</span>(<span class="params">size</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (size &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> FastBuffer();</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (size &lt; (Buffer.poolSize &gt;&gt;&gt; <span class="number">1</span>)) &#123;</span><br><span class="line">    <span class="keyword">if</span> (size &gt; (poolSize - poolOffset))</span><br><span class="line">      createPool();</span><br><span class="line">    <span class="keyword">var</span> b = <span class="keyword">new</span> FastBuffer(allocPool, poolOffset, size);</span><br><span class="line">    poolOffset += size;</span><br><span class="line">    alignPool();</span><br><span class="line">    <span class="keyword">return</span> b;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> createUnsafeBuffer(size);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>来一张图:</p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/memory.png" alt="http://7xsi10.com1.z0.glb.clouddn.com/memory.png"></p>
+<h1 id="Stream"><a href="#Stream" class="headerlink" title="Stream"></a>Stream</h1><h2 id="highWaterMark"><a href="#highWaterMark" class="headerlink" title="highWaterMark"></a>highWaterMark</h2><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> hwm = options.highWaterMark;</span><br><span class="line"><span class="keyword">var</span> defaultHwm = <span class="keyword">this</span>.objectMode ? <span class="number">16</span> : <span class="number">16</span> * <span class="number">1024</span>;</span><br><span class="line"><span class="keyword">this</span>.highWaterMark = (hwm || hwm === <span class="number">0</span>) ? hwm : defaultHwm;</span><br><span class="line"><span class="keyword">this</span>.highWaterMark = <span class="built_in">Math</span>.floor(<span class="keyword">this</span>.highWaterMark);</span><br></pre></td></tr></table></figure>
+<p>默认为16个对象(objectMode下)和16KB，而针对于不同的stream实现，又会对其进行重写，如fs模块的readStream:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (options.highWaterMark === <span class="literal">undefined</span>)</span><br><span class="line">    options.highWaterMark = <span class="number">64</span> * <span class="number">1024</span>;</span><br></pre></td></tr></table></figure></p>
+<p>默认为64KB</p>
+<h2 id="过程"><a href="#过程" class="headerlink" title="过程"></a>过程</h2><p>整个过程进行了两层抽象，一层是stream层的，具有一个BufferList，源码参照<code>/lib/internal/streams/BufferList.js</code><br>这一层用于存储将要消费的Buffer队列；而另一层是内部Buffer,通过slab分配内存的方式，从源文件里读出特定大小的数据，然后通过slice()方法，将这部分内存push到BufferList里。</p>
+<h3 id="实现-read-方法"><a href="#实现-read-方法" class="headerlink" title="实现_read()方法"></a>实现_read()方法</h3><p>._read()方法里去调用源资源的read()操作，读出来的数据暂时存在内部buffer里</p>
+<p>fs模块的ReadStream实现的_.read()方法里:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line">ReadStream.prototype._read = <span class="function"><span class="keyword">function</span>(<span class="params">n</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">typeof</span> <span class="keyword">this</span>.fd !== <span class="string">'number'</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>.once(<span class="string">'open'</span>, <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="keyword">this</span>._read(n);</span><br><span class="line">    &#125;);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">this</span>.destroyed)</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (!pool || pool.length - pool.used &lt; kMinPoolSpace) &#123;</span><br><span class="line">    <span class="comment">// discard the old pool.</span></span><br><span class="line">    allocNewPool(<span class="keyword">this</span>._readableState.highWaterMark);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">var</span> thisPool = pool;</span><br><span class="line">  <span class="keyword">var</span> toRead = <span class="built_in">Math</span>.min(pool.length - pool.used, n);</span><br><span class="line">  <span class="keyword">var</span> start = pool.used;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">this</span>.pos !== <span class="literal">undefined</span>)</span><br><span class="line">    toRead = <span class="built_in">Math</span>.min(<span class="keyword">this</span>.end - <span class="keyword">this</span>.pos + <span class="number">1</span>, toRead);</span><br><span class="line">  <span class="keyword">if</span> (toRead &lt;= <span class="number">0</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>.push(<span class="literal">null</span>);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">var</span> self = <span class="keyword">this</span>;</span><br><span class="line">  fs.read(<span class="keyword">this</span>.fd, pool, pool.used, toRead, <span class="keyword">this</span>.pos, onread);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">this</span>.pos !== <span class="literal">undefined</span>)</span><br><span class="line">    <span class="keyword">this</span>.pos += toRead;</span><br><span class="line">  pool.used += toRead;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">onread</span>(<span class="params">er, bytesRead</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (er) &#123;</span><br><span class="line">      <span class="keyword">if</span> (self.autoClose) &#123;</span><br><span class="line">        self.destroy();</span><br><span class="line">      &#125;</span><br><span class="line">      self.emit(<span class="string">'error'</span>, er);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">var</span> b = <span class="literal">null</span>;</span><br><span class="line">      <span class="keyword">if</span> (bytesRead &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        self.bytesRead += bytesRead;</span><br><span class="line">        b = thisPool.slice(start, start + bytesRead);</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      self.push(b);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<p>可以看到，实际上每次从源文件里读取的数据大小toRead为<code>var toRead = Math.min(pool.length - pool.used, n);</code><br>然后通过slice()将读出来的数据所在这块内存push到Stream的BufferList里(其实一次push过程并不一定只会slice一次，如果一次的slice过来后<code>state.length &lt; state.highWaterMark</code>,还会循环继续从内部buffer读，具体源代码可以查看push方法有关的maybeReadMore()方法)</p>
+<h3 id="从Stream-read-里来看"><a href="#从Stream-read-里来看" class="headerlink" title="从Stream.read()里来看:"></a>从Stream.read()里来看:</h3><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br></pre></td><td class="code"><pre><span class="line">Readable.prototype.read = <span class="function"><span class="keyword">function</span>(<span class="params">n</span>) </span>&#123;</span><br><span class="line">  debug(<span class="string">'read'</span>, n);</span><br><span class="line">  n = <span class="built_in">parseInt</span>(n, <span class="number">10</span>);</span><br><span class="line">  <span class="keyword">var</span> state = <span class="keyword">this</span>._readableState;</span><br><span class="line">  <span class="keyword">var</span> nOrig = n;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (n !== <span class="number">0</span>)</span><br><span class="line">    state.emittedReadable = <span class="literal">false</span>;</span><br><span class="line">  <span class="keyword">if</span> (n === <span class="number">0</span> &amp;&amp;</span><br><span class="line">      state.needReadable &amp;&amp;</span><br><span class="line">      (state.length &gt;= state.highWaterMark || state.ended)) &#123;</span><br><span class="line">    debug(<span class="string">'read: emitReadable'</span>, state.length, state.ended);</span><br><span class="line">    <span class="keyword">if</span> (state.length === <span class="number">0</span> &amp;&amp; state.ended)</span><br><span class="line">      endReadable(<span class="keyword">this</span>);</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">      emitReadable(<span class="keyword">this</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  n = howMuchToRead(n, state);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (n === <span class="number">0</span> &amp;&amp; state.ended) &#123;</span><br><span class="line">    <span class="keyword">if</span> (state.length === <span class="number">0</span>)</span><br><span class="line">      endReadable(<span class="keyword">this</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">var</span> doRead = state.needReadable;</span><br><span class="line">  debug(<span class="string">'need readable'</span>, doRead);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (state.length === <span class="number">0</span> || state.length - n &lt; state.highWaterMark) &#123;</span><br><span class="line">    doRead = <span class="literal">true</span>;</span><br><span class="line">    debug(<span class="string">'length less than watermark'</span>, doRead);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (state.ended || state.reading) &#123;</span><br><span class="line">    doRead = <span class="literal">false</span>;</span><br><span class="line">    debug(<span class="string">'reading or ended'</span>, doRead);</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (doRead) &#123;</span><br><span class="line">    debug(<span class="string">'do read'</span>);</span><br><span class="line">    state.reading = <span class="literal">true</span>;</span><br><span class="line">    state.sync = <span class="literal">true</span>;</span><br><span class="line">    <span class="keyword">if</span> (state.length === <span class="number">0</span>)</span><br><span class="line">      state.needReadable = <span class="literal">true</span>;</span><br><span class="line">    <span class="keyword">this</span>._read(state.highWaterMark);</span><br><span class="line">    state.sync = <span class="literal">false</span>;</span><br><span class="line">    <span class="keyword">if</span> (!state.reading)</span><br><span class="line">      n = howMuchToRead(nOrig, state);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">var</span> ret;</span><br><span class="line">  <span class="keyword">if</span> (n &gt; <span class="number">0</span>)</span><br><span class="line">    ret = fromList(n, state);</span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">    ret = <span class="literal">null</span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (ret === <span class="literal">null</span>) &#123;</span><br><span class="line">    state.needReadable = <span class="literal">true</span>;</span><br><span class="line">    n = <span class="number">0</span>;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    state.length -= n;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (state.length === <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (!state.ended)</span><br><span class="line">      state.needReadable = <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (nOrig !== n &amp;&amp; state.ended)</span><br><span class="line">      endReadable(<span class="keyword">this</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (ret !== <span class="literal">null</span>)</span><br><span class="line">    <span class="keyword">this</span>.emit(<span class="string">'data'</span>, ret);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> ret;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>起初流处于paused状态，根据官方文档所述，可以通过以下三种方式将mode转换为flowing:</p>
+<ol>
+<li>添加data事件监听器</li>
+<li>resume()</li>
+<li>src.pipe()</li>
+</ol>
+<p>然后以此为脉络，从flowing的启动到最终数据的呈现过程分析:</p>
+<p>监听data事件时:</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">Readable.prototype.on = <span class="function"><span class="keyword">function</span>(<span class="params">ev, fn</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> res = Stream.prototype.on.call(<span class="keyword">this</span>, ev, fn);</span><br><span class="line">  <span class="keyword">if</span> (ev === <span class="string">'data'</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">this</span>._readableState.flowing !== <span class="literal">false</span>)</span><br><span class="line">      <span class="keyword">this</span>.resume();</span><br><span class="line">  &#125; ...</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> res;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">Readable.prototype.resume = <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">var</span> state = <span class="keyword">this</span>._readableState;</span><br><span class="line">  <span class="keyword">if</span> (!state.flowing) &#123;</span><br><span class="line">    debug(<span class="string">'resume'</span>);</span><br><span class="line">    state.flowing = <span class="literal">true</span>;</span><br><span class="line">    resume(<span class="keyword">this</span>, state);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">resume</span>(<span class="params">stream, state</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (!state.resumeScheduled) &#123;</span><br><span class="line">    state.resumeScheduled = <span class="literal">true</span>;</span><br><span class="line">    process.nextTick(resume_, stream, state);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">resume_</span>(<span class="params">stream, state</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (!state.reading) &#123;</span><br><span class="line">    debug(<span class="string">'resume read 0'</span>);</span><br><span class="line">    stream.read(<span class="number">0</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  state.resumeScheduled = <span class="literal">false</span>;</span><br><span class="line">  state.awaitDrain = <span class="number">0</span>;</span><br><span class="line">  stream.emit(<span class="string">'resume'</span>);</span><br><span class="line">  flow(stream);</span><br><span class="line">  <span class="keyword">if</span> (state.flowing &amp;&amp; !state.reading)</span><br><span class="line">    stream.read(<span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里有个关键的一点是<code>read(0)</code>,我们查看<code>Stream.read(n)</code>方法不难知道，当参数n为0时，只会从内部buffer里slice内存到Stream的BufferList里，然后接着有<code>flow(stream)</code>的调用，来看看:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">flow</span>(<span class="params">stream</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> state = stream._readableState;</span><br><span class="line">  debug(<span class="string">'flow'</span>, state.flowing);</span><br><span class="line">  <span class="keyword">while</span> (state.flowing &amp;&amp; stream.read() !== <span class="literal">null</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>循环不断的调用stream.read()，即参数n为undefined,而在Stream.read()里经过<code>parseInt(undfined,10)</code>结果就为NaN了，然后我们从<code>howMuchToRead</code>里看到:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (n !== n) &#123;</span><br><span class="line">    <span class="comment">// Only flow one buffer at a time</span></span><br><span class="line">    <span class="keyword">if</span> (state.flowing &amp;&amp; state.length)</span><br><span class="line">      <span class="keyword">return</span> state.buffer.head.data.length;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">      <span class="keyword">return</span> state.length;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
+<p>结论就是，Stream添加ondata后，就会每次自动地从BufferList里读取一个Buffer数据，而当<code>state.length === 0 || state.length - n &lt; state.highWaterMark</code>满足时，会执行<code>_.read()</code>操作，数据通过<code>fromList</code>方法得到，最终触发data事件，将Buffer浮现。一直这样直到源数据末尾。</p>
+<h2 id="从pipe-角度看限流"><a href="#从pipe-角度看限流" class="headerlink" title="从pipe()角度看限流"></a>从pipe()角度看限流</h2><p>设想一个场景，我们的readable stream的速度比writable速度快，我们看看Writable Stream的代码:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">writeOrBuffer</span>(<span class="params">stream, state, isBuf, chunk, encoding, cb</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (!isBuf) &#123;</span><br><span class="line">    <span class="keyword">var</span> newChunk = decodeChunk(state, chunk, encoding);</span><br><span class="line">    <span class="keyword">if</span> (chunk !== newChunk) &#123;</span><br><span class="line">      isBuf = <span class="literal">true</span>;</span><br><span class="line">      encoding = <span class="string">'buffer'</span>;</span><br><span class="line">      chunk = newChunk;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">var</span> len = state.objectMode ? <span class="number">1</span> : chunk.length;</span><br><span class="line"></span><br><span class="line">  state.length += len;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">var</span> ret = state.length &lt; state.highWaterMark;</span><br><span class="line">  <span class="comment">// we must ensure that previous needDrain will not be reset to false.</span></span><br><span class="line">  <span class="keyword">if</span> (!ret)</span><br><span class="line">    state.needDrain = <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (state.writing || state.corked) &#123;</span><br><span class="line">    <span class="keyword">var</span> last = state.lastBufferedRequest;</span><br><span class="line">    state.lastBufferedRequest = &#123;</span><br><span class="line">      chunk,</span><br><span class="line">      encoding,</span><br><span class="line">      isBuf,</span><br><span class="line">      callback: cb,</span><br><span class="line">      next: <span class="literal">null</span></span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="keyword">if</span> (last) &#123;</span><br><span class="line">      last.next = state.lastBufferedRequest;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      state.bufferedRequest = state.lastBufferedRequest;</span><br><span class="line">    &#125;</span><br><span class="line">    state.bufferedRequestCount += <span class="number">1</span>;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    doWrite(stream, state, <span class="literal">false</span>, len, chunk, encoding, cb);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>可以看到，当<code>state.length</code>超过highWaterMark时，<code>write()</code>就返回false，此时如果我们不暂停readable stream,那么接下来的Buffer都会暂存到BufferedRequest里，我们也可以在<code>write()</code>返回false时，对readable stream暂停，当BuffererdRequest内的数据写入完毕后，会触发<code>drain</code>事件,我们在<code>ondrain</code>里可以resume readable stream。</p>
+<p>正如Readable Stream的pipe()方法:</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">src.on(<span class="string">'data'</span>, ondata);</span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">ondata</span>(<span class="params">chunk</span>) </span>&#123;</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">var</span> ret = dest.write(chunk);</span><br><span class="line">    <span class="keyword">if</span> (<span class="literal">false</span> === ret &amp;&amp; !increasedAwaitDrain) &#123;</span><br><span class="line">      ...</span><br><span class="line">      src.pause();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">pipeOnDrain</span>(<span class="params">src</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">var</span> state = src._readableState;</span><br><span class="line">    debug(<span class="string">'pipeOnDrain'</span>, state.awaitDrain);</span><br><span class="line">    <span class="keyword">if</span> (state.awaitDrain)</span><br><span class="line">      state.awaitDrain--;</span><br><span class="line">    <span class="keyword">if</span> (state.awaitDrain === <span class="number">0</span> &amp;&amp; EE.listenerCount(src, <span class="string">'data'</span>)) &#123;</span><br><span class="line">      state.flowing = <span class="literal">true</span>;</span><br><span class="line">      flow(src);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>补充一张图:</p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/f9a3e300-9b20-11e4-9e14-a6938b3327f0.png" alt="http://7xsi10.com1.z0.glb.clouddn.com/f9a3e300-9b20-11e4-9e14-a6938b3327f0.png"></p>
+
+      
+    </div>
+
+    <div>
+      
+        
+<div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/code/images/wechat.jpg" alt="罗峡的博客 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎扫描上面的微信公众号二维码，关注我的个人公众号：全栈前端</div>
+</div>
+
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/code/images/wechat_pay.png" alt="罗峡的博客 WeChat Pay"/>
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/code/images/ali_pay.jpg" alt="罗峡的博客 Alipay"/>
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/code/tags/buffer/" rel="tag">#buffer</a>
+          
+            <a href="/code/tags/stream/" rel="tag">#stream</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/code/2017/05/30/一个私有云实例的起步/" rel="next" title="一个私有云实例的起步">
+                <i class="fa fa-chevron-left"></i> 一个私有云实例的起步
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/code/2017/07/16/聊聊Agent&Proxy/" rel="prev" title="聊聊Agent/Proxy">
+                聊聊Agent/Proxy <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/code/images/head.jpg"
+               alt="罗峡的博客" />
+          <p class="site-author-name" itemprop="name">罗峡的博客</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/code/archives">
+              <span class="site-state-item-count">43</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/code/categories">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/code/tags">
+                <span class="site-state-item-count">85</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/code/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/laoqiren" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://luoxia.me/life" title="生活随笔" target="_blank">生活随笔</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Buffer"><span class="nav-number">1.</span> <span class="nav-text">Buffer</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#单次分配大小限制"><span class="nav-number">1.1.</span> <span class="nav-text">单次分配大小限制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#C-直接分配策略"><span class="nav-number">1.2.</span> <span class="nav-text">C++直接分配策略</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#slab与C-直接分配结合"><span class="nav-number">1.2.1.</span> <span class="nav-text">slab与C++直接分配结合</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Stream"><span class="nav-number">2.</span> <span class="nav-text">Stream</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#highWaterMark"><span class="nav-number">2.1.</span> <span class="nav-text">highWaterMark</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#过程"><span class="nav-number">2.2.</span> <span class="nav-text">过程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#实现-read-方法"><span class="nav-number">2.2.1.</span> <span class="nav-text">实现_read()方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#从Stream-read-里来看"><span class="nav-number">2.2.2.</span> <span class="nav-text">从Stream.read()里来看:</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#从pipe-角度看限流"><span class="nav-number">2.3.</span> <span class="nav-text">从pipe()角度看限流</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结语"><span class="nav-number">2.4.</span> <span class="nav-text">结语</span></a></li></ol></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">罗峡的博客</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/code/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/code/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/code/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/code/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length == 0) {
+       search_path = "search.xml";
+    }
+    var path = "/code/" + search_path;
+    // monitor main search box;
+
+    function proceedsearch() {
+      $("body").append('<div class="popoverlay">').css('overflow', 'hidden');
+      $('.popup').toggle();
+
+    }
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+    'use strict';
+    $.ajax({
+        url: path,
+        dataType: "xml",
+        async: true,
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            isfetched = true;
+            $('.popup').detach().appendTo('.header-inner');
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                var matchcounts = 0;
+                var str='<ul class=\"search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length > 1) {
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var content_index = [];
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_content = data.content.trim().replace(/<[^>]+>/g,"").toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    var index_content = -1;
+                    var first_occur = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title != '' && data_content != '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            index_content = data_content.indexOf(keyword);
+                            if( index_title < 0 && index_content < 0 ){
+                                isMatch = false;
+                            } else {
+                                if (index_content < 0) {
+                                    index_content = 0;
+                                }
+                                if (i == 0) {
+                                    first_occur = index_content;
+                                }
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        matchcounts += 1;
+                        str += "<li><a href='"+ data_url +"' class='search-result-title'>"+ data_title +"</a>";
+                        var content = data.content.trim().replace(/<[^>]+>/g,"");
+                        if (first_occur >= 0) {
+                            // cut out 100 characters
+                            var start = first_occur - 20;
+                            var end = first_occur + 80;
+                            if(start < 0){
+                                start = 0;
+                            }
+                            if(start == 0){
+                                end = 50;
+                            }
+                            if(end > content.length){
+                                end = content.length;
+                            }
+                            var match_content = content.substring(start, end);
+                            // highlight all keywords
+                            keywords.forEach(function(keyword){
+                                var regS = new RegExp(keyword, "gi");
+                                match_content = match_content.replace(regS, "<b class=\"search-keyword\">"+keyword+"</b>");
+                            });
+
+                            str += "<p class=\"search-result\">" + match_content +"...</p>"
+                        }
+                        str += "</li>";
+                    }
+                })};
+                str += "</ul>";
+                if (matchcounts == 0) { str = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>' }
+                if (keywords == "") { str = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>' }
+                $resultContent.innerHTML = str;
+            });
+            proceedsearch();
+        }
+    });}
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched == false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+
+    });
+
+    $('.popup-btn-close').click(function(e){
+      $('.popup').hide();
+      $(".popoverlay").remove();
+      $('body').css('overflow', '');
+    });
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+  </script>
+
+
+  
+
+  
+
+  
+<script type="text/javascript" async src="//push.zhanzhang.baidu.com/push.js">
+</script>
+
+
+</body>
+</html>

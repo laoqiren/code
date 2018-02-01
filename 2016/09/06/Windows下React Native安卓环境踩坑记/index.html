@@ -1,0 +1,875 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/code/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/code/lib/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/code/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="React,React Native,安卓开发," />
+
+
+
+
+
+  <link rel="alternate" href="/code/atom.xml" title="罗峡的技术博客" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/code/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="React Native是FaceBook开源的一款用于开发移动app的框架，不用java开发安卓，不用object-c或swift开发IOS，而是用一套JS（ReactJS）。”LEARN ONCE, WRITE ANYWHERE: BUILD MOBILE APPS WITH REACT”. 最近折腾折腾用wind">
+<meta name="keywords" content="React,React Native,安卓开发">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Windows下React Native安卓环境踩坑记">
+<meta property="og:url" content="http://luoxia.me/code/2016/09/06/Windows下React Native安卓环境踩坑记/index.html">
+<meta property="og:site_name" content="罗峡的技术博客">
+<meta property="og:description" content="React Native是FaceBook开源的一款用于开发移动app的框架，不用java开发安卓，不用object-c或swift开发IOS，而是用一套JS（ReactJS）。”LEARN ONCE, WRITE ANYWHERE: BUILD MOBILE APPS WITH REACT”. 最近折腾折腾用windows来进行react-native开发安卓，毕竟windows，各种坑，搞了好">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/successyeah.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/qs01.jpg">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/slove01.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/qs02.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/device01.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/qs03.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/solve02.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/suc001.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/suc002.png">
+<meta property="og:updated_time" content="2017-11-16T13:10:06.486Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Windows下React Native安卓环境踩坑记">
+<meta name="twitter:description" content="React Native是FaceBook开源的一款用于开发移动app的框架，不用java开发安卓，不用object-c或swift开发IOS，而是用一套JS（ReactJS）。”LEARN ONCE, WRITE ANYWHERE: BUILD MOBILE APPS WITH REACT”. 最近折腾折腾用windows来进行react-native开发安卓，毕竟windows，各种坑，搞了好">
+<meta name="twitter:image" content="http://7xsi10.com1.z0.glb.clouddn.com/successyeah.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: undefined,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://luoxia.me/code/2016/09/06/Windows下React Native安卓环境踩坑记/"/>
+
+  <title> Windows下React Native安卓环境踩坑记 | 罗峡的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?179492533449f84f24555d1cbf10462f";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/code/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">罗峡的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">爱技术，爱生活</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/code/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/code/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/code/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/code/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/code/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup">
+ <span class="search-icon fa fa-search"></span>
+ <input type="text" id="local-search-input">
+ <div id="local-search-result"></div>
+ <span class="popup-btn-close">close</span>
+</div>
+
+
+    </div>
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Windows下React Native安卓环境踩坑记
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-09-06T12:23:46+08:00" content="2016-09-06">
+              2016-09-06
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/code/categories/React-Native/" itemprop="url" rel="index">
+                    <span itemprop="name">React Native</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>React Native是FaceBook开源的一款用于开发移动app的框架，不用java开发安卓，不用object-c或swift开发IOS，而是用一套JS（ReactJS）。”LEARN ONCE, WRITE ANYWHERE: BUILD MOBILE APPS WITH REACT”.</p>
+<p>最近折腾折腾用windows来进行react-native开发安卓，毕竟windows，各种坑，搞了好几个小时，功夫不负有心人，最终成功的迎来了Hello,React Native!值得写一篇文章记录记录了。</p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/successyeah.png" alt="真机测试成功"></p>
+<p>有钱了一定要买Mac!!</p>
+<p>前几天的NingJS大会上，尤大大宣布Vue和阿里的weex团队合作，目的是让大家可以用vue来开发原生app。虽然还有很长的路要走。。期待国内技术的未来。<br><a id="more"></a></p>
+<p><strong>具体的配置过程react native文档还是写得比较详细的，文章只是记录我遇到的一些问题，通过各种渠道，最终解决完成，感谢社区的各位前辈的热心帮助</strong></p>
+<h3 id="虚拟机运行安卓模拟器问题"><a href="#虚拟机运行安卓模拟器问题" class="headerlink" title="虚拟机运行安卓模拟器问题"></a>虚拟机运行安卓模拟器问题</h3><p><strong>问题描述</strong><br>在windows上我使用Genymotion安卓模拟器来开发，从virtualBox虚拟机启动，提示报错如下:<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/qs01.jpg" alt="运行模拟器出错"></p>
+<p>查了查错误，原来是我的系统默认就是破解了主题的，就是uxtheme.dll有关主题的文件出的问题。</p>
+<p><strong>解决办法</strong><br>使用主题破解/恢复软件来恢复主题破解，当自己本地没有原厂的主题文件备份时，需要下载原始文件,找到包含了原始文件备份的UniversalThemePatcher软件，<a href="http://pan.baidu.com/s/1hqpOljY" target="_blank" rel="noopener">百度云地址:</a> 提取密码:4p51，解压里面有32位和64位不同的原始文件备份，将里面的三个原始备份.backup文件复制到c:\windows\system32下面,再运行UniversalThemePatcher,就可以恢复了，恢复后的结果：<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/slove01.png" alt="恢复主题破解"><br>这样，安卓模拟器就运行了。</p>
+<h3 id="模拟器运行应用一片空白，红框报错"><a href="#模拟器运行应用一片空白，红框报错" class="headerlink" title="模拟器运行应用一片空白，红框报错:"></a>模拟器运行应用一片空白，红框报错:</h3><p><strong>问题描述</strong><br>react-native run-android，apk也是安装了的，packages也是运行中的，没有什么报错，可运行apk就是一片空白加一红框报错。貌似很多人都遇到了这个问题。不过在我的捣鼓和大家的热心帮助下，还是解决了。</p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/qs02.png" alt="packages红框"></p>
+<p>网上看了各种问题解决办法，都尝试过，但是并没有什么卵用。于是我就先试试真机。</p>
+<p><strong>解决办法</strong><br>见真机测试部分</p>
+<h3 id="真机测试"><a href="#真机测试" class="headerlink" title="真机测试"></a>真机测试</h3><p>我的安卓机是5.1.1的，打开usb调试，连接电脑，连接电脑的wifi,理论上是没什么问题的</p>
+<p>执行adb devices，正常:</p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/device01.png" alt="查询设备"></p>
+<p><strong>问题:</strong><br>执行react-native run-android报错:</p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/qs03.png" alt="安装apk出错"></p>
+<p>提示没法安装apk到手机。。。</p>
+<p><strong>解决办法:</strong><br>原来是项目的gradle版本问题，依赖了一个bug比较多的版本，需要改成一个比较稳定的版本如1.2.3。<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/solve02.png" alt="gradle"></p>
+<p>重新run-android，成功的安装了app，但是打开apk，又一次遇到了上面模拟器的红框错误。</p>
+<p>官网教程说的安卓5.0以上是不用配置ip和端口的，但是我最终还是设置了Ip和端口才解决了上面的问题。</p>
+<p>吃了个午饭回来</p>
+<p>dev settings&gt;debug server host&amp; port for device，然后reload。。。当当当当，神奇的成功了:</p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/suc001.png" alt="真机测试成功"></p>
+<p>我之前设置ip也不行啊。。。不知道是不是它也饿了。。。</p>
+<p>然后再回来看看我的模拟器，这下也行了：</p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/suc002.png" alt="模拟器运行成功"></p>
+<p>应该就是上面的gradle版本问题。</p>
+<p><strong>结语</strong><br>真是各种问题，各种坑。但终究还是解决了。模拟器找不到错误解决方案，干脆就用真机先试试，正是真机测试找到了解决办法，模拟器的也一并解决了。。。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+<div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/code/images/wechat.jpg" alt="罗峡的博客 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎扫描上面的微信公众号二维码，关注我的个人公众号：全栈前端</div>
+</div>
+
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/code/images/wechat_pay.png" alt="罗峡的博客 WeChat Pay"/>
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/code/images/ali_pay.jpg" alt="罗峡的博客 Alipay"/>
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/code/tags/React/" rel="tag">#React</a>
+          
+            <a href="/code/tags/React-Native/" rel="tag">#React Native</a>
+          
+            <a href="/code/tags/安卓开发/" rel="tag">#安卓开发</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/code/2016/09/01/以一个WebApp开始探寻Vue的思想/" rel="next" title="以一个WebApp开始探寻Vue的思想">
+                <i class="fa fa-chevron-left"></i> 以一个WebApp开始探寻Vue的思想
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/code/2016/09/24/session身份验证/" rel="prev" title="session身份验证">
+                session身份验证 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/code/images/head.jpg"
+               alt="罗峡的博客" />
+          <p class="site-author-name" itemprop="name">罗峡的博客</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/code/archives">
+              <span class="site-state-item-count">43</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/code/categories">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/code/tags">
+                <span class="site-state-item-count">85</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/code/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/laoqiren" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://luoxia.me/life" title="生活随笔" target="_blank">生活随笔</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#虚拟机运行安卓模拟器问题"><span class="nav-number">1.</span> <span class="nav-text">虚拟机运行安卓模拟器问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#模拟器运行应用一片空白，红框报错"><span class="nav-number">2.</span> <span class="nav-text">模拟器运行应用一片空白，红框报错:</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#真机测试"><span class="nav-number">3.</span> <span class="nav-text">真机测试</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">罗峡的博客</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/code/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/code/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/code/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/code/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length == 0) {
+       search_path = "search.xml";
+    }
+    var path = "/code/" + search_path;
+    // monitor main search box;
+
+    function proceedsearch() {
+      $("body").append('<div class="popoverlay">').css('overflow', 'hidden');
+      $('.popup').toggle();
+
+    }
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+    'use strict';
+    $.ajax({
+        url: path,
+        dataType: "xml",
+        async: true,
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            isfetched = true;
+            $('.popup').detach().appendTo('.header-inner');
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                var matchcounts = 0;
+                var str='<ul class=\"search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length > 1) {
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var content_index = [];
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_content = data.content.trim().replace(/<[^>]+>/g,"").toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    var index_content = -1;
+                    var first_occur = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title != '' && data_content != '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            index_content = data_content.indexOf(keyword);
+                            if( index_title < 0 && index_content < 0 ){
+                                isMatch = false;
+                            } else {
+                                if (index_content < 0) {
+                                    index_content = 0;
+                                }
+                                if (i == 0) {
+                                    first_occur = index_content;
+                                }
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        matchcounts += 1;
+                        str += "<li><a href='"+ data_url +"' class='search-result-title'>"+ data_title +"</a>";
+                        var content = data.content.trim().replace(/<[^>]+>/g,"");
+                        if (first_occur >= 0) {
+                            // cut out 100 characters
+                            var start = first_occur - 20;
+                            var end = first_occur + 80;
+                            if(start < 0){
+                                start = 0;
+                            }
+                            if(start == 0){
+                                end = 50;
+                            }
+                            if(end > content.length){
+                                end = content.length;
+                            }
+                            var match_content = content.substring(start, end);
+                            // highlight all keywords
+                            keywords.forEach(function(keyword){
+                                var regS = new RegExp(keyword, "gi");
+                                match_content = match_content.replace(regS, "<b class=\"search-keyword\">"+keyword+"</b>");
+                            });
+
+                            str += "<p class=\"search-result\">" + match_content +"...</p>"
+                        }
+                        str += "</li>";
+                    }
+                })};
+                str += "</ul>";
+                if (matchcounts == 0) { str = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>' }
+                if (keywords == "") { str = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>' }
+                $resultContent.innerHTML = str;
+            });
+            proceedsearch();
+        }
+    });}
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched == false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+
+    });
+
+    $('.popup-btn-close').click(function(e){
+      $('.popup').hide();
+      $(".popoverlay").remove();
+      $('body').css('overflow', '');
+    });
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+  </script>
+
+
+  
+
+  
+
+  
+<script type="text/javascript" async src="//push.zhanzhang.baidu.com/push.js">
+</script>
+
+
+</body>
+</html>

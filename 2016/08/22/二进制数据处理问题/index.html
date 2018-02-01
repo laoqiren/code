@@ -1,0 +1,906 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/code/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/code/lib/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/code/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="二进制数据操作," />
+
+
+
+
+
+  <link rel="alternate" href="/code/atom.xml" title="罗峡的技术博客" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/code/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="二进制数据的处理在开发中是非常普遍和重要的，文件I/O,网络I/O，HTML5 Canvas/WebGL,音频数据的处理等等，这些不管是从性能上考虑，还是对数据的精确处理上来考虑，二进制数据接口都是非常重要的。 ArrayBuffer是Js操作二进制数据的接口，到后来加入到了es6的标准，Blob对象存储原始数据，相当">
+<meta name="keywords" content="二进制数据操作">
+<meta property="og:type" content="article">
+<meta property="og:title" content="二进制数据处理问题">
+<meta property="og:url" content="http://luoxia.me/code/2016/08/22/二进制数据处理问题/index.html">
+<meta property="og:site_name" content="罗峡的技术博客">
+<meta property="og:description" content="二进制数据的处理在开发中是非常普遍和重要的，文件I/O,网络I/O，HTML5 Canvas/WebGL,音频数据的处理等等，这些不管是从性能上考虑，还是对数据的精确处理上来考虑，二进制数据接口都是非常重要的。 ArrayBuffer是Js操作二进制数据的接口，到后来加入到了es6的标准，Blob对象存储原始数据，相当于是ArrayBuffer数据的超集，XHR二级提供了FormData来完成表单">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/requestheder.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/resultP.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/blob.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/base64.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/slowR.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/fastR.png">
+<meta property="og:updated_time" content="2017-11-16T13:10:06.490Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="二进制数据处理问题">
+<meta name="twitter:description" content="二进制数据的处理在开发中是非常普遍和重要的，文件I/O,网络I/O，HTML5 Canvas/WebGL,音频数据的处理等等，这些不管是从性能上考虑，还是对数据的精确处理上来考虑，二进制数据接口都是非常重要的。 ArrayBuffer是Js操作二进制数据的接口，到后来加入到了es6的标准，Blob对象存储原始数据，相当于是ArrayBuffer数据的超集，XHR二级提供了FormData来完成表单">
+<meta name="twitter:image" content="http://7xsi10.com1.z0.glb.clouddn.com/requestheder.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: undefined,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://luoxia.me/code/2016/08/22/二进制数据处理问题/"/>
+
+  <title> 二进制数据处理问题 | 罗峡的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?179492533449f84f24555d1cbf10462f";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/code/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">罗峡的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">爱技术，爱生活</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/code/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/code/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/code/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/code/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/code/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup">
+ <span class="search-icon fa fa-search"></span>
+ <input type="text" id="local-search-input">
+ <div id="local-search-result"></div>
+ <span class="popup-btn-close">close</span>
+</div>
+
+
+    </div>
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                二进制数据处理问题
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-08-22T11:11:15+08:00" content="2016-08-22">
+              2016-08-22
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/code/categories/HTML5/" itemprop="url" rel="index">
+                    <span itemprop="name">HTML5</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>二进制数据的处理在开发中是非常普遍和重要的，文件I/O,网络I/O，HTML5 Canvas/WebGL,音频数据的处理等等，这些不管是从性能上考虑，还是对数据的精确处理上来考虑，二进制数据接口都是非常重要的。</p>
+<p>ArrayBuffer是Js操作二进制数据的接口，到后来加入到了es6的标准，Blob对象存储原始数据，相当于是ArrayBuffer数据的超集，XHR二级提供了FormData来完成表单数据提交，并且还支持Blob对象的上传，我们可以用以文件上传，而Nodejs的Buffer作为js和C++结合模块，相当于对ArrayBuffer的封装以更加方便的进行二进制数据的操作。</p>
+<p>本文就一些遇到的问题进行总结。将会涉及上述相关知识</p>
+<p><strong>文章目录</strong></p>
+<ol>
+<li>字节序问题</li>
+<li>编码问题</li>
+<li>客户端发送FormData（文件上传）</li>
+<li>node向客户端发送ArrayBuffer</li>
+<li>综合实例</li>
+<li>性能测试<a id="more"></a>
+</li>
+</ol>
+<h3 id="字节序问题"><a href="#字节序问题" class="headerlink" title="字节序问题"></a>字节序问题</h3><p>字节序指数据在内存中的储存方式，分为小端字节序和大端字节序，小端字节序：相对重要的字节排在后面的内存地址，相对不重要字节排在前面的内存地址。大端字节序相反。</p>
+<p>举个栗子：<br>开辟内存空间储存二进制数据，并写入32位整数：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> buffer = <span class="keyword">new</span> <span class="built_in">ArrayBuffer</span>(<span class="number">16</span>);</span><br><span class="line"><span class="keyword">var</span> int32View = <span class="keyword">new</span> <span class="built_in">Int32Array</span>(buffer);</span><br><span class="line"><span class="keyword">for</span>(<span class="keyword">let</span> i=<span class="number">0</span>; i&lt;int32View.length; i++)&#123;</span><br><span class="line">	int32View[i] = i * <span class="number">2</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">0</span></span><br><span class="line"><span class="comment">2</span></span><br><span class="line"><span class="comment">4</span></span><br><span class="line"><span class="comment">6</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure></p>
+<p>上面代码建立的32位整数视图，每个元素占4个字节，而用于储存的内存空间为16个字节，可以存4个元素。每个元素在内存当中是怎么储存的呢？</p>
+<p>我们这时候再在这片内存上建立8位整数的视图，看看每一个元素是怎样的？<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> int8View = <span class="keyword">new</span> <span class="built_in">Int8Array</span>(buffer);</span><br><span class="line"><span class="keyword">for</span>(<span class="keyword">let</span> element <span class="keyword">of</span> int8View)&#123;</span><br><span class="line">	<span class="built_in">console</span>.log(element);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">0</span></span><br><span class="line"><span class="comment">0</span></span><br><span class="line"><span class="comment">0</span></span><br><span class="line"><span class="comment">0</span></span><br><span class="line"><span class="comment">2</span></span><br><span class="line"><span class="comment">0</span></span><br><span class="line"><span class="comment">0</span></span><br><span class="line"><span class="comment">0</span></span><br><span class="line"><span class="comment">4</span></span><br><span class="line"><span class="comment">0</span></span><br><span class="line"><span class="comment">0</span></span><br><span class="line"><span class="comment">0</span></span><br><span class="line"><span class="comment">6</span></span><br><span class="line"><span class="comment">0</span></span><br><span class="line"><span class="comment">0</span></span><br><span class="line"><span class="comment">0</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure></p>
+<p>可以看到在32位整数视图存的数字，对数值大小决定性更大的处于后面了。</p>
+<p>记住这里是以字节为单位的，并不是每个位都会发生颠倒，而是字节的顺序。以第二个元素2为例，其在内存中的存在方式：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">00000010 00000000 00000000 00000000</span><br></pre></td></tr></table></figure></p>
+<p>TypedArray视图只能以小端字节序处理数据，当我们需要大端字节序呢？</p>
+<p>DataView复合视图。其get和set方法都提供第二个参数设置，默认情况下，DataView的get方法使用大端字节序解读数据，如果需要使用小端字节序解读，必须在get方法的第二个参数指定true。</p>
+<h3 id="编码问题"><a href="#编码问题" class="headerlink" title="编码问题"></a>编码问题</h3><p>看个例子：</p>
+<p>我们在服务器上新建一个文本文件hello.txt:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">你好啊，欢迎来到罗峡的技术博客</span><br></pre></td></tr></table></figure>
+<p>然后我们创建可读流读取：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> fs = <span class="built_in">require</span>(<span class="string">'fs'</span>);</span><br><span class="line"><span class="keyword">var</span> result = <span class="string">''</span>;</span><br><span class="line"><span class="keyword">var</span> rs = fs.createReadStream(<span class="string">'./hello.txt'</span>,&#123;<span class="attr">highWaterMark</span>:<span class="number">11</span>&#125;);</span><br><span class="line">rs.on(<span class="string">'data'</span>,<span class="function"><span class="keyword">function</span>(<span class="params">chunk</span>)</span>&#123;</span><br><span class="line">    result += chunk;</span><br><span class="line">&#125;);</span><br><span class="line">rs.on(<span class="string">'end'</span>,<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(result);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure></p>
+<p>结果：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">你好啊���欢迎来���罗峡的技术博���</span><br></pre></td></tr></table></figure></p>
+<p>好气有木有，怎么会乱码呢？</p>
+<p><strong>乱码的产生</strong><br>问题就在<strong>highWaterMark:11</strong>,我们设定了buffer的长度为11,我们在创建可读流的时候，默认以utf-8编码，而在utf-8下，中文字符占3个字节，整个文本的二进制储存如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;Buffer e4 bd a0 e5 a5 bd e5 95 8a ef bf bd ef bf bd ef bf bd e6 ac a2 e8 bf 8e e6 9d a5 ef bf bd ef bf bd ef bf bd e7 bd 97 e5 b3 a1 e7 9a 84 e6 8a 80 e6 9c...&gt;</span><br></pre></td></tr></table></figure>
+<p>每个16进制数据代表一个字节，三个才表示了一个字符，而我们设置了buffer长度为11个字节，表示三个字符后，剩余两个字节，和第二个buffer的前1个字节都不能正确解析，就乱码了。我们可以看到有3个乱码正是3个字节。</p>
+<p><strong>setEncoding(‘utf-8’)的作用：</strong></p>
+<p>这时候data事件的chunk不再是buffer，而是经过编码后的字符串，可读流在内部设置了decoder对象，每次data事件，通过该对象进行解码，这个对象知道宽字符在UTF-8下是3个字节方式储存的，所以每次就会根据buffer大小来读取最大的3的整数个 字节，剩余的2个字节留下来和第二段buffer的第一个字节一起读。</p>
+<p><strong>正确拼接buffer</strong><br>虽然setEncoding能够解决大部分问题，但是对一些编码是不支持的，我们需要正确的拼接buffer:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> chunks = [];</span><br><span class="line">res.on(<span class="string">'data'</span>,<span class="function"><span class="keyword">function</span>(<span class="params">chunk</span>)</span>&#123;</span><br><span class="line">	chunks.push(chunk);</span><br><span class="line">&#125;);</span><br><span class="line">res.on(<span class="string">'end'</span>,<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">	<span class="keyword">var</span> buf = Buffer.concat(chunks);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure></p>
+<h3 id="客户端向node发送FormData"><a href="#客户端向node发送FormData" class="headerlink" title="客户端向node发送FormData"></a>客户端向node发送FormData</h3><p>FormData是HTML5 XHR2级新增的类型，用于表单数据上传。其作用其实与Jquery的serialize()方法，这个方法将传入的表达序列化为查询字符串的格式:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">userid=123&amp;username=xx</span><br></pre></td></tr></table></figure></p>
+<p>而FormData的好处是可以发送blob对象,file类型的input得到的文件就继承于blob,所以FormData可用于文件上传。</p>
+<p>举个栗子：</p>
+<p>客户端index.html:<br><figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">form</span> <span class="attr">id</span>=<span class="string">"myform"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">label</span> <span class="attr">for</span>=<span class="string">'name'</span>&gt;</span>用户名:<span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">text</span> <span class="attr">name</span>=<span class="string">"name"</span> <span class="attr">id</span>=<span class="string">"name"</span>/&gt;</span><span class="tag">&lt;/<span class="name">label</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">label</span> <span class="attr">for</span>=<span class="string">"password"</span>&gt;</span>密码:<span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">"password"</span> <span class="attr">name</span>=<span class="string">"password"</span> <span class="attr">id</span>=<span class="string">"password"</span>/&gt;</span><span class="tag">&lt;/<span class="name">label</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">label</span> <span class="attr">for</span>=<span class="string">'file'</span>&gt;</span>文件<span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">file</span> <span class="attr">id</span>=<span class="string">'file'</span> <span class="attr">name</span>=<span class="string">"file"</span> <span class="attr">required</span>/&gt;</span><span class="tag">&lt;/<span class="name">label</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">"button"</span> <span class="attr">value</span>=<span class="string">"提交"</span> <span class="attr">id</span>=<span class="string">"sub"</span>/&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">form</span>&gt;</span></span><br></pre></td></tr></table></figure></p>
+<p>表单元素的name属性将作为键值对的键名。</p>
+<p>客户端client.js:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">window</span>.onload = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="built_in">document</span>.getElementById(<span class="string">"sub"</span>).addEventListener(<span class="string">"click"</span>,<span class="function"><span class="keyword">function</span>(<span class="params">e</span>)</span>&#123;</span><br><span class="line">        <span class="keyword">var</span> myFormData = <span class="keyword">new</span> FormData(<span class="built_in">document</span>.getElementById(<span class="string">"myform"</span>));</span><br><span class="line">        <span class="keyword">var</span> xhr = <span class="keyword">new</span> XMLHttpRequest();</span><br><span class="line">        xhr.open(<span class="string">"post"</span>,<span class="string">"http://localhost:8008/"</span>);</span><br><span class="line">        xhr.onload = <span class="function"><span class="keyword">function</span>(<span class="params">e</span>)</span>&#123;</span><br><span class="line">            <span class="keyword">if</span>(xhr.status === <span class="number">200</span>)&#123;</span><br><span class="line">                <span class="built_in">console</span>.log(<span class="string">'succuess'</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;,<span class="literal">false</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>我们来查看network:<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/requestheder.png" alt="requestHeader"></p>
+<p>我们在node端通过multiparty模块出来FormData数据：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> http = <span class="built_in">require</span>(<span class="string">'http'</span>);</span><br><span class="line"><span class="keyword">var</span> urlLib = <span class="built_in">require</span>(<span class="string">'url'</span>);</span><br><span class="line"><span class="keyword">var</span> multiparty = <span class="built_in">require</span>(<span class="string">'multiparty'</span>);</span><br><span class="line">http.createServer(<span class="function"><span class="keyword">function</span>(<span class="params">req,res</span>)</span>&#123;</span><br><span class="line">    <span class="keyword">var</span> parms = urlLib.parse(req.url,<span class="literal">true</span>);</span><br><span class="line">    <span class="keyword">if</span>(parms.pathname === <span class="string">'/'</span>)&#123;</span><br><span class="line">        <span class="keyword">var</span> form = <span class="keyword">new</span> multiparty.Form();</span><br><span class="line">        form.parse(req,<span class="function"><span class="keyword">function</span>(<span class="params">err,fields,files</span>)</span>&#123;</span><br><span class="line">			<span class="built_in">console</span>.log(<span class="string">'fileds:'</span> +fields + <span class="string">'files'</span> + files);</span><br><span class="line">			<span class="comment">//...</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;);</span><br><span class="line"><span class="comment">//...</span></span><br></pre></td></tr></table></figure></p>
+<p>我们得到的打印结果：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">server has been listened on <span class="number">8008</span></span><br><span class="line">&#123; <span class="attr">name</span>: [ <span class="string">'罗峡'</span> ], <span class="attr">password</span>: [ <span class="string">'hello'</span> ] &#125; &#123; <span class="attr">file</span>:</span><br><span class="line">   [ &#123; <span class="attr">fieldName</span>: <span class="string">'file'</span>,</span><br><span class="line">       originalFilename: <span class="string">''</span>,</span><br><span class="line">       path: <span class="string">'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\XJhnYHS1XylGbr2NQCYXBvLC'</span>,</span><br><span class="line">       headers: [<span class="built_in">Object</span>],</span><br><span class="line">       size: <span class="number">0</span> &#125; ] &#125;</span><br></pre></td></tr></table></figure></p>
+<p>我们可以通过<strong>files.file[0].path</strong>获取第一个文件的文件路径。</p>
+<h3 id="node端发送ArrayBuffer给客户端"><a href="#node端发送ArrayBuffer给客户端" class="headerlink" title="node端发送ArrayBuffer给客户端"></a>node端发送ArrayBuffer给客户端</h3><p>xhr2为ajax请求对象提供了response属性和responseType属性，前者根据后者的设置对服务端发送过来的数据进行解析。</p>
+<p>比如我设置responseType为ArrayBuffer,response就返回ArrayBuffer,但是有一点需要注意的是，我们要保证服务端返回的数据是能够被解析成ArrayBuffer的。</p>
+<p>客户端client.js:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> xhr = <span class="keyword">new</span> XMLHttpRequest();</span><br><span class="line">xhr.responseType = <span class="string">"arraybuffer"</span>;</span><br><span class="line">xhr.open(<span class="string">"get"</span>,<span class="string">"http://localhost:8008/"</span>);</span><br><span class="line">xhr.onload = <span class="function"><span class="keyword">function</span>(<span class="params">e</span>)</span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(xhr.status === <span class="number">200</span>)&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">'succuess'</span>);</span><br><span class="line">		<span class="keyword">var</span> buffer = xhr.response;</span><br><span class="line">        <span class="keyword">var</span> int8View = <span class="keyword">new</span> <span class="built_in">Int8Array</span>(buffer);</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">let</span> element <span class="keyword">of</span> int8View)&#123;</span><br><span class="line">            <span class="built_in">console</span>.log(element);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">xhr.send(<span class="literal">null</span>);</span><br></pre></td></tr></table></figure></p>
+<p>node server.js:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">res.writeHead(<span class="number">200</span>,&#123;<span class="string">'Access-Control-Allow-Origin'</span>:<span class="string">'*'</span>,<span class="string">'Access-Control-Allow-Method'</span>:<span class="string">'GET,POST'</span>,<span class="string">'Content-Type'</span>:<span class="string">'application/octet-stream'</span>&#125;);</span><br><span class="line"><span class="keyword">var</span> typedView = <span class="keyword">new</span> <span class="built_in">Int16Array</span>([<span class="number">1</span>,<span class="number">6</span>,<span class="number">8</span>]);</span><br><span class="line">res.write(<span class="keyword">new</span> Buffer(typedView));</span><br><span class="line">res.end();</span><br></pre></td></tr></table></figure></p>
+<p>这里要注意的是，需要设定’Content-type’为二进制文件，之前我没设置，以及后来我先写入数据再才设置这个响应头，客户端会一直报错：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GET http:<span class="comment">//localhost:8008/ net::ERR_INVALID_CHUNKED_ENCODING</span></span><br></pre></td></tr></table></figure></p>
+<p>这都是因为没有设置文件类型响应头的结果。</p>
+<h3 id="综合实例"><a href="#综合实例" class="headerlink" title="综合实例"></a>综合实例</h3><p>这个综合实例，我们先从客户端上传图片文件，然后服务端将图片的二进制数据发送给客户端，客户端再生成图片链接，客户端将图片文件显示出来。</p>
+<p>生成的图片url可由两种方式，一种是blob形式和base64形式。</p>
+<p>客户端index.html:<br><figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">form</span> <span class="attr">id</span>=<span class="string">"myform"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">label</span> <span class="attr">for</span>=<span class="string">'name'</span>&gt;</span>用户名:<span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">text</span> <span class="attr">name</span>=<span class="string">"name"</span> <span class="attr">id</span>=<span class="string">"name"</span>/&gt;</span><span class="tag">&lt;/<span class="name">label</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">label</span> <span class="attr">for</span>=<span class="string">"password"</span>&gt;</span>密码:<span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">"password"</span> <span class="attr">name</span>=<span class="string">"password"</span> <span class="attr">id</span>=<span class="string">"password"</span>/&gt;</span><span class="tag">&lt;/<span class="name">label</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">label</span> <span class="attr">for</span>=<span class="string">'file'</span>&gt;</span>文件<span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">file</span> <span class="attr">id</span>=<span class="string">'file'</span> <span class="attr">name</span>=<span class="string">"file"</span> <span class="attr">required</span>/&gt;</span><span class="tag">&lt;/<span class="name">label</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">"button"</span> <span class="attr">value</span>=<span class="string">"提交"</span> <span class="attr">id</span>=<span class="string">"sub"</span>/&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">form</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">"result"</span>&gt;</span><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br></pre></td></tr></table></figure></p>
+<p>客户端client.js:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">window</span>.onload = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="keyword">var</span> resultBox = <span class="built_in">document</span>.getElementById(<span class="string">'result'</span>)</span><br><span class="line">    <span class="built_in">document</span>.getElementById(<span class="string">"sub"</span>).addEventListener(<span class="string">"click"</span>,<span class="function"><span class="keyword">function</span>(<span class="params">e</span>)</span>&#123;</span><br><span class="line">        <span class="keyword">var</span> myFormData = <span class="keyword">new</span> FormData(<span class="built_in">document</span>.getElementById(<span class="string">"myform"</span>));</span><br><span class="line">        <span class="keyword">var</span> xhr = <span class="keyword">new</span> XMLHttpRequest();</span><br><span class="line">        xhr.responseType = <span class="string">"arraybuffer"</span>;</span><br><span class="line">        xhr.open(<span class="string">"post"</span>,<span class="string">"http://localhost:8008/"</span>);</span><br><span class="line">        xhr.onload = <span class="function"><span class="keyword">function</span>(<span class="params">e</span>)</span>&#123;</span><br><span class="line">            <span class="keyword">if</span>(xhr.status === <span class="number">200</span>)&#123;</span><br><span class="line">                <span class="built_in">console</span>.log(<span class="string">'succuess'</span>);</span><br><span class="line">				<span class="keyword">var</span> bb = <span class="keyword">new</span> Blob([xhr.response]);</span><br><span class="line">                resultBox.innerHTML = <span class="string">'&lt;img src="'</span> + <span class="built_in">window</span>.URL.createObjectURL(bb) +<span class="string">'"/&gt;'</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        xhr.send(myFormData);</span><br><span class="line">    &#125;,<span class="literal">false</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>服务端server.js:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> http = <span class="built_in">require</span>(<span class="string">'http'</span>);</span><br><span class="line"><span class="keyword">var</span> urlLib = <span class="built_in">require</span>(<span class="string">'url'</span>);</span><br><span class="line"><span class="keyword">var</span> fs = <span class="built_in">require</span>(<span class="string">'fs'</span>);</span><br><span class="line"><span class="keyword">var</span> multiparty = <span class="built_in">require</span>(<span class="string">'multiparty'</span>);</span><br><span class="line"><span class="keyword">var</span> bufs = [];</span><br><span class="line"><span class="keyword">var</span> img;</span><br><span class="line">http.createServer(<span class="function"><span class="keyword">function</span>(<span class="params">req,res</span>)</span>&#123;</span><br><span class="line">    <span class="keyword">var</span> parms = urlLib.parse(req.url,<span class="literal">true</span>);</span><br><span class="line">    <span class="keyword">if</span>(parms.pathname === <span class="string">'/'</span>)&#123; </span><br><span class="line">        <span class="keyword">var</span> form = <span class="keyword">new</span> multiparty.Form();</span><br><span class="line">        form.parse(req,<span class="function"><span class="keyword">function</span>(<span class="params">err,fields,files</span>)</span>&#123;</span><br><span class="line">            <span class="keyword">var</span> readStream = fs.createReadStream(files.file[<span class="number">0</span>].path);</span><br><span class="line">            readStream.on(<span class="string">'data'</span>,<span class="function"><span class="keyword">function</span>(<span class="params">chunk</span>)</span>&#123;</span><br><span class="line">                bufs.push(chunk);</span><br><span class="line">            &#125;);</span><br><span class="line">            readStream.on(<span class="string">'end'</span>,<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">                img = Buffer.concat(bufs);</span><br><span class="line">                res.writeHead(<span class="number">200</span>,&#123;<span class="string">'Access-Control-Allow-Origin'</span>:<span class="string">'*'</span>,<span class="string">'Access-Control-Allow-Method'</span>:<span class="string">'GET,POST'</span>,<span class="string">'Content-Type'</span>:<span class="string">'application/octet-stream'</span>&#125;);</span><br><span class="line">                res.write(img);</span><br><span class="line">                res.end();</span><br><span class="line">				bufs = [];</span><br><span class="line">            &#125;)</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;).listen(<span class="number">8008</span>);</span><br><span class="line"><span class="built_in">console</span>.log(<span class="string">'server has been listened on 8008'</span>);</span><br></pre></td></tr></table></figure></p>
+<p>我们查看结果:<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/resultP.png" alt="result"><br>注意，上面的write一定要在数据读取完毕即readStream的end事件触发后才进行，不然会使得buffer为undefined.</p>
+<p>我们查看上面的图片URL地址：<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/blob.png" alt="blob"><br>发现是blob形式的，原因是我们通过<strong>window.URL.createObjectURL(bb) </strong>创建的 ，那如果我们想生存base64格式的url呢？</p>
+<p>Just：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> myBlob = <span class="keyword">new</span> Blob([xhr.response]);</span><br><span class="line"><span class="keyword">var</span> reader = <span class="keyword">new</span> FileReader();</span><br><span class="line">reader.readAsDataURL(myBlob);</span><br><span class="line">reader.onload = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    resultBox.innerHTML = <span class="string">'&lt;img src="'</span> + <span class="keyword">this</span>.result +<span class="string">'"/&gt;'</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<p>结果：<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/base64.png" alt="base64"></p>
+<h3 id="性能"><a href="#性能" class="headerlink" title="性能"></a>性能</h3><p>前面说过二进制数据操作对开发非常重要，最求更高的性能和数据的精确操作都离不开二进制操作，我们以网络I/O为例，看看非二进制操作和二进制操作的对比。</p>
+<p>server.js:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> http = <span class="built_in">require</span>(<span class="string">'http'</span>);</span><br><span class="line"><span class="keyword">var</span> hello = <span class="string">''</span>;</span><br><span class="line"><span class="keyword">for</span>(<span class="keyword">var</span> i=<span class="number">0</span>; i&lt;<span class="number">1000</span>; i++)&#123;</span><br><span class="line">	hello += <span class="string">'h'</span>;</span><br><span class="line">&#125;</span><br><span class="line">http.createServer(<span class="function"><span class="keyword">function</span>(<span class="params">req,res</span>)</span>&#123;</span><br><span class="line">	res.writeHead(<span class="number">200</span>);</span><br><span class="line">	res.end(hello);</span><br><span class="line">&#125;).listen(<span class="number">8008</span>);</span><br></pre></td></tr></table></figure></p>
+<p>然后我们通过Apache提供的ab工具，进行性能测试：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ab -c 200 http://localhost:8008</span><br></pre></td></tr></table></figure></p>
+<p>-c表示并发数，我们发起一次并发数为200的请求，看看结果：<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/slowR.png" alt="slow"></p>
+<p>然后我们在通过buffer形式进行传输：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> http = <span class="built_in">require</span>(<span class="string">'http'</span>);</span><br><span class="line"><span class="keyword">var</span> hello = <span class="string">''</span>;</span><br><span class="line"><span class="keyword">for</span>(<span class="keyword">var</span> i=<span class="number">0</span>; i&lt;<span class="number">1000</span>; i++)&#123;</span><br><span class="line">	hello += <span class="string">'h'</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">var</span> buf = <span class="keyword">new</span> Buffer(hello);</span><br><span class="line">http.createServer(<span class="function"><span class="keyword">function</span>(<span class="params">req,res</span>)</span>&#123;</span><br><span class="line">	res.writeHead(<span class="number">200</span>);</span><br><span class="line">	res.end(buf);</span><br><span class="line">&#125;).listen(<span class="number">8008</span>);</span><br></pre></td></tr></table></figure></p>
+<p>再看看结果:<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/fastR.png" alt="fast"></p>
+<p>可见通过二进制数据传输传输速率快得多，耗时较少。</p>
+<p><strong>之后会基于二进制数据操作对canvas图形图像处理，音乐可视化等等内容进行总结。敬请期待</strong></p>
+<p><strong>我们可以看到，前端知识体系是如此庞大，每个知识点都有许多内容，要hold住实属不易，但是我想只要我们有兴趣，有一颗最求卓越的心，我们就能做到最好的自己的。</strong></p>
+<p><strong>里约奥运已经在今天落幕，感谢运动员们带给我们的难忘时刻，最让我难忘的是中国女排姑娘们，永不放弃，顽强拼搏的精神，在coding过程中，我们也要发扬这种精神，不是吗？</strong></p>
+
+      
+    </div>
+
+    <div>
+      
+        
+<div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/code/images/wechat.jpg" alt="罗峡的博客 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎扫描上面的微信公众号二维码，关注我的个人公众号：全栈前端</div>
+</div>
+
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/code/images/wechat_pay.png" alt="罗峡的博客 WeChat Pay"/>
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/code/images/ali_pay.jpg" alt="罗峡的博客 Alipay"/>
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/code/tags/二进制数据操作/" rel="tag">#二进制数据操作</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/code/2016/08/17/异步编程解决方案/" rel="next" title="异步编程解决方案">
+                <i class="fa fa-chevron-left"></i> 异步编程解决方案
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/code/2016/08/28/I Promise/" rel="prev" title="I Promise">
+                I Promise <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/code/images/head.jpg"
+               alt="罗峡的博客" />
+          <p class="site-author-name" itemprop="name">罗峡的博客</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/code/archives">
+              <span class="site-state-item-count">43</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/code/categories">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/code/tags">
+                <span class="site-state-item-count">85</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/code/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/laoqiren" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://luoxia.me/life" title="生活随笔" target="_blank">生活随笔</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#字节序问题"><span class="nav-number">1.</span> <span class="nav-text">字节序问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#编码问题"><span class="nav-number">2.</span> <span class="nav-text">编码问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#客户端向node发送FormData"><span class="nav-number">3.</span> <span class="nav-text">客户端向node发送FormData</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#node端发送ArrayBuffer给客户端"><span class="nav-number">4.</span> <span class="nav-text">node端发送ArrayBuffer给客户端</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#综合实例"><span class="nav-number">5.</span> <span class="nav-text">综合实例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#性能"><span class="nav-number">6.</span> <span class="nav-text">性能</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">罗峡的博客</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/code/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/code/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/code/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/code/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length == 0) {
+       search_path = "search.xml";
+    }
+    var path = "/code/" + search_path;
+    // monitor main search box;
+
+    function proceedsearch() {
+      $("body").append('<div class="popoverlay">').css('overflow', 'hidden');
+      $('.popup').toggle();
+
+    }
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+    'use strict';
+    $.ajax({
+        url: path,
+        dataType: "xml",
+        async: true,
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            isfetched = true;
+            $('.popup').detach().appendTo('.header-inner');
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                var matchcounts = 0;
+                var str='<ul class=\"search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length > 1) {
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var content_index = [];
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_content = data.content.trim().replace(/<[^>]+>/g,"").toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    var index_content = -1;
+                    var first_occur = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title != '' && data_content != '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            index_content = data_content.indexOf(keyword);
+                            if( index_title < 0 && index_content < 0 ){
+                                isMatch = false;
+                            } else {
+                                if (index_content < 0) {
+                                    index_content = 0;
+                                }
+                                if (i == 0) {
+                                    first_occur = index_content;
+                                }
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        matchcounts += 1;
+                        str += "<li><a href='"+ data_url +"' class='search-result-title'>"+ data_title +"</a>";
+                        var content = data.content.trim().replace(/<[^>]+>/g,"");
+                        if (first_occur >= 0) {
+                            // cut out 100 characters
+                            var start = first_occur - 20;
+                            var end = first_occur + 80;
+                            if(start < 0){
+                                start = 0;
+                            }
+                            if(start == 0){
+                                end = 50;
+                            }
+                            if(end > content.length){
+                                end = content.length;
+                            }
+                            var match_content = content.substring(start, end);
+                            // highlight all keywords
+                            keywords.forEach(function(keyword){
+                                var regS = new RegExp(keyword, "gi");
+                                match_content = match_content.replace(regS, "<b class=\"search-keyword\">"+keyword+"</b>");
+                            });
+
+                            str += "<p class=\"search-result\">" + match_content +"...</p>"
+                        }
+                        str += "</li>";
+                    }
+                })};
+                str += "</ul>";
+                if (matchcounts == 0) { str = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>' }
+                if (keywords == "") { str = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>' }
+                $resultContent.innerHTML = str;
+            });
+            proceedsearch();
+        }
+    });}
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched == false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+
+    });
+
+    $('.popup-btn-close').click(function(e){
+      $('.popup').hide();
+      $(".popoverlay").remove();
+      $('body').css('overflow', '');
+    });
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+  </script>
+
+
+  
+
+  
+
+  
+<script type="text/javascript" async src="//push.zhanzhang.baidu.com/push.js">
+</script>
+
+
+</body>
+</html>

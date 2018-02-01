@@ -1,0 +1,881 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/code/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/code/lib/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/code/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="HTTPS,TLS,Web安全," />
+
+
+
+
+
+  <link rel="alternate" href="/code/atom.xml" title="罗峡的技术博客" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/code/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="迁移到HTTPS已经成为必然，许多API已经必须部署HTTPS才能使用，如我之前分享过的WebRTC等，ios已经强制app使用HTTPS,HTTP2.0必须基于HTTPS之上。。。 那么这篇文章分享下HTTPS系列之实战部署，从Node server和Nginx Server两种情景来分析。">
+<meta name="keywords" content="HTTPS,TLS,Web安全">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Let&#39;s Encrypt">
+<meta property="og:url" content="http://luoxia.me/code/2017/03/13/Let-s-Encrypt/index.html">
+<meta property="og:site_name" content="罗峡的技术博客">
+<meta property="og:description" content="迁移到HTTPS已经成为必然，许多API已经必须部署HTTPS才能使用，如我之前分享过的WebRTC等，ios已经强制app使用HTTPS,HTTP2.0必须基于HTTPS之上。。。 那么这篇文章分享下HTTPS系列之实战部署，从Node server和Nginx Server两种情景来分析。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/certificateshow.jpg">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/generate.jpg">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/localhostresult.jpg">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/okla.jpg">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/httpsnice.jpg">
+<meta property="og:updated_time" content="2017-11-16T13:10:06.485Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Let&#39;s Encrypt">
+<meta name="twitter:description" content="迁移到HTTPS已经成为必然，许多API已经必须部署HTTPS才能使用，如我之前分享过的WebRTC等，ios已经强制app使用HTTPS,HTTP2.0必须基于HTTPS之上。。。 那么这篇文章分享下HTTPS系列之实战部署，从Node server和Nginx Server两种情景来分析。">
+<meta name="twitter:image" content="http://7xsi10.com1.z0.glb.clouddn.com/certificateshow.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: undefined,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://luoxia.me/code/2017/03/13/Let-s-Encrypt/"/>
+
+  <title> Let's Encrypt | 罗峡的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?179492533449f84f24555d1cbf10462f";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/code/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">罗峡的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">爱技术，爱生活</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/code/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/code/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/code/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/code/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/code/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup">
+ <span class="search-icon fa fa-search"></span>
+ <input type="text" id="local-search-input">
+ <div id="local-search-result"></div>
+ <span class="popup-btn-close">close</span>
+</div>
+
+
+    </div>
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Let's Encrypt
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2017-03-13T17:03:26+08:00" content="2017-03-13">
+              2017-03-13
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/code/categories/Web安全/" itemprop="url" rel="index">
+                    <span itemprop="name">Web安全</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>迁移到HTTPS已经成为必然，许多API已经必须部署HTTPS才能使用，如我之前分享过的WebRTC等，ios已经强制app使用HTTPS,HTTP2.0必须基于HTTPS之上。。。</p>
+<p>那么这篇文章分享下HTTPS系列之实战部署，从Node server和Nginx Server两种情景来分析。</p>
+<a id="more"></a>
+<h1 id="证书"><a href="#证书" class="headerlink" title="证书"></a>证书</h1><p>上篇文章的TLS原理篇提到了证书，用于安全交换公钥，包含了证书订阅者信息，以及CA的数字签名（HASH + 私钥加密，上篇有讲）。</p>
+<h3 id="字段"><a href="#字段" class="headerlink" title="字段"></a>字段</h3><p><img src="http://7xsi10.com1.z0.glb.clouddn.com/certificateshow.jpg" alt="certificate"><br>证书字段包含了版本，序列号，签名算法，颁发者，颁发对象，有效期，使用者公钥，证书扩展等信息。</p>
+<h3 id="证书链"><a href="#证书链" class="headerlink" title="证书链"></a>证书链</h3><p>根CA -&gt; 中间CA(可能多个) -&gt; 最终实体证书</p>
+<p>client（即信赖方）会存放知名根CA的证书。当server发送过来自己的证书时，client会由该证书知道颁发它的上一级CA的证书，接着从上一级的证书里找到再上一级的证书，一级一级直到根CA证书进行验证。</p>
+<h3 id="证书吊销"><a href="#证书吊销" class="headerlink" title="证书吊销"></a>证书吊销</h3><p><strong>CRL（证书吊销列表）</strong>，这个列表记录了未过期但是已经被吊销的证书,之前证书字段里的CRL分发点就用于记录CRL地址</p>
+<p><strong>OCSP（在线证书状态协议）</strong>支持实时查询</p>
+<h1 id="用openssl生成自签名证书"><a href="#用openssl生成自签名证书" class="headerlink" title="用openssl生成自签名证书"></a>用openssl生成自签名证书</h1><h3 id="生成server-RSA私钥"><a href="#生成server-RSA私钥" class="headerlink" title="生成server RSA私钥:"></a>生成server RSA私钥:</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl genrsa -out server.key 1024</span><br></pre></td></tr></table></figure>
+<h3 id="生成server-RSA公钥"><a href="#生成server-RSA公钥" class="headerlink" title="生成server RSA公钥:"></a>生成server RSA公钥:</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl rsa -in server.key -pubout -out server.pem</span><br></pre></td></tr></table></figure>
+<h3 id="CA准备"><a href="#CA准备" class="headerlink" title="CA准备"></a>CA准备</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ openssl genrsa -out ca.key 1024 //生成CA私钥</span><br><span class="line">$ openssl req -new -key ca.key -out ca.csr //通过CA私钥生成证书申请文件</span><br><span class="line">$ openssl x509 -req -in ca.csr  -signkey ca.key -out ca.crt //生成CA证书</span><br></pre></td></tr></table></figure>
+<h3 id="用CA颁发server证书"><a href="#用CA颁发server证书" class="headerlink" title="用CA颁发server证书"></a>用CA颁发server证书</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ openssl req -new -key server.key -out server.csr //通过server私钥生成证书申请文件</span><br><span class="line">$ openssl x509 -req -CA ca.crt -CAkey ca.key -CAcreateserial -in server.csr -out server.crt //生成server 证书</span><br></pre></td></tr></table></figure>
+<p>生成成功:<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/generate.jpg" alt="generate"></p>
+<h1 id="Node-server部署HTTPS"><a href="#Node-server部署HTTPS" class="headerlink" title="Node server部署HTTPS"></a>Node server部署HTTPS</h1><h3 id="用http-proxy做反向代理，HTTPS-gt-HTTP-起多个服务"><a href="#用http-proxy做反向代理，HTTPS-gt-HTTP-起多个服务" class="headerlink" title="用http-proxy做反向代理，HTTPS-&gt;HTTP,起多个服务"></a>用http-proxy做反向代理，HTTPS-&gt;HTTP,起多个服务</h3><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> https = <span class="built_in">require</span>(<span class="string">'https'</span>);</span><br><span class="line"><span class="keyword">const</span> proxy = <span class="built_in">require</span>(<span class="string">'http-proxy'</span>).createProxyServer(&#123;&#125;);</span><br><span class="line"><span class="keyword">const</span> fs = <span class="built_in">require</span>(<span class="string">'fs'</span>);</span><br><span class="line"><span class="keyword">const</span> options = &#123;</span><br><span class="line">    key: fs.readFileSync(<span class="string">'./keys/server.key'</span>),</span><br><span class="line">    cert: fs.readFileSync(<span class="string">'./keys/server.crt'</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> server = https.createServer(options,(req,res)=&gt;&#123;</span><br><span class="line">    <span class="keyword">const</span> host = req.headers.host,</span><br><span class="line">        ip = req.headers[<span class="string">'x-forwarded-for'</span>] || req.connection.remoteAddress;</span><br><span class="line">    <span class="keyword">switch</span>(host)&#123;</span><br><span class="line">        <span class="keyword">case</span> <span class="string">'test.localhost'</span>:</span><br><span class="line">            proxy.web(req,res,&#123;</span><br><span class="line">                target: <span class="string">'http://localhost:3000'</span>,</span><br><span class="line">                ssl: &#123;</span><br><span class="line">                    key: fs.readFileSync(<span class="string">'./keys/server.key'</span>, <span class="string">'utf8'</span>),</span><br><span class="line">                    cert: fs.readFileSync(<span class="string">'./keys/server.crt'</span>, <span class="string">'utf8'</span>)</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">            res.writeHead(<span class="number">200</span>);</span><br><span class="line">            res.end(<span class="string">'welcome to node https proxy server'</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;).listen(<span class="number">443</span>);</span><br></pre></td></tr></table></figure>
+<h3 id="将HTTP的80端口请求重定向到HTTPS的443端口"><a href="#将HTTP的80端口请求重定向到HTTPS的443端口" class="headerlink" title="将HTTP的80端口请求重定向到HTTPS的443端口"></a>将HTTP的80端口请求重定向到HTTPS的443端口</h3><p>在client输入网址默认是http协议的，所以需要重定向一下<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> httpServer = http.createServer(<span class="function">(<span class="params">req,res</span>)=&gt;</span>&#123;</span><br><span class="line">    res.writeHead(<span class="number">301</span>,&#123;</span><br><span class="line">        <span class="string">'Location'</span>: <span class="string">`https://<span class="subst">$&#123;req.headers.host&#125;</span><span class="subst">$&#123;req.url&#125;</span>`</span></span><br><span class="line">    &#125;)</span><br><span class="line">    res.end();</span><br><span class="line">&#125;)</span><br><span class="line">httpServer.listen(<span class="number">80</span>);</span><br><span class="line">httpServer.on(<span class="string">'listening'</span>,()=&gt;&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'the http server has been listened at port 80'</span>)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure></p>
+<h3 id="综合代码"><a href="#综合代码" class="headerlink" title="综合代码"></a>综合代码</h3><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> https = <span class="built_in">require</span>(<span class="string">'https'</span>);</span><br><span class="line"><span class="keyword">const</span> http = <span class="built_in">require</span>(<span class="string">'http'</span>);</span><br><span class="line"><span class="keyword">const</span> proxy = <span class="built_in">require</span>(<span class="string">'http-proxy'</span>).createProxyServer(&#123;&#125;);</span><br><span class="line"><span class="keyword">const</span> fs = <span class="built_in">require</span>(<span class="string">'fs'</span>);</span><br><span class="line"><span class="keyword">const</span> options = &#123;</span><br><span class="line">    key: fs.readFileSync(<span class="string">'./keys/server.key'</span>),</span><br><span class="line">    cert: fs.readFileSync(<span class="string">'./keys/server.crt'</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> server = https.createServer(options,(req,res)=&gt;&#123;</span><br><span class="line">    <span class="keyword">const</span> host = req.headers.host,</span><br><span class="line">        ip = req.headers[<span class="string">'x-forwarded-for'</span>] || req.connection.remoteAddress;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">`client ip: <span class="subst">$&#123;ip&#125;</span>`</span>);</span><br><span class="line">    <span class="keyword">switch</span>(host)&#123;</span><br><span class="line">        <span class="keyword">case</span> <span class="string">'test.localhost'</span>:</span><br><span class="line">            proxy.web(req,res,&#123;</span><br><span class="line">                target: <span class="string">'http://localhost:3000'</span>,</span><br><span class="line">                ssl: &#123;</span><br><span class="line">                    key: fs.readFileSync(<span class="string">'./keys/server.key'</span>, <span class="string">'utf8'</span>),</span><br><span class="line">                    cert: fs.readFileSync(<span class="string">'./keys/server.crt'</span>, <span class="string">'utf8'</span>)</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">            res.writeHead(<span class="number">200</span>);</span><br><span class="line">            res.end(<span class="string">'welcome to node https proxy server'</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;).listen(<span class="number">443</span>);</span><br><span class="line"></span><br><span class="line">server.on(<span class="string">'listening'</span>,()=&gt;&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'https server has been listened at port 8000'</span>);</span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> httpServer = http.createServer(<span class="function">(<span class="params">req,res</span>)=&gt;</span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">`the url is <span class="subst">$&#123;req.url&#125;</span>`</span>)</span><br><span class="line">    res.writeHead(<span class="number">301</span>,&#123;</span><br><span class="line">        <span class="string">'Location'</span>: <span class="string">`https://<span class="subst">$&#123;req.headers.host&#125;</span><span class="subst">$&#123;req.url&#125;</span>`</span></span><br><span class="line">    &#125;)</span><br><span class="line">    res.end()</span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line">httpServer.listen(<span class="number">80</span>);</span><br><span class="line">httpServer.on(<span class="string">'listening'</span>,()=&gt;&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'the http server has been listened at port 80'</span>)</span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> testServer = http.createServer(<span class="function">(<span class="params">req,res</span>)=&gt;</span>&#123;</span><br><span class="line">    res.writeHead(<span class="number">200</span>,&#123;</span><br><span class="line">        <span class="string">'Content-Type'</span>: <span class="string">'text/html'</span></span><br><span class="line">    &#125;);</span><br><span class="line">    res.end(fs.readFileSync(<span class="string">'./index.html'</span>));</span><br><span class="line">&#125;).listen(<span class="number">3000</span>);</span><br><span class="line">testServer.on(<span class="string">'listening'</span>,()=&gt;&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'the test server has been listened at port 3000'</span>)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+<p>将我们的CA证书加入客户端受信任CA证书列表，再访问看看：</p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/localhostresult.jpg" alt="nice"><br>可爱的小绿锁！</p>
+<p>自己充当CA虽然快捷方便，但是客户端并没有信任该CA证书，还得让客户端将你的CA导入才行。这是很伤感的。</p>
+<h1 id="使用Let’s-Encrypt免费证书"><a href="#使用Let’s-Encrypt免费证书" class="headerlink" title="使用Let’s Encrypt免费证书"></a>使用Let’s Encrypt免费证书</h1><p>Let’s Encrypt是一个开源免费的公钥证书颁发机构，为了促进web https化进程而生。**</p>
+<p>**我这里的环境Centos6 + Nginx</p>
+<h3 id="安装certbot"><a href="#安装certbot" class="headerlink" title="安装certbot"></a>安装certbot</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ wget https://dl.eff.org/certbot-auto</span><br><span class="line">$ chmod a+x certbot-auto</span><br><span class="line">$ ./certbot-auto</span><br></pre></td></tr></table></figure>
+<h3 id="配置Nginx"><a href="#配置Nginx" class="headerlink" title="配置Nginx"></a>配置Nginx</h3><p>Let’s Encrypt自助进行颁发证书，需要验证域名所属权限，在申请证书时，Cerbot会在服务器生成随机文件，然后Cerbot服务器会来尝试访问这个随机文件，以此来验证。</p>
+<p>在nginx监听80端口且代理了将要申请证书的域名的server里加匹配路由：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">location ^~ /.well-known/acme-challenge/ &#123;</span><br><span class="line">    default_type &quot;text/plain&quot;;</span><br><span class="line">    root /usr/local/webserver/nginx/html;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">location = /.well-known/acme-challenge/ &#123;</span><br><span class="line">    return 404;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>接着要根据自己的配置在相应目录下新建 <strong>.well-known/acme-challenge/</strong>目录</p>
+<p>如这里的<strong>/usr/local/webserver/nginx/html/.well-known/acme-challenge/</strong></p>
+<p>重启nginx</p>
+<h3 id="申请免费证书"><a href="#申请免费证书" class="headerlink" title="申请免费证书"></a>申请免费证书</h3><p>这里我拿自己的一个子域名做测试:<strong>ppt.luoxia.me</strong><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./certbot certonly --webroot -w /usr/local/webserver/nginx/html/ -d ppt.luoxia.me</span><br></pre></td></tr></table></figure></p>
+<p><strong>申请成功</strong><br><img src="http://7xsi10.com1.z0.glb.clouddn.com/okla.jpg" alt="okla"></p>
+<p>另外注意一个问题，由于Centos 6自带的Python版本是2.6.6，Cerbot不支持，需要升级Python,另外，在申请过程中老是报错：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">No matching distribution found for acme==0.12.0</span><br></pre></td></tr></table></figure></p>
+<p>原因是我的阿里云主机里pip是阿里源，解决办法，修改pip源就好了。</p>
+<h3 id="更新证书"><a href="#更新证书" class="headerlink" title="更新证书"></a>更新证书</h3><p>申请的免费证书有效期为90天，可以进行更新<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./certbot-auto renew --dry-run</span><br></pre></td></tr></table></figure></p>
+<h1 id="Nginx-server-https部署"><a href="#Nginx-server-https部署" class="headerlink" title="Nginx  server https部署"></a>Nginx  server https部署</h1><p>原理和Node server类似</p>
+<h3 id="https-gt-http的反向代理"><a href="#https-gt-http的反向代理" class="headerlink" title="https -&gt; http的反向代理"></a>https -&gt; http的反向代理</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">upstream ppt &#123;</span><br><span class="line">    server  localhost:3000;</span><br><span class="line">&#125;</span><br><span class="line">server &#123;</span><br><span class="line">    listen  443 ssl;</span><br><span class="line"></span><br><span class="line">    ssl_certificate /etc/letsencrypt/live/ppt.luoxia.me/fullchain.pem;</span><br><span class="line">    ssl_certificate_key /etc/letsencrypt/live/ppt.luoxia.me/privkey.pem;</span><br><span class="line">    ssl_trusted_certificate /etc/letsencrypt/live/ppt.luoxia.me/chain.pem;</span><br><span class="line"></span><br><span class="line">    server_name ppt.luoxia.me;</span><br><span class="line">    location ^~ /.well-known/acme-challenge/ &#123;</span><br><span class="line">            default_type &quot;text/plain&quot;;</span><br><span class="line">            root     /usr/local/webserver/nginx/html;</span><br><span class="line">    &#125;</span><br><span class="line">    location = /.well-known/acme-challenge/ &#123;</span><br><span class="line">            return 404;</span><br><span class="line">    &#125;</span><br><span class="line">    location / &#123;</span><br><span class="line">        proxy_set_header X-Real-IP $remote_addr;</span><br><span class="line">        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;</span><br><span class="line">        proxy_set_header Host $http_host;</span><br><span class="line">        proxy_set_header X-NginX-Proxy true;</span><br><span class="line">        proxy_pass http://ppt/;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中ssl_trusted_certificate用于开启OCSP。</p>
+<h3 id="http服务重定向到https"><a href="#http服务重定向到https" class="headerlink" title="http服务重定向到https"></a>http服务重定向到https</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen 80;</span><br><span class="line">    server_name ppt.luoxia.me;</span><br><span class="line">    rewrite ^(.*)$  https://$host$1 permanent;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>部署成功,可爱的小绿锁。<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/httpsnice.jpg" alt="nice https"></p>
+<h1 id="结束语"><a href="#结束语" class="headerlink" title="结束语"></a>结束语</h1><p>博客网站托管在github主机上的，所以暂时没法给自己的博客域名升级到https，在移动端访问会被流氓的运营商加广告，找个机会将博客迁移到自己的主机上。</p>
+<p>后面还会有不定期的https系列分享，欢迎大家一起讨论。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+<div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/code/images/wechat.jpg" alt="罗峡的博客 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎扫描上面的微信公众号二维码，关注我的个人公众号：全栈前端</div>
+</div>
+
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/code/images/wechat_pay.png" alt="罗峡的博客 WeChat Pay"/>
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/code/images/ali_pay.jpg" alt="罗峡的博客 Alipay"/>
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/code/tags/HTTPS/" rel="tag">#HTTPS</a>
+          
+            <a href="/code/tags/TLS/" rel="tag">#TLS</a>
+          
+            <a href="/code/tags/Web安全/" rel="tag">#Web安全</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/code/2017/03/09/TLS原理浅析/" rel="next" title="TLS/SSL原理浅析">
+                <i class="fa fa-chevron-left"></i> TLS/SSL原理浅析
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/code/2017/03/16/Haskell类型系统/" rel="prev" title="Haskell类型系统">
+                Haskell类型系统 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/code/images/head.jpg"
+               alt="罗峡的博客" />
+          <p class="site-author-name" itemprop="name">罗峡的博客</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/code/archives">
+              <span class="site-state-item-count">43</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/code/categories">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/code/tags">
+                <span class="site-state-item-count">85</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/code/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/laoqiren" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://luoxia.me/life" title="生活随笔" target="_blank">生活随笔</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#证书"><span class="nav-number">1.</span> <span class="nav-text">证书</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#字段"><span class="nav-number">1.0.1.</span> <span class="nav-text">字段</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#证书链"><span class="nav-number">1.0.2.</span> <span class="nav-text">证书链</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#证书吊销"><span class="nav-number">1.0.3.</span> <span class="nav-text">证书吊销</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#用openssl生成自签名证书"><span class="nav-number">2.</span> <span class="nav-text">用openssl生成自签名证书</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#生成server-RSA私钥"><span class="nav-number">2.0.1.</span> <span class="nav-text">生成server RSA私钥:</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#生成server-RSA公钥"><span class="nav-number">2.0.2.</span> <span class="nav-text">生成server RSA公钥:</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CA准备"><span class="nav-number">2.0.3.</span> <span class="nav-text">CA准备</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#用CA颁发server证书"><span class="nav-number">2.0.4.</span> <span class="nav-text">用CA颁发server证书</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Node-server部署HTTPS"><span class="nav-number">3.</span> <span class="nav-text">Node server部署HTTPS</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#用http-proxy做反向代理，HTTPS-gt-HTTP-起多个服务"><span class="nav-number">3.0.1.</span> <span class="nav-text">用http-proxy做反向代理，HTTPS->HTTP,起多个服务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#将HTTP的80端口请求重定向到HTTPS的443端口"><span class="nav-number">3.0.2.</span> <span class="nav-text">将HTTP的80端口请求重定向到HTTPS的443端口</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#综合代码"><span class="nav-number">3.0.3.</span> <span class="nav-text">综合代码</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#使用Let’s-Encrypt免费证书"><span class="nav-number">4.</span> <span class="nav-text">使用Let’s Encrypt免费证书</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#安装certbot"><span class="nav-number">4.0.1.</span> <span class="nav-text">安装certbot</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#配置Nginx"><span class="nav-number">4.0.2.</span> <span class="nav-text">配置Nginx</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#申请免费证书"><span class="nav-number">4.0.3.</span> <span class="nav-text">申请免费证书</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#更新证书"><span class="nav-number">4.0.4.</span> <span class="nav-text">更新证书</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Nginx-server-https部署"><span class="nav-number">5.</span> <span class="nav-text">Nginx  server https部署</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#https-gt-http的反向代理"><span class="nav-number">5.0.1.</span> <span class="nav-text">https -> http的反向代理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#http服务重定向到https"><span class="nav-number">5.0.2.</span> <span class="nav-text">http服务重定向到https</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#结束语"><span class="nav-number">6.</span> <span class="nav-text">结束语</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">罗峡的博客</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/code/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/code/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/code/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/code/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length == 0) {
+       search_path = "search.xml";
+    }
+    var path = "/code/" + search_path;
+    // monitor main search box;
+
+    function proceedsearch() {
+      $("body").append('<div class="popoverlay">').css('overflow', 'hidden');
+      $('.popup').toggle();
+
+    }
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+    'use strict';
+    $.ajax({
+        url: path,
+        dataType: "xml",
+        async: true,
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            isfetched = true;
+            $('.popup').detach().appendTo('.header-inner');
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                var matchcounts = 0;
+                var str='<ul class=\"search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length > 1) {
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var content_index = [];
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_content = data.content.trim().replace(/<[^>]+>/g,"").toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    var index_content = -1;
+                    var first_occur = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title != '' && data_content != '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            index_content = data_content.indexOf(keyword);
+                            if( index_title < 0 && index_content < 0 ){
+                                isMatch = false;
+                            } else {
+                                if (index_content < 0) {
+                                    index_content = 0;
+                                }
+                                if (i == 0) {
+                                    first_occur = index_content;
+                                }
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        matchcounts += 1;
+                        str += "<li><a href='"+ data_url +"' class='search-result-title'>"+ data_title +"</a>";
+                        var content = data.content.trim().replace(/<[^>]+>/g,"");
+                        if (first_occur >= 0) {
+                            // cut out 100 characters
+                            var start = first_occur - 20;
+                            var end = first_occur + 80;
+                            if(start < 0){
+                                start = 0;
+                            }
+                            if(start == 0){
+                                end = 50;
+                            }
+                            if(end > content.length){
+                                end = content.length;
+                            }
+                            var match_content = content.substring(start, end);
+                            // highlight all keywords
+                            keywords.forEach(function(keyword){
+                                var regS = new RegExp(keyword, "gi");
+                                match_content = match_content.replace(regS, "<b class=\"search-keyword\">"+keyword+"</b>");
+                            });
+
+                            str += "<p class=\"search-result\">" + match_content +"...</p>"
+                        }
+                        str += "</li>";
+                    }
+                })};
+                str += "</ul>";
+                if (matchcounts == 0) { str = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>' }
+                if (keywords == "") { str = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>' }
+                $resultContent.innerHTML = str;
+            });
+            proceedsearch();
+        }
+    });}
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched == false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+
+    });
+
+    $('.popup-btn-close').click(function(e){
+      $('.popup').hide();
+      $(".popoverlay").remove();
+      $('body').css('overflow', '');
+    });
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+  </script>
+
+
+  
+
+  
+
+  
+<script type="text/javascript" async src="//push.zhanzhang.baidu.com/push.js">
+</script>
+
+
+</body>
+</html>

@@ -1,0 +1,910 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/code/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/code/lib/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/code/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="WebGL,计算机图形学," />
+
+
+
+
+
+  <link rel="alternate" href="/code/atom.xml" title="罗峡的技术博客" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/code/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="从原生WebGL的角度分析一个立方体的产生。例子虽简单，但包含了好多基础概念哈哈，算是入门阶段的小小总结吧。 首先来看看最终的效果 (♥◠‿◠)ﾉ：">
+<meta name="keywords" content="WebGL,计算机图形学">
+<meta property="og:type" content="article">
+<meta property="og:title" content="记一个立方体的产生">
+<meta property="og:url" content="http://luoxia.me/code/2017/03/23/记一个立方体的产生/index.html">
+<meta property="og:site_name" content="罗峡的技术博客">
+<meta property="og:description" content="从原生WebGL的角度分析一个立方体的产生。例子虽简单，但包含了好多基础概念哈哈，算是入门阶段的小小总结吧。 首先来看看最终的效果 (♥◠‿◠)ﾉ：">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/test.gif">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/locate.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/proj.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/processgraph.png">
+<meta property="og:updated_time" content="2017-11-16T13:10:06.492Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="记一个立方体的产生">
+<meta name="twitter:description" content="从原生WebGL的角度分析一个立方体的产生。例子虽简单，但包含了好多基础概念哈哈，算是入门阶段的小小总结吧。 首先来看看最终的效果 (♥◠‿◠)ﾉ：">
+<meta name="twitter:image" content="http://7xsi10.com1.z0.glb.clouddn.com/test.gif">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: undefined,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://luoxia.me/code/2017/03/23/记一个立方体的产生/"/>
+
+  <title> 记一个立方体的产生 | 罗峡的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?179492533449f84f24555d1cbf10462f";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/code/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">罗峡的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">爱技术，爱生活</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/code/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/code/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/code/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/code/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/code/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup">
+ <span class="search-icon fa fa-search"></span>
+ <input type="text" id="local-search-input">
+ <div id="local-search-result"></div>
+ <span class="popup-btn-close">close</span>
+</div>
+
+
+    </div>
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                记一个立方体的产生
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2017-03-23T11:22:12+08:00" content="2017-03-23">
+              2017-03-23
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/code/categories/WebGL/" itemprop="url" rel="index">
+                    <span itemprop="name">WebGL</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>从原生WebGL的角度分析一个立方体的产生。例子虽简单，但包含了好多基础概念哈哈，算是入门阶段的小小总结吧。</p>
+<p>首先来看看最终的效果 (♥◠‿◠)ﾉ：</p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/test.gif" alt=""><br><a id="more"></a></p>
+<h2 id="WebGL坐标系统"><a href="#WebGL坐标系统" class="headerlink" title="WebGL坐标系统"></a>WebGL坐标系统</h2><p>与Canvas画布的坐标系不同，WebGL默认采用右手坐标系：<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/locate.png" alt=""></p>
+<p>WebGL坐标原点在画布中点。</p>
+<p>以将屏幕上某点的px坐标转换到WebGL坐标为例：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">let</span> x = e.clientX,</span><br><span class="line">    y = e.clientY;</span><br><span class="line"><span class="keyword">let</span> rect = e.target.getBoundingClientRect();</span><br><span class="line"></span><br><span class="line">x = ((x - rect.left) - canvas.width/<span class="number">2</span>)/(canvas.width/<span class="number">2</span>);</span><br><span class="line">y = ((y - rect.height) - canvas.height/<span class="number">2</span>)/(canvas.height/<span class="number">2</span>);</span><br></pre></td></tr></table></figure></p>
+<p>先是将px坐标转换为canvas画布坐标（即减去画布与屏幕左和上的距离），再转换成WebGL坐标（由于坐标值为0.0-1.0的值，所以要进行比值操作）</p>
+<h2 id="缓冲区对象"><a href="#缓冲区对象" class="headerlink" title="缓冲区对象"></a>缓冲区对象</h2><p>用于临时保存多个顶点信息，一次性绘制多个顶点。</p>
+<p>创建缓冲区对象 -&gt; 绑定缓冲区对象 -&gt; 写入数据到缓冲区对象 -&gt; 分配缓冲区对象给attribute变量 -&gt; 开启attribute变量</p>
+<p>如将正方体的每个顶点坐标，颜色值，法向量坐标输送到顶点着色器变量里:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> vertices = <span class="keyword">new</span> <span class="built_in">Float32Array</span>([</span><br><span class="line">        <span class="number">1.0</span>, <span class="number">1.0</span>, <span class="number">1.0</span>,  <span class="number">-1.0</span>, <span class="number">1.0</span>, <span class="number">1.0</span>,  <span class="number">-1.0</span>,<span class="number">-1.0</span>, <span class="number">1.0</span>,   <span class="number">1.0</span>,<span class="number">-1.0</span>, <span class="number">1.0</span>,  <span class="comment">// v0-v1-v2-v3 front</span></span><br><span class="line">     <span class="number">1.0</span>, <span class="number">1.0</span>, <span class="number">1.0</span>,   <span class="number">1.0</span>,<span class="number">-1.0</span>, <span class="number">1.0</span>,   <span class="number">1.0</span>,<span class="number">-1.0</span>,<span class="number">-1.0</span>,   <span class="number">1.0</span>, <span class="number">1.0</span>,<span class="number">-1.0</span>,  <span class="comment">// v0-v3-v4-v5 right</span></span><br><span class="line">     <span class="number">1.0</span>, <span class="number">1.0</span>, <span class="number">1.0</span>,   <span class="number">1.0</span>, <span class="number">1.0</span>,<span class="number">-1.0</span>,  <span class="number">-1.0</span>, <span class="number">1.0</span>,<span class="number">-1.0</span>,  <span class="number">-1.0</span>, <span class="number">1.0</span>, <span class="number">1.0</span>,  <span class="comment">// v0-v5-v6-v1 up</span></span><br><span class="line">    <span class="number">-1.0</span>, <span class="number">1.0</span>, <span class="number">1.0</span>,  <span class="number">-1.0</span>, <span class="number">1.0</span>,<span class="number">-1.0</span>,  <span class="number">-1.0</span>,<span class="number">-1.0</span>,<span class="number">-1.0</span>,  <span class="number">-1.0</span>,<span class="number">-1.0</span>, <span class="number">1.0</span>,  <span class="comment">// v1-v6-v7-v2 left</span></span><br><span class="line">    <span class="number">-1.0</span>,<span class="number">-1.0</span>,<span class="number">-1.0</span>,   <span class="number">1.0</span>,<span class="number">-1.0</span>,<span class="number">-1.0</span>,   <span class="number">1.0</span>,<span class="number">-1.0</span>, <span class="number">1.0</span>,  <span class="number">-1.0</span>,<span class="number">-1.0</span>, <span class="number">1.0</span>,  <span class="comment">// v7-v4-v3-v2 down</span></span><br><span class="line">     <span class="number">1.0</span>,<span class="number">-1.0</span>,<span class="number">-1.0</span>,  <span class="number">-1.0</span>,<span class="number">-1.0</span>,<span class="number">-1.0</span>,  <span class="number">-1.0</span>, <span class="number">1.0</span>,<span class="number">-1.0</span>,   <span class="number">1.0</span>, <span class="number">1.0</span>,<span class="number">-1.0</span>   <span class="comment">// v4-v7-v6-v5 back</span></span><br><span class="line">    ]);</span><br><span class="line"><span class="keyword">let</span> buffer = gl.createBuffer();</span><br><span class="line">gl.bindBuffer(gl.ARRAY_BUFFER,buffer);</span><br><span class="line">gl.bufferData(gl.ARRAY_BUFFER,vertices,gl.STATIC_DRAW);</span><br><span class="line"><span class="keyword">let</span> a_Attribute = gl.getAttribLocation(gl.program,<span class="string">'a_Postion'</span>);</span><br><span class="line">gl.vertexAttribPointer(a_Attribute,num,type,<span class="literal">false</span>,<span class="number">0</span>,<span class="number">0</span>);</span><br><span class="line">gl.enableVertexAttribArray(a_Attribute);</span><br></pre></td></tr></table></figure></p>
+<h2 id="变换（模型矩阵）"><a href="#变换（模型矩阵）" class="headerlink" title="变换（模型矩阵）"></a>变换（模型矩阵）</h2><p>将物体进行多种变换，实际是多种矩阵做乘法。这里用封装好的矩阵API来创建模型变换矩阵。</p>
+<p>正方体在不断的旋转:</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> modelMatrix = <span class="keyword">new</span> Matrix4();</span><br><span class="line"><span class="keyword">let</span> currentAngle = animate(currentAngle);</span><br><span class="line">modelMatrix.setRotate(currentAngle, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>);</span><br><span class="line">gl.uniformMatrix4fv(u_ModelMatrix,<span class="literal">false</span>,modelMatrix.elements);</span><br></pre></td></tr></table></figure>
+<h2 id="观察者视点和视线"><a href="#观察者视点和视线" class="headerlink" title="观察者视点和视线"></a>观察者视点和视线</h2><p>通过指定观察点位置，目标坐标，上方向，生成视图矩阵。</p>
+<p>如这里我们看正方体：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> viewMatrix = <span class="keyword">new</span> Matrix4();</span><br><span class="line">viewMatrix.setLookAt(<span class="number">4</span>, <span class="number">3</span>, <span class="number">7</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>);</span><br></pre></td></tr></table></figure></p>
+<h2 id="可视空间（投影矩阵）"><a href="#可视空间（投影矩阵）" class="headerlink" title="可视空间（投影矩阵）"></a>可视空间（投影矩阵）</h2><p>和现实中的照相机一样，可视区间是有一定范围的，在范围之外的，可以不用渲染，来节约开销。</p>
+<p>两类可视空间：</p>
+<ol>
+<li>正射投影</li>
+<li>透视投影</li>
+</ol>
+<p>正射投影中，不管目标离视点多远，呈现的大小就是原本的大小，这适合打印等场景，要模拟显示场景，就需要深度感，即目标大小离视点越远，看起来应该越小。</p>
+<h3 id="创建透视投影矩阵"><a href="#创建透视投影矩阵" class="headerlink" title="创建透视投影矩阵"></a>创建透视投影矩阵</h3><p>我们这里的正方体模拟显示场景，用透视投影，<br>透视投影图示：<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/proj.png" alt=""></p>
+<p>创建透视投影矩阵，需指定垂直视角（顶面与底面夹角，图中两条红色线夹角），近剪裁面宽高比，近剪裁面和远剪裁面的位置。为了防止正方体变形，将宽高比设为画布宽高比:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> projMatrix = <span class="keyword">new</span> Matrix4();</span><br><span class="line">projMatrix.setPerspective(<span class="number">30</span>,canvas.width/canvas.height,<span class="number">1</span>,<span class="number">100</span>);</span><br></pre></td></tr></table></figure></p>
+<h2 id="得到最终位置"><a href="#得到最终位置" class="headerlink" title="得到最终位置"></a>得到最终位置</h2><p>实际绘制在画布上的顶点位置，是经过原本坐标矩阵，模型矩阵，视图矩阵，投影矩阵运算而来的。</p>
+<p>即最终<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gl_Position = u_MvpMatrix * a_Position;</span><br></pre></td></tr></table></figure></p>
+<p>其中u_MvpMatrix表示模型视图投影综合矩阵。</p>
+<p>如这个正方体:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> mvpMatrix = <span class="keyword">new</span> Matrix4();</span><br><span class="line">mvpMatrix.set(projMatrix).multiply(viewMatrix).multiply(modelMatrix);</span><br><span class="line">gl.uniformMatrix4fv(u_MvpMatrix,<span class="literal">false</span>,mvpMatrix.elements);</span><br></pre></td></tr></table></figure></p>
+<h2 id="光照"><a href="#光照" class="headerlink" title="光照"></a>光照</h2><p>可以看到，这个正方体是模拟在光照环境下的，而且是点光源光。</p>
+<h3 id="漫反射光"><a href="#漫反射光" class="headerlink" title="漫反射光"></a>漫反射光</h3><p>对于平行光和点光源，漫反射形式的反射光颜色最终取决于入色光颜色，表面本身颜色，以及入射光与表面法线夹角决定。</p>
+<p>即：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;漫反射光颜色&gt; = &lt;入射光颜色&gt; x &lt;表面基底色&gt; x cosa</span><br></pre></td></tr></table></figure></p>
+<p>根据数量积公式，得到<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cosa = &lt;光线方向单位向量&gt;.&lt;法线方向单位向量&gt;</span><br></pre></td></tr></table></figure></p>
+<p>对于点光源，还需要通过点光源位置和目标点位置计算出光线方向</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">vec3 normal = normalize(v_Normal);</span><br><span class="line">vec3 lightDirection = normalize(u_LightPosition - v_Position);</span><br><span class="line"><span class="keyword">float</span> nDotL = max(dot(lightDirection,normal),<span class="number">0.0</span>);</span><br><span class="line">vec3 diffuse = u_LightColor * vec3(v_Color) * nDotL; <span class="comment">//漫反射光颜色</span></span><br></pre></td></tr></table></figure>
+<h3 id="加上环境光效果"><a href="#加上环境光效果" class="headerlink" title="加上环境光效果"></a>加上环境光效果</h3><p>最终的物体视觉颜色应该是:<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">vec3 ambient = u_AmbientLight * v_Color.rgb;</span><br><span class="line">gl_FragColor = vec4(diffuse + ambient,v_Color.a);</span><br></pre></td></tr></table></figure></p>
+<h3 id="转动的正方体光照"><a href="#转动的正方体光照" class="headerlink" title="转动的正方体光照"></a>转动的正方体光照</h3><p>目标在不断转动，会导致顶点位置在不断变化，使得光线方向在不断变化，而且转动会导致顶点的法向量发生变化。</p>
+<p>对于光线方向，在计算的时候，目标顶点坐标就应该是经过模型矩阵运算后的坐标（不包括视图，投影，因为光照考虑实际目标位置），即<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">v_Position = vec3(u_ModelMatrix * a_Position);</span><br></pre></td></tr></table></figure></p>
+<p>对于变化的法向量：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">变化后的法向量 = 原来的法向量矩阵 x 模型矩阵的逆转置矩阵。</span><br></pre></td></tr></table></figure></p>
+<p>如这里的正方体:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> normalMatrix  = <span class="keyword">new</span> Matrix4();</span><br><span class="line">normalMatrix.setInverseOf(modelMatrix);</span><br><span class="line">normalMatrix.transpose();</span><br><span class="line">gl.uniformMatrix4fv(u_NormalMatrix,<span class="literal">false</span>,normalMatrix.elements);</span><br></pre></td></tr></table></figure></p>
+<p>着色器：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">v_Normal = normalize(vec3(u_NormalMatrix * a_Normal));</span><br></pre></td></tr></table></figure></p>
+<h2 id="其他细节"><a href="#其他细节" class="headerlink" title="其他细节"></a>其他细节</h2><h3 id="隐藏面消除"><a href="#隐藏面消除" class="headerlink" title="隐藏面消除"></a>隐藏面消除</h3><p>默认情况下，WebGL是以顶点在缓冲区的顺序进行绘制的，当我们绘制的各目标实际远近顺序和数据在缓冲区顺序不一致时，就会出现远处目标本来看不到的部分挡住了近处的目标现象。</p>
+<p>开启隐藏面消除功能:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gl.enable(gl.DEPTH_TEST);</span><br></pre></td></tr></table></figure></p>
+<p>绘制之前，清除深度缓冲区:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);</span><br></pre></td></tr></table></figure></p>
+<h3 id="顶点索引"><a href="#顶点索引" class="headerlink" title="顶点索引"></a>顶点索引</h3><p>你可能会问，上面的顶点坐标类型数组中，为什么有24个顶点数据呢？<br>这是因为在正方体中，每个顶点可能处于不同面，不同面有不同法向量，webGL提供drawElements方法，通过索引方式绘制，这样做可以节省一些数据（不然需要6x6=36个顶点）</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> indices = <span class="keyword">new</span> <span class="built_in">Uint8Array</span>([</span><br><span class="line">    <span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>,   <span class="number">0</span>, <span class="number">2</span>, <span class="number">3</span>,    <span class="comment">// front</span></span><br><span class="line">    <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>,   <span class="number">4</span>, <span class="number">6</span>, <span class="number">7</span>,    <span class="comment">// right</span></span><br><span class="line">    <span class="number">8</span>, <span class="number">9</span>,<span class="number">10</span>,   <span class="number">8</span>,<span class="number">10</span>,<span class="number">11</span>,    <span class="comment">// up</span></span><br><span class="line">    <span class="number">12</span>,<span class="number">13</span>,<span class="number">14</span>,  <span class="number">12</span>,<span class="number">14</span>,<span class="number">15</span>,    <span class="comment">// left</span></span><br><span class="line">    <span class="number">16</span>,<span class="number">17</span>,<span class="number">18</span>,  <span class="number">16</span>,<span class="number">18</span>,<span class="number">19</span>,    <span class="comment">// down</span></span><br><span class="line">    <span class="number">20</span>,<span class="number">21</span>,<span class="number">22</span>,  <span class="number">20</span>,<span class="number">22</span>,<span class="number">23</span>      <span class="comment">// back</span></span><br><span class="line">]);</span><br><span class="line"><span class="keyword">let</span> indexBuffer = gl.createBuffer();</span><br><span class="line">gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,indexBuffer);</span><br><span class="line">gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,indices,gl.STATIC_DRAW);</span><br><span class="line">...</span><br><span class="line">gl.drawElements(gl.TRIANGLES,<span class="number">24</span>,gl.UNSIGNED_BYTE,<span class="number">0</span>);</span><br></pre></td></tr></table></figure>
+<h3 id="逐顶点不自然现象"><a href="#逐顶点不自然现象" class="headerlink" title="逐顶点不自然现象"></a>逐顶点不自然现象</h3><p>如果在顶点着色器中进行逐顶点的颜色计算，会发现最后立方体表面颜色渐变不够自然。这是因为靠几个顶点进行内插计算出来的效果和实际光照效果有一定差别，这就需要我们进行逐片元的颜色计算：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> FSHADER_SOURCE = <span class="string">`</span></span><br><span class="line"><span class="string">    precision mediump float;</span></span><br><span class="line"><span class="string">    uniform vec3 u_LightColor;</span></span><br><span class="line"><span class="string">    uniform vec3 u_LightPosition;</span></span><br><span class="line"><span class="string">    uniform vec3 u_AmbientLight;</span></span><br><span class="line"><span class="string">    varying vec4 v_Color;</span></span><br><span class="line"><span class="string">    varying vec3 v_Normal;</span></span><br><span class="line"><span class="string">    varying vec3 v_Position;</span></span><br><span class="line"><span class="string">    void main()&#123;</span></span><br><span class="line"><span class="string">        vec3 normal = normalize(v_Normal);</span></span><br><span class="line"><span class="string">        vec3 lightDirection = normalize(u_LightPosition - v_Position);</span></span><br><span class="line"><span class="string">        float nDotL = max(dot(lightDirection,normal),0.0);</span></span><br><span class="line"><span class="string">        vec3 diffuse = u_LightColor * vec3(v_Color) * nDotL;</span></span><br><span class="line"><span class="string">        vec3 ambient = u_AmbientLight * v_Color.rgb;</span></span><br><span class="line"><span class="string">        gl_FragColor = vec4(diffuse + ambient,v_Color.a);</span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">`</span></span><br></pre></td></tr></table></figure></p>
+<h3 id="精度限定"><a href="#精度限定" class="headerlink" title="精度限定"></a>精度限定</h3><p>着色器对片元着色器的float类型没有默认精度，需要手动添加（不然会报错）:<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">precision mediump <span class="keyword">float</span>;<span class="comment">//中精度</span></span><br><span class="line">precision highp <span class="keyword">float</span>; <span class="comment">//高精度</span></span><br><span class="line">precision lowp <span class="keyword">float</span>; <span class="comment">//低精度</span></span><br></pre></td></tr></table></figure></p>
+<h2 id="渲染过程"><a href="#渲染过程" class="headerlink" title="渲染过程"></a>渲染过程</h2><p><img src="http://7xsi10.com1.z0.glb.clouddn.com/processgraph.png" alt=""></p>
+<ol>
+<li><p>对缓冲区对象的每个顶点，执行顶点着色器，将顶点坐标赋值给gl_Position后，顶点进入图形装配区域，暂存。</p>
+</li>
+<li><p>所有点传入后，根据绘制API第一个参数决定如何装配图形，然后装配出图形。</p>
+</li>
+<li><p>对装配出来的几何图形进行光栅化，对装配的几何图形用像素进行填充。</p>
+</li>
+<li><p>对光栅化后的图形进行逐片元调用片元着色器，片元着色器会根据片元坐标计算每个片元的信息，比如颜色，纹理像素等并写入颜色缓冲区。如这里的正方体，我们就在片元着色器里计算像素颜色值（在光照影响下），如果同一个表面的四个顶点颜色不同，会发现有一个渐变效果，这便是片元着色器进行插值计算的结果。</p>
+</li>
+<li><p>当所有片元的值计算完毕后，进行最终渲染。</p>
+</li>
+</ol>
+<h2 id="initShaders"><a href="#initShaders" class="headerlink" title="initShaders()"></a>initShaders()</h2><p>这里绘制正方体参照《WebGL编程指南》并用了代码示例中的一些库文件，包括这里的initShaders():</p>
+<ol>
+<li>创建着色器对象(gl.createShader());</li>
+<li>向着色器对象中填充着色器的源代码(gl.shaderSource());</li>
+<li>编译着色器(gl.compileProgram());</li>
+<li>创建程序对象（gl.createProgram());</li>
+<li>为程序对象分配着色器(gl.attachShader());</li>
+<li>连接程序对象(gl.linkProgram());</li>
+<li>使用程序对象(gl.useProgram());</li>
+</ol>
+<p>详细细节参考《WebGL编程指南》</p>
+<h2 id="结束语"><a href="#结束语" class="headerlink" title="结束语"></a>结束语</h2><p>可以看到，用原生WebGL API进行绘制是多么的麻烦，这里还引入了一些矩阵库，简化了矩阵转换细节。虽说麻烦，但是对于用来学习图形学基础知识还是不错的。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+<div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/code/images/wechat.jpg" alt="罗峡的博客 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎扫描上面的微信公众号二维码，关注我的个人公众号：全栈前端</div>
+</div>
+
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/code/images/wechat_pay.png" alt="罗峡的博客 WeChat Pay"/>
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/code/images/ali_pay.jpg" alt="罗峡的博客 Alipay"/>
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/code/tags/WebGL/" rel="tag">#WebGL</a>
+          
+            <a href="/code/tags/计算机图形学/" rel="tag">#计算机图形学</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/code/2017/03/16/Haskell类型系统/" rel="next" title="Haskell类型系统">
+                <i class="fa fa-chevron-left"></i> Haskell类型系统
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/code/2017/04/01/docker初步实践/" rel="prev" title="Docker初步实践">
+                Docker初步实践 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/code/images/head.jpg"
+               alt="罗峡的博客" />
+          <p class="site-author-name" itemprop="name">罗峡的博客</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/code/archives">
+              <span class="site-state-item-count">43</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/code/categories">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/code/tags">
+                <span class="site-state-item-count">85</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/code/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/laoqiren" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://luoxia.me/life" title="生活随笔" target="_blank">生活随笔</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#WebGL坐标系统"><span class="nav-number">1.</span> <span class="nav-text">WebGL坐标系统</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#缓冲区对象"><span class="nav-number">2.</span> <span class="nav-text">缓冲区对象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#变换（模型矩阵）"><span class="nav-number">3.</span> <span class="nav-text">变换（模型矩阵）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#观察者视点和视线"><span class="nav-number">4.</span> <span class="nav-text">观察者视点和视线</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#可视空间（投影矩阵）"><span class="nav-number">5.</span> <span class="nav-text">可视空间（投影矩阵）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#创建透视投影矩阵"><span class="nav-number">5.1.</span> <span class="nav-text">创建透视投影矩阵</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#得到最终位置"><span class="nav-number">6.</span> <span class="nav-text">得到最终位置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#光照"><span class="nav-number">7.</span> <span class="nav-text">光照</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#漫反射光"><span class="nav-number">7.1.</span> <span class="nav-text">漫反射光</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#加上环境光效果"><span class="nav-number">7.2.</span> <span class="nav-text">加上环境光效果</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#转动的正方体光照"><span class="nav-number">7.3.</span> <span class="nav-text">转动的正方体光照</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#其他细节"><span class="nav-number">8.</span> <span class="nav-text">其他细节</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#隐藏面消除"><span class="nav-number">8.1.</span> <span class="nav-text">隐藏面消除</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#顶点索引"><span class="nav-number">8.2.</span> <span class="nav-text">顶点索引</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#逐顶点不自然现象"><span class="nav-number">8.3.</span> <span class="nav-text">逐顶点不自然现象</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#精度限定"><span class="nav-number">8.4.</span> <span class="nav-text">精度限定</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#渲染过程"><span class="nav-number">9.</span> <span class="nav-text">渲染过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#initShaders"><span class="nav-number">10.</span> <span class="nav-text">initShaders()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结束语"><span class="nav-number">11.</span> <span class="nav-text">结束语</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">罗峡的博客</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/code/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/code/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/code/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/code/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length == 0) {
+       search_path = "search.xml";
+    }
+    var path = "/code/" + search_path;
+    // monitor main search box;
+
+    function proceedsearch() {
+      $("body").append('<div class="popoverlay">').css('overflow', 'hidden');
+      $('.popup').toggle();
+
+    }
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+    'use strict';
+    $.ajax({
+        url: path,
+        dataType: "xml",
+        async: true,
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            isfetched = true;
+            $('.popup').detach().appendTo('.header-inner');
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                var matchcounts = 0;
+                var str='<ul class=\"search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length > 1) {
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var content_index = [];
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_content = data.content.trim().replace(/<[^>]+>/g,"").toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    var index_content = -1;
+                    var first_occur = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title != '' && data_content != '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            index_content = data_content.indexOf(keyword);
+                            if( index_title < 0 && index_content < 0 ){
+                                isMatch = false;
+                            } else {
+                                if (index_content < 0) {
+                                    index_content = 0;
+                                }
+                                if (i == 0) {
+                                    first_occur = index_content;
+                                }
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        matchcounts += 1;
+                        str += "<li><a href='"+ data_url +"' class='search-result-title'>"+ data_title +"</a>";
+                        var content = data.content.trim().replace(/<[^>]+>/g,"");
+                        if (first_occur >= 0) {
+                            // cut out 100 characters
+                            var start = first_occur - 20;
+                            var end = first_occur + 80;
+                            if(start < 0){
+                                start = 0;
+                            }
+                            if(start == 0){
+                                end = 50;
+                            }
+                            if(end > content.length){
+                                end = content.length;
+                            }
+                            var match_content = content.substring(start, end);
+                            // highlight all keywords
+                            keywords.forEach(function(keyword){
+                                var regS = new RegExp(keyword, "gi");
+                                match_content = match_content.replace(regS, "<b class=\"search-keyword\">"+keyword+"</b>");
+                            });
+
+                            str += "<p class=\"search-result\">" + match_content +"...</p>"
+                        }
+                        str += "</li>";
+                    }
+                })};
+                str += "</ul>";
+                if (matchcounts == 0) { str = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>' }
+                if (keywords == "") { str = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>' }
+                $resultContent.innerHTML = str;
+            });
+            proceedsearch();
+        }
+    });}
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched == false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+
+    });
+
+    $('.popup-btn-close').click(function(e){
+      $('.popup').hide();
+      $(".popoverlay").remove();
+      $('body').css('overflow', '');
+    });
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+  </script>
+
+
+  
+
+  
+
+  
+<script type="text/javascript" async src="//push.zhanzhang.baidu.com/push.js">
+</script>
+
+
+</body>
+</html>

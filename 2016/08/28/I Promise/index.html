@@ -1,0 +1,865 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/code/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/code/lib/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/code/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="异步编程," />
+
+
+
+
+
+  <link rel="alternate" href="/code/atom.xml" title="罗峡的技术博客" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/code/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="正如标题那样，Promise对未来某个事件做出承诺，比如如果成功，那么...；如果失败，那么...。是一种相对于回调和事件订阅更高级的抽象，本文就从其起源，实现，面临的问题等方面分析Promise。">
+<meta name="keywords" content="异步编程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="I Promise">
+<meta property="og:url" content="http://luoxia.me/code/2016/08/28/I Promise/index.html">
+<meta property="og:site_name" content="罗峡的技术博客">
+<meta property="og:description" content="正如标题那样，Promise对未来某个事件做出承诺，比如如果成功，那么...；如果失败，那么...。是一种相对于回调和事件订阅更高级的抽象，本文就从其起源，实现，面临的问题等方面分析Promise。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://mdn.mozillademos.org/files/8633/promises.png">
+<meta property="og:updated_time" content="2017-11-16T13:10:06.484Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="I Promise">
+<meta name="twitter:description" content="正如标题那样，Promise对未来某个事件做出承诺，比如如果成功，那么...；如果失败，那么...。是一种相对于回调和事件订阅更高级的抽象，本文就从其起源，实现，面临的问题等方面分析Promise。">
+<meta name="twitter:image" content="https://mdn.mozillademos.org/files/8633/promises.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: undefined,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://luoxia.me/code/2016/08/28/I Promise/"/>
+
+  <title> I Promise | 罗峡的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?179492533449f84f24555d1cbf10462f";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/code/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">罗峡的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">爱技术，爱生活</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/code/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/code/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/code/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/code/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/code/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup">
+ <span class="search-icon fa fa-search"></span>
+ <input type="text" id="local-search-input">
+ <div id="local-search-result"></div>
+ <span class="popup-btn-close">close</span>
+</div>
+
+
+    </div>
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                I Promise
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-08-28T21:19:07+08:00" content="2016-08-28">
+              2016-08-28
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/code/categories/JavaScript/" itemprop="url" rel="index">
+                    <span itemprop="name">JavaScript</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>正如标题那样，Promise对未来某个事件做出承诺，比如<code>如果成功，那么...；如果失败，那么...</code>。是一种相对于回调和事件订阅更高级的抽象，本文就从其起源，实现，面临的问题等方面分析Promise。</p>
+<a id="more"></a>
+<p>Promise被广为所知是来自于Jquery的Promise/Deferred：</p>
+<h1 id="Jquery-Promise-Deferred"><a href="#Jquery-Promise-Deferred" class="headerlink" title="Jquery Promise/Deferred"></a>Jquery Promise/Deferred</h1><p><code>$.when()</code>:如果向 jQuery.when 传入一个延迟对象，那么会返回它的 Promise 对象(延迟方法的一个子集)。可以继续绑定 Promise 对象的其它方法，例如， defered.then 。当延迟对象已经被受理（resolved）或被拒绝(rejected）（通常是由创建延迟对象的最初代码执行的），那么就会调用适当的回调函数。</p>
+<p>有多个延迟对象传递给jQuery.when ，该方法返回一个新的“宿主”延迟对象，跟踪所有已通过Deferreds聚集状态。 当所有的延迟对象被受理（resolve）时，该方法才会受理它的 master 延迟对象。当其中有一个延迟对象被拒绝（rejected）时，该方法就会拒绝它的 master 延迟对象。如果 master 延迟对象被受理（resolved），那么会传入所有延迟对象的受理（resolved）值，这些延迟对象指的就是传给 jQuery.when 的参数。<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> dtd = $.Deferred();</span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">wait</span>(<span class="params">dtd</span>)</span>&#123;</span><br><span class="line">        <span class="keyword">let</span> tasks = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">"执行完毕"</span>);</span><br><span class="line">            dtd.resolve(<span class="string">"hello"</span>,<span class="string">"恩恩"</span>,<span class="string">"你在哪儿"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        setTimeout(tasks,<span class="number">5000</span>);</span><br><span class="line">        <span class="keyword">return</span> dtd;</span><br><span class="line">    &#125;</span><br><span class="line">    $.when(wait(dtd))</span><br><span class="line">    .done(<span class="function">(<span class="params">a1,a2,a3</span>)=&gt;</span><span class="built_in">console</span>.log(a1,a2,a3))</span><br><span class="line">    .fail(<span class="function"><span class="params">()</span>=&gt;</span><span class="built_in">console</span>.log(<span class="string">"完了"</span>))</span><br><span class="line"></span><br><span class="line">    dtd.resolve(<span class="string">"lfjaljfl"</span>,<span class="string">"hfaljfla"</span>,<span class="string">"hhhhh"</span>)</span><br></pre></td></tr></table></figure></p>
+<p>上述做法有问题，因为<code>wait</code>方法暴露出的是Deferred对象，含有可以改变内部状态的方法，可以被外界代码随时用于改变状态，如上面的例子，在外面调用了<code>resolve</code>方法，则一开始就会调用<code>done</code>方法的回调，后面<code>wait</code>内异步操作执行完毕不会再执行<code>done</code>的回调了。</p>
+<p>换种方式：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">wait1</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="keyword">let</span> dtd = $.Deferred();</span><br><span class="line">    <span class="keyword">let</span> tasks = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">"执行完毕"</span>);</span><br><span class="line">        dtd.resolve(<span class="string">"hello"</span>,<span class="string">"恩恩"</span>,<span class="string">"你在哪儿1"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    setTimeout(tasks,<span class="number">5000</span>);</span><br><span class="line">    <span class="keyword">return</span> dtd.promise();</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">wait2</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="keyword">let</span> dtd = $.Deferred();</span><br><span class="line">    <span class="keyword">let</span> tasks = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">"执行完毕"</span>);</span><br><span class="line">        dtd.resolve(<span class="string">"hello"</span>,<span class="string">"恩恩"</span>,<span class="string">"你在哪儿2"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    setTimeout(tasks,<span class="number">6000</span>);</span><br><span class="line">    <span class="keyword">return</span> dtd.promise();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">$.when(wait1(),wait2())</span><br><span class="line">.then(<span class="function">(<span class="params">r1,r2</span>)=&gt;</span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="string">"r1.concat(r2)"</span></span><br><span class="line">&#125;).then(<span class="function"><span class="params">rs</span>=&gt;</span><span class="built_in">console</span>.log(rs)) </span><br><span class="line"> <span class="comment">//["hello", "恩恩", "你在哪儿1"] ["hello", "恩恩", "你在哪儿2"]</span></span><br></pre></td></tr></table></figure></p>
+<p>deferred.promise() 方法允许一个异步函数阻止那些干涉其内部请求的进度（progress）或状态（status）的其它代码。Promise （承诺）对象仅会暴露那些需要绑定额外的处理或判断状态的延迟方法(then, done, fail, always, pipe, progress, 和 state)时，并不会暴露任何用于改变状态的延迟方法(resolve, reject, notify, resolveWith, rejectWith, 和 notifyWith).</p>
+<h1 id="Promise-A"><a href="#Promise-A" class="headerlink" title="Promise/A"></a>Promise/A</h1><p>09年，Promise/Deferred模式被抽象为一个提议草案发布在CommonJS规范中，后来抽象出了一系列模型，包括<code>Promise/A</code>,具体标准请看<a href="https://promisesaplus.com/" target="_blank" rel="noopener">https://promisesaplus.com/</a></p>
+<p><img src="https://mdn.mozillademos.org/files/8633/promises.png" alt="https://mdn.mozillademos.org/files/8633/promises.png"></p>
+<h2 id="Pub-Sub实现"><a href="#Pub-Sub实现" class="headerlink" title="Pub/Sub实现"></a>Pub/Sub实现</h2><p>这个就可以看做是事件订阅模式和Promise的小小联系。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> EventEmitter = <span class="built_in">require</span>(<span class="string">"events"</span>);</span><br><span class="line"><span class="keyword">const</span> util = <span class="built_in">require</span>(<span class="string">"util"</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> <span class="built_in">Promise</span> = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    EventEmitter.call(<span class="keyword">this</span>);</span><br><span class="line">&#125;;</span><br><span class="line">util.inherits(<span class="built_in">Promise</span>,EventEmitter);</span><br><span class="line"></span><br><span class="line"><span class="built_in">Promise</span>.prototype.then = <span class="function"><span class="keyword">function</span>(<span class="params">fulfilledHandler,errorHandler,progressHandler</span>)</span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(<span class="keyword">typeof</span> fulfilledHandler === <span class="string">'function'</span>)&#123;</span><br><span class="line">        <span class="keyword">this</span>.once(<span class="string">'success'</span>,fulfilledHandler);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span>(<span class="keyword">typeof</span> errorHandler === <span class="string">'function'</span>)&#123;</span><br><span class="line">        <span class="keyword">this</span>.once(<span class="string">'error'</span>,errorHandler);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span>(<span class="keyword">typeof</span> progressHandler === <span class="string">'function'</span>)&#123;</span><br><span class="line">        <span class="keyword">this</span>.once(<span class="string">'progress'</span>,progressHandler);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> Deferred = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.state = <span class="string">'unfulfilled'</span>;</span><br><span class="line">    <span class="keyword">this</span>.promise = <span class="keyword">new</span> <span class="built_in">Promise</span>();</span><br><span class="line">&#125;</span><br><span class="line">Deferred.prototype.resolve = <span class="function"><span class="keyword">function</span>(<span class="params">obj</span>)</span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.state = <span class="string">'fulfilled'</span>;</span><br><span class="line">    <span class="keyword">this</span>.promise.emit(<span class="string">'success'</span>,obj);</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">Deferred.prototype.reject = <span class="function"><span class="keyword">function</span>(<span class="params">err</span>)</span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.state = <span class="string">'failed'</span>;</span><br><span class="line">    <span class="keyword">this</span>.promise.emit(<span class="string">'error'</span>,err);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">Deferred.prototype.progress = <span class="function"><span class="keyword">function</span>(<span class="params">data</span>)</span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.promise.emit(<span class="string">'progress'</span>,data);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>但是，面临一个问题，那就是链式调用问题，多次调用<code>then()</code>方法，发现只会针对<code>resolve()</code>传入的value多次触发success事件,比如:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">promisify</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="keyword">let</span> dtd = <span class="keyword">new</span> Deferred();</span><br><span class="line">    setTimeout(<span class="function"><span class="params">()</span>=&gt;</span>dtd.resolve(<span class="string">"hello1"</span>),<span class="number">3000</span>);</span><br><span class="line">    <span class="keyword">return</span> dtd.promise;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">promisify2</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="keyword">let</span> dtd = <span class="keyword">new</span> Deferred();</span><br><span class="line">    setTimeout(<span class="function"><span class="params">()</span>=&gt;</span>dtd.resolve(<span class="string">"hello2"</span>),<span class="number">3000</span>);</span><br><span class="line">    <span class="keyword">return</span> dtd.promise;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 并不能正常完成序列执行的链式调用。</span></span><br><span class="line">promisify()</span><br><span class="line">    .then(<span class="function"><span class="params">result</span>=&gt;</span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(result)</span><br><span class="line">        <span class="keyword">return</span> promisify2();</span><br><span class="line">    &#125;)</span><br><span class="line">    .then(<span class="function"><span class="params">result</span>=&gt;</span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(result);</span><br><span class="line">    &#125;)</span><br><span class="line"><span class="comment">// hello1 hello1</span></span><br></pre></td></tr></table></figure></p>
+<h2 id="链式Promise"><a href="#链式Promise" class="headerlink" title="链式Promise"></a>链式Promise</h2><p>我们要实现像jq的Promise/Deferred那样链式执行，主要处理两种情况：</p>
+<ol>
+<li>当<code>fulfilledHandler</code>返回非promise时，将结果作为下一个fulfilledHandler的参数；</li>
+<li>当<code>fulfilledHandler</code>返回新的promise时，等待新的promise完成后执行后续任务;</li>
+</ol>
+<p>我在《深入浅出Node.js》书上的实现基础上做了一些改进和完善：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> Deferred = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.promise = <span class="keyword">new</span> <span class="built_in">Promise</span>();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">Deferred.prototype.resolve = <span class="function"><span class="keyword">function</span>(<span class="params">...obj</span>)</span>&#123;</span><br><span class="line">    <span class="keyword">let</span> promise = <span class="keyword">this</span>.promise;</span><br><span class="line">    <span class="keyword">let</span> handler;</span><br><span class="line">    <span class="keyword">while</span>((handler=promise.queue.shift()))&#123;</span><br><span class="line">        <span class="keyword">if</span>(handler &amp;&amp; handler.fulfilled) &#123;</span><br><span class="line">            <span class="keyword">let</span> ret = handler.fulfilled(...obj);</span><br><span class="line">            <span class="keyword">if</span>(ret &amp;&amp; ret.isPromise)&#123;</span><br><span class="line">                <span class="comment">/*</span></span><br><span class="line"><span class="comment">                如果返回的是新的Promise，将deferred的promise指向新的promise,并转交任务队列，然后终止循环执行任务队列，等到控制新的promise状态的deferred对象调用了resolve才再一次来到循环。</span></span><br><span class="line"><span class="comment">                */</span></span><br><span class="line">                ret.queue = promise.queue;</span><br><span class="line">                <span class="keyword">this</span>.promise = ret;</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            obj = [ret]; <span class="comment">//如果返回非promise,就继续执行后续任务，并将返回值作为下一个任务的回调参数。</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">Deferred.prototype.reject = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;&#125;　<span class="comment">//省略</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> <span class="built_in">Promise</span> = <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.queue = [];</span><br><span class="line">    <span class="keyword">this</span>.isPromise = <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="built_in">Promise</span>.prototype.then = <span class="function"><span class="keyword">function</span>(<span class="params">fulfilledHandler,errorHandler,progressHandler</span>)</span>&#123;</span><br><span class="line">    <span class="keyword">let</span> handler = &#123;&#125;;</span><br><span class="line">    <span class="keyword">if</span>(<span class="keyword">typeof</span> fulfilledHandler === <span class="string">'function'</span>)&#123;</span><br><span class="line">        handler.fulfilled = fulfilledHandler;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span>(<span class="keyword">typeof</span> errorHandler === <span class="string">'function'</span>)&#123;</span><br><span class="line">        handler.error = errorHandler;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 每次调用then,都将回调加入到队列里</span></span><br><span class="line">    <span class="keyword">this</span>.queue.push(handler);</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//对Promise/Deferred的封装，符合规范的语法</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">promise</span>(<span class="params">resolver</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">typeof</span> resolver !== <span class="string">"function"</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="built_in">TypeError</span>(<span class="string">"resolver must be a function."</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">var</span> deferred = <span class="keyword">new</span> Deferred();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        resolver(deferred.resolve.bind(deferred), </span><br><span class="line">            deferred.reject.bind(deferred));</span><br><span class="line">    &#125; <span class="keyword">catch</span> (reason) &#123;</span><br><span class="line">        deferred.reject(reason);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> deferred.promise;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>可以看到实现思想还是<code>Promise/Deferred</code>，<code>Deferred</code>来管理状态，每个Promise实例里边维护一个任务队列，通过<code>then</code>调用将任务加入到队列里边，<code>Deferred</code>调用<code>resolve</code>或<code>reject</code>改变状态，并挨个执行任务队列里的任务，但是遇到某个任务返回新的Promise时，需要暂停任务执行，将任务队列转交，并等待新的异步任务完成后继续执行任务。</p>
+<p>最后对<code>Promise/Deferred</code>进行了封装，形成最终与标准语法相近的<code>promise</code>构造函数。</p>
+<p>上述例子只是一个粗略的实现，还有许多细节问题，比如错误处理，在<code>fulfilled</code>函数里抛出错误的处理，<code>catch</code>实现，其他重要接口，如<code>Promise.all(),Promise.race()</code>等。</p>
+<h2 id="存在的问题"><a href="#存在的问题" class="headerlink" title="存在的问题:"></a>存在的问题:</h2><ol>
+<li><p>对于异步操作API，需要进行封装才能成为Promise对象，可以借助第三方API进行快速封装。</p>
+</li>
+<li><p>太复杂的异步场景，会使得链式过长。</p>
+</li>
+</ol>
+<h2 id="第三方实现"><a href="#第三方实现" class="headerlink" title="第三方实现"></a>第三方实现</h2><p>bluebird: <a href="https://github.com/kriskowal/q" target="_blank" rel="noopener">https://github.com/kriskowal/q</a></p>
+<p>Q: <a href="https://github.com/kriskowal/q" target="_blank" rel="noopener">https://github.com/kriskowal/q</a></p>
+<p>when: <a href="https://github.com/cujojs/when" target="_blank" rel="noopener">https://github.com/cujojs/when</a></p>
+<h2 id="官方标准实现"><a href="#官方标准实现" class="headerlink" title="官方标准实现"></a>官方标准实现</h2><p>参照ES6 <code>Promise</code>标准。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+<div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/code/images/wechat.jpg" alt="罗峡的博客 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎扫描上面的微信公众号二维码，关注我的个人公众号：全栈前端</div>
+</div>
+
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/code/images/wechat_pay.png" alt="罗峡的博客 WeChat Pay"/>
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/code/images/ali_pay.jpg" alt="罗峡的博客 Alipay"/>
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/code/tags/异步编程/" rel="tag">#异步编程</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/code/2016/08/22/二进制数据处理问题/" rel="next" title="二进制数据处理问题">
+                <i class="fa fa-chevron-left"></i> 二进制数据处理问题
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/code/2016/08/30/async流程控制/" rel="prev" title="async流程控制">
+                async流程控制 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/code/images/head.jpg"
+               alt="罗峡的博客" />
+          <p class="site-author-name" itemprop="name">罗峡的博客</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/code/archives">
+              <span class="site-state-item-count">43</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/code/categories">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/code/tags">
+                <span class="site-state-item-count">85</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/code/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/laoqiren" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://luoxia.me/life" title="生活随笔" target="_blank">生活随笔</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Jquery-Promise-Deferred"><span class="nav-number">1.</span> <span class="nav-text">Jquery Promise/Deferred</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Promise-A"><span class="nav-number">2.</span> <span class="nav-text">Promise/A</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Pub-Sub实现"><span class="nav-number">2.1.</span> <span class="nav-text">Pub/Sub实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#链式Promise"><span class="nav-number">2.2.</span> <span class="nav-text">链式Promise</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#存在的问题"><span class="nav-number">2.3.</span> <span class="nav-text">存在的问题:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#第三方实现"><span class="nav-number">2.4.</span> <span class="nav-text">第三方实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#官方标准实现"><span class="nav-number">2.5.</span> <span class="nav-text">官方标准实现</span></a></li></ol></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">罗峡的博客</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/code/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/code/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/code/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/code/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length == 0) {
+       search_path = "search.xml";
+    }
+    var path = "/code/" + search_path;
+    // monitor main search box;
+
+    function proceedsearch() {
+      $("body").append('<div class="popoverlay">').css('overflow', 'hidden');
+      $('.popup').toggle();
+
+    }
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+    'use strict';
+    $.ajax({
+        url: path,
+        dataType: "xml",
+        async: true,
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            isfetched = true;
+            $('.popup').detach().appendTo('.header-inner');
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                var matchcounts = 0;
+                var str='<ul class=\"search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length > 1) {
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var content_index = [];
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_content = data.content.trim().replace(/<[^>]+>/g,"").toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    var index_content = -1;
+                    var first_occur = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title != '' && data_content != '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            index_content = data_content.indexOf(keyword);
+                            if( index_title < 0 && index_content < 0 ){
+                                isMatch = false;
+                            } else {
+                                if (index_content < 0) {
+                                    index_content = 0;
+                                }
+                                if (i == 0) {
+                                    first_occur = index_content;
+                                }
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        matchcounts += 1;
+                        str += "<li><a href='"+ data_url +"' class='search-result-title'>"+ data_title +"</a>";
+                        var content = data.content.trim().replace(/<[^>]+>/g,"");
+                        if (first_occur >= 0) {
+                            // cut out 100 characters
+                            var start = first_occur - 20;
+                            var end = first_occur + 80;
+                            if(start < 0){
+                                start = 0;
+                            }
+                            if(start == 0){
+                                end = 50;
+                            }
+                            if(end > content.length){
+                                end = content.length;
+                            }
+                            var match_content = content.substring(start, end);
+                            // highlight all keywords
+                            keywords.forEach(function(keyword){
+                                var regS = new RegExp(keyword, "gi");
+                                match_content = match_content.replace(regS, "<b class=\"search-keyword\">"+keyword+"</b>");
+                            });
+
+                            str += "<p class=\"search-result\">" + match_content +"...</p>"
+                        }
+                        str += "</li>";
+                    }
+                })};
+                str += "</ul>";
+                if (matchcounts == 0) { str = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>' }
+                if (keywords == "") { str = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>' }
+                $resultContent.innerHTML = str;
+            });
+            proceedsearch();
+        }
+    });}
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched == false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+
+    });
+
+    $('.popup-btn-close').click(function(e){
+      $('.popup').hide();
+      $(".popoverlay").remove();
+      $('body').css('overflow', '');
+    });
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+  </script>
+
+
+  
+
+  
+
+  
+<script type="text/javascript" async src="//push.zhanzhang.baidu.com/push.js">
+</script>
+
+
+</body>
+</html>

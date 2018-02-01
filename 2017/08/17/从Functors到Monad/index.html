@@ -1,0 +1,961 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/code/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/code/lib/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/code/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Haskell,functional,Monad,Functor,Applicative,Monoid," />
+
+
+
+
+
+  <link rel="alternate" href="/code/atom.xml" title="罗峡的技术博客" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/code/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="从Functors到Monad，理解Functor,Applicative,Monoids,Monad。文章理解或有偏差，仅作为自己总结用。">
+<meta name="keywords" content="Haskell,functional,Monad,Functor,Applicative,Monoid">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从Functors到Monad">
+<meta property="og:url" content="http://luoxia.me/code/2017/08/17/从Functors到Monad/index.html">
+<meta property="og:site_name" content="罗峡的技术博客">
+<meta property="og:description" content="从Functors到Monad，理解Functor,Applicative,Monoids,Monad。文章理解或有偏差，仅作为自己总结用。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://learnyoua.haskell.sg/content/zh-cn/ch12/concatmap.png">
+<meta property="og:updated_time" content="2017-11-16T13:10:06.490Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="从Functors到Monad">
+<meta name="twitter:description" content="从Functors到Monad，理解Functor,Applicative,Monoids,Monad。文章理解或有偏差，仅作为自己总结用。">
+<meta name="twitter:image" content="https://learnyoua.haskell.sg/content/zh-cn/ch12/concatmap.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: undefined,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://luoxia.me/code/2017/08/17/从Functors到Monad/"/>
+
+  <title> 从Functors到Monad | 罗峡的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?179492533449f84f24555d1cbf10462f";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/code/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">罗峡的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">爱技术，爱生活</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/code/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/code/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/code/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/code/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/code/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup">
+ <span class="search-icon fa fa-search"></span>
+ <input type="text" id="local-search-input">
+ <div id="local-search-result"></div>
+ <span class="popup-btn-close">close</span>
+</div>
+
+
+    </div>
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                从Functors到Monad
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2017-08-17T09:35:33+08:00" content="2017-08-17">
+              2017-08-17
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/code/categories/Haskell/" itemprop="url" rel="index">
+                    <span itemprop="name">Haskell</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>从Functors到Monad，理解Functor,Applicative,Monoids,Monad。文章理解或有偏差，仅作为自己总结用。</p>
+<a id="more"></a>
+<p>文章参照《Learn you a Haskell》和《mostly　adequate　guide》</p>
+<h2 id="Functor-typeclass"><a href="#Functor-typeclass" class="headerlink" title="Functor typeclass"></a>Functor typeclass</h2><p>先来看看haskell中其type class定义:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="type">Functor</span> (<span class="title">f</span> :: * -&gt; *) <span class="keyword">where</span></span></span><br><span class="line">  fmap :: (a -&gt; b) -&gt; f a -&gt; f b</span><br><span class="line">  (&lt;$) :: a -&gt; f b -&gt; f a</span><br></pre></td></tr></table></figure></p>
+<p>从f的kind我们可以看到，其不是一个具体类型，而是一个接受具体类型来构造具体类型的类型构造子（参照我的另一篇文章”Haskell类型系统”）。</p>
+<p>在js中的实现：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> Container = <span class="function"><span class="keyword">function</span>(<span class="params">x</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.__value = x;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">Container.of = <span class="function"><span class="keyword">function</span>(<span class="params">x</span>) </span>&#123; <span class="keyword">return</span> <span class="keyword">new</span> Container(x); &#125;;</span><br><span class="line"></span><br><span class="line">Container.prototype.fmap = <span class="function"><span class="keyword">function</span>(<span class="params">f</span>)</span>&#123;</span><br><span class="line">  <span class="keyword">return</span> Container.of(f(<span class="keyword">this</span>.__value))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里暂时可以简单地把Functor理解为容器，将函数运用到容器内的值上面，再将处理结果用容器进行包装。</p>
+<h3 id="List-Functor"><a href="#List-Functor" class="headerlink" title="List Functor"></a>List Functor</h3><p>以<code>[]</code>为例，看看<code>[]</code>的<code>Functor instance</code>实现:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Functor</span> [] <span class="keyword">where</span></span></span><br><span class="line">    <span class="meta">&#123;-# INLINE fmap #-&#125;</span></span><br><span class="line">    fmap = map</span><br></pre></td></tr></table></figure></p>
+<p>可以看到<code>fmap</code>直接就是<code>map</code>，这个不难理解：<code>map :: (a -&gt; b) -&gt; [a] -&gt; [b]</code>。</p>
+<h3 id="Maybe-Functor"><a href="#Maybe-Functor" class="headerlink" title="Maybe Functor"></a>Maybe Functor</h3><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">instance</span>  <span class="type">Functor</span> <span class="type">Maybe</span>  <span class="keyword">where</span></span></span><br><span class="line">    fmap _ <span class="type">Nothing</span>       = <span class="type">Nothing</span></span><br><span class="line">    fmap f (<span class="type">Just</span> a)      = <span class="type">Just</span> (f a)</span><br></pre></td></tr></table></figure>
+<p>总之接受一个通过类型构造子包装的具体类型数据，最终返回的也要是经过它封装的具体类型数据。</p>
+<p>js中实现:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> Maybe = <span class="function"><span class="keyword">function</span>(<span class="params">x</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.__value = x;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">Maybe.of = <span class="function"><span class="keyword">function</span>(<span class="params">x</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> Maybe(x);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">Maybe.prototype.isNothing = <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> (<span class="keyword">this</span>.__value === <span class="literal">null</span> || <span class="keyword">this</span>.__value === <span class="literal">undefined</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">Maybe.prototype.fmap = <span class="function"><span class="keyword">function</span>(<span class="params">f</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">this</span>.isNothing() ? Maybe.of(<span class="literal">null</span>) : Maybe.of(f(<span class="keyword">this</span>.__value));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>一个例子:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> showWelcome = _.compose(_.concat( <span class="string">"Welcome "</span>), _.prop(<span class="string">'name'</span>))</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> checkActive = <span class="function"><span class="keyword">function</span>(<span class="params">user</span>) </span>&#123;</span><br><span class="line"> <span class="keyword">return</span> user.active ? Right.of(user) : Left.of(<span class="string">'Your account is not active'</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> ex6 = _.compose(fmap(showWelcome),checkActive)</span><br><span class="line"></span><br><span class="line"><span class="built_in">console</span>.log(ex6(&#123;<span class="attr">active</span>:<span class="literal">false</span>,<span class="attr">name</span>:<span class="string">"luoxia"</span>&#125;)) <span class="comment">// Left &#123;__value: 'Your account is not active'&#125;</span></span><br></pre></td></tr></table></figure></p>
+<h3 id="Either-Functor"><a href="#Either-Functor" class="headerlink" title="Either Functor"></a>Either Functor</h3><p>Either可以用于纯的错误处理，这里的纯可以对比一般的<code>try/catch</code>。</p>
+<p>haskell中关于Either的Functor instance:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Functor</span> (<span class="type">Either</span> <span class="title">a</span>) <span class="keyword">where</span></span></span><br><span class="line">    fmap f (<span class="type">Right</span> x) = <span class="type">Right</span> (f x)</span><br><span class="line">    fmap f (<span class="type">Left</span> x) = <span class="type">Left</span> x</span><br></pre></td></tr></table></figure></p>
+<p>可以看到，Left构造子构造的类型数据可以充当报告错误信息的功能:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Prelude&gt; fmap (\s -&gt; &quot;the result: &quot; ++ s) $ Left &quot;error:overflow&quot;</span><br><span class="line">Left &quot;error:overflow&quot;</span><br><span class="line">Prelude&gt; fmap (\s -&gt; &quot;the result: &quot; ++ show s) $ Right 66</span><br><span class="line">Right &quot;the result: 66&quot;</span><br></pre></td></tr></table></figure></p>
+<p>来看看js中的例子:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> moment = <span class="built_in">require</span>(<span class="string">'moment'</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">//  getAge :: Date -&gt; User -&gt; Either(String, Number)</span></span><br><span class="line"><span class="keyword">var</span> getAge = curry(<span class="function"><span class="keyword">function</span>(<span class="params">now, user</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">var</span> birthdate = moment(user.birthdate, <span class="string">'YYYY-MM-DD'</span>);</span><br><span class="line">  <span class="keyword">if</span>(!birthdate.isValid()) <span class="keyword">return</span> Left.of(<span class="string">"Birth date could not be parsed"</span>);</span><br><span class="line">  <span class="keyword">return</span> Right.of(now.diff(birthdate, <span class="string">'years'</span>));</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line">getAge(moment(), &#123;<span class="attr">birthdate</span>: <span class="string">'2005-12-12'</span>&#125;);</span><br><span class="line"><span class="comment">// Right(9)</span></span><br><span class="line"></span><br><span class="line">getAge(moment(), &#123;<span class="attr">birthdate</span>: <span class="string">'balloons!'</span>&#125;);</span><br><span class="line"><span class="comment">// Left("Birth date could not be parsed")</span></span><br></pre></td></tr></table></figure></p>
+<h3 id="IO-Functor"><a href="#IO-Functor" class="headerlink" title="IO Functor"></a>IO Functor</h3><p>I/O同样也是<code>functor</code>：<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">instance</span>  <span class="type">Functor</span> <span class="type">IO</span> <span class="keyword">where</span></span></span><br><span class="line">   fmap f x = x &gt;&gt;= (pure . f)</span><br></pre></td></tr></table></figure></p>
+<p>这里还得联系<code>Applicative Functor</code>和<code>Monad</code>:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Applicative</span> <span class="type">IO</span> <span class="keyword">where</span></span></span><br><span class="line">    pure  = returnIO</span><br><span class="line">    (*&gt;)  = thenIO</span><br><span class="line">    (&lt;*&gt;) = ap</span><br><span class="line">    liftA2 = liftM2</span><br><span class="line"></span><br><span class="line"><span class="comment">-- | @since 2.01</span></span><br><span class="line"><span class="class"><span class="keyword">instance</span>  <span class="type">Monad</span> <span class="type">IO</span>  <span class="keyword">where</span></span></span><br><span class="line">    (&gt;&gt;)      = (*&gt;)</span><br><span class="line">    (&gt;&gt;=)     = bindIO</span><br><span class="line">    fail s    = failIO s</span><br><span class="line"></span><br><span class="line"><span class="title">returnIO</span> :: a -&gt; <span class="type">IO</span> a</span><br><span class="line"><span class="title">bindIO</span> :: <span class="type">IO</span> a -&gt; (a -&gt; <span class="type">IO</span> b) -&gt; <span class="type">IO</span> b</span><br></pre></td></tr></table></figure></p>
+<p>而这里的<code>pure</code>实际上是对某常规值进行一个<code>IO</code>包装，例如<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="title">fmap</span> (\() -&gt; <span class="string">"hello  world"</span>) (putStrLn <span class="string">"hello"</span>) :: <span class="type">IO</span> [<span class="type">Char</span>]</span><br></pre></td></tr></table></figure></p>
+<p><code>putStrLn &quot;hello&quot;</code>返回值为<code>IO ()</code>，经过fmap的f参数一处理返回<code>[Char]</code>，再经过<code>pure</code>函数包装。</p>
+<p>其与下面这种异曲同工:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Functor</span> <span class="type">IO</span> <span class="keyword">where</span></span></span><br><span class="line">    fmap f action = <span class="keyword">do</span></span><br><span class="line">        result &lt;- action</span><br><span class="line">        return (f result)</span><br></pre></td></tr></table></figure></p>
+<p>我们再来看看js中实现:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> IO = <span class="function"><span class="keyword">function</span>(<span class="params">f</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.__value = f;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">IO.of = <span class="function"><span class="keyword">function</span>(<span class="params">x</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> IO(<span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> x;</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">IO.prototype.fmap = <span class="function"><span class="keyword">function</span>(<span class="params">f</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> IO(_.compose(f, <span class="keyword">this</span>.__value));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>我们可以看到IO context中的值是一个函数，而这个函数可以对一些非纯的操作进行包装延迟执行，从而使得程序看起来还是纯的。</p>
+<p>举个例子:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//  io_window_ :: IO Window</span></span><br><span class="line"><span class="keyword">var</span> io_window = <span class="keyword">new</span> IO(<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123; <span class="keyword">return</span> <span class="built_in">window</span>; &#125;);</span><br><span class="line"></span><br><span class="line">io_window.fmap(<span class="function"><span class="keyword">function</span>(<span class="params">win</span>)</span>&#123; <span class="keyword">return</span> win.innerWidth &#125;);</span><br><span class="line"><span class="comment">// IO(1430)</span></span><br><span class="line"></span><br><span class="line">io_window.fmap(_.prop(<span class="string">'location'</span>)).fmap(_.prop(<span class="string">'href'</span>)).fmap(_.split(<span class="string">'/'</span>));</span><br><span class="line"><span class="comment">// IO(["http:", "", "localhost:8000", "blog", "posts"])</span></span><br></pre></td></tr></table></figure></p>
+<p>上面的结果注释实际上是概念性的，实际上的返回值是诸如:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">IO &#123;</span><br><span class="line">    __value: _.compose(_.split(<span class="string">'/'</span>),_.prop(<span class="string">'href'</span>),_.prop(<span class="string">'location'</span>),<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123; <span class="keyword">return</span> <span class="built_in">window</span>; &#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>每一次调用<code>fmap</code>实际上是把新的function加入到function compose队列最后。这样我们把一系列的不纯的操作包裹在了这样一个IO Functor context里。</p>
+<p>就如同haskell中的做法一样，我们在集中的一个地方去释放这些不纯的操作：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">////// 非纯调用代码: main.js ///////</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 调用 __value() 来运行它！</span></span><br><span class="line">IO.of(impureOperation.__value());</span><br></pre></td></tr></table></figure>
+<p>haskell也是将不纯操作放到<code>main do</code>块里，在<code>runhaskell</code>时，就释放里面的不纯操作并执行:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="title">main</span> = <span class="keyword">do</span> line &lt;- fmap (intersperse '-' . reverse . map toUpper) getLine  </span><br><span class="line">          putStrLn line</span><br></pre></td></tr></table></figure></p>
+<h3 id="gt-r-Functor"><a href="#gt-r-Functor" class="headerlink" title="(-&gt;) r Functor"></a>(-&gt;) r Functor</h3><p>刚刚在IO Functor的js实现中我们谈到了function composition,这可以联想到函数本身也是一个在<code>(-&gt;) r</code> functor context下的值，其fmap实现就等同于function composition。</p>
+<p>看看instance定义:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Functor</span> ((-&gt;) r) <span class="keyword">where</span></span></span><br><span class="line">    fmap = (.)</span><br></pre></td></tr></table></figure></p>
+<p>而<code>(.) :: (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c</code>，而根据<code>fmap</code>定义:<code>fmap :: Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b</code>，用<code>(-&gt;) r</code>替换f，得到:<code>fmap :: (a -&gt; b) -&gt; (r -&gt; a) -&gt; (r -&gt; b)</code>恰好符合<code>.</code>的定义。即一个function composition。</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="title">ghci</span> &gt; fmap (show . (*<span class="number">3</span>)) (*<span class="number">100</span>) <span class="number">2</span></span><br><span class="line"><span class="number">600</span></span><br></pre></td></tr></table></figure>
+<h3 id="Functor-laws"><a href="#Functor-laws" class="headerlink" title="Functor laws"></a>Functor laws</h3><ol>
+<li><p><code>fmap id = id</code>即用id去map over functor会返回跟原functor一样的functor。</p>
+</li>
+<li><p><code>fmap (f . g) = fmap f . fmap g</code></p>
+</li>
+</ol>
+<p>或者js实现表示：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// identity</span></span><br><span class="line">map(id) === id;</span><br><span class="line"></span><br><span class="line"><span class="comment">// composition</span></span><br><span class="line">compose(map(f), map(g)) === map(compose(f, g));</span><br></pre></td></tr></table></figure></p>
+<h2 id="Applicative-Functor-type-class"><a href="#Applicative-Functor-type-class" class="headerlink" title="Applicative Functor type class"></a>Applicative Functor type class</h2><p>之前讲到的Functor，我们只能对functor运用一个单参数函数。但是如果我们要将一个接受多个参数的函数运用到functor呢？这就要提到Applicative Functor,它可以让一个接受多个参数的函数运用到多个Functor上。</p>
+<p>首先是其定义:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="type">Functor</span> f =&gt; <span class="type">Applicative</span> (<span class="title">f</span> :: * -&gt; *) <span class="keyword">where</span></span></span><br><span class="line">  pure :: a -&gt; f a</span><br><span class="line">  (&lt;*&gt;) :: f (a -&gt; b) -&gt; f a -&gt; f b</span><br><span class="line">  (*&gt;) :: f a -&gt; f b -&gt; f b</span><br><span class="line">  (&lt;*) :: f a -&gt; f b -&gt; f a</span><br></pre></td></tr></table></figure></p>
+<p>来看看一个js关于<code>&lt;*&gt;</code>的实现：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Container.prototype.ap = <span class="function"><span class="keyword">function</span>(<span class="params">other_container</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> other_container.fmap(<span class="keyword">this</span>.__value);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="Maybe-Applicative"><a href="#Maybe-Applicative" class="headerlink" title="Maybe Applicative"></a>Maybe Applicative</h3><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Applicative</span> <span class="type">Maybe</span> <span class="keyword">where</span></span></span><br><span class="line">    pure = <span class="type">Just</span></span><br><span class="line"></span><br><span class="line">    <span class="type">Just</span> f  &lt;*&gt; m       = fmap f m</span><br><span class="line">    <span class="type">Nothing</span> &lt;*&gt; _m      = <span class="type">Nothing</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">ghci&gt; pure (+) &lt;*&gt; Just 3 &lt;*&gt; Just 5  </span><br><span class="line">Just 8  </span><br><span class="line">ghci&gt; pure (+) &lt;*&gt; Just 3 &lt;*&gt; Nothing  </span><br><span class="line">Nothing  </span><br><span class="line">ghci&gt; pure (+) &lt;*&gt; Nothing &lt;*&gt; Just 5  </span><br><span class="line">Nothing</span><br></pre></td></tr></table></figure>
+<p>这让我们能够以一种从左到右的方式去应用函数到多个Functors:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Maybe.of(_.add).ap(Maybe.of(<span class="number">2</span>)).ap(Maybe.of(<span class="number">3</span>));</span><br></pre></td></tr></table></figure></p>
+<p>而<code>pure (+) &lt;*&gt; Just 3</code>这种完全可以用<code>fmap (+) Just 3</code>代替，有一个<code>&lt;$&gt;</code>就是做这个的:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">(&lt;$&gt;) :: (<span class="type">Functor</span> f) =&gt; (a -&gt; b) -&gt; f a -&gt; f b  </span><br><span class="line"><span class="title">f</span> &lt;$&gt; x = fmap f x</span><br></pre></td></tr></table></figure></p>
+<p>这样就可以这样写:<code>(++) &lt;$&gt; Just &quot;johntra&quot; &lt;*&gt; Just &quot;volta&quot;</code>就可以直接将一个普通函数用到applicative functor上了。</p>
+<p>从js角度来看：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">F.of(x).fmap(f) == F.of(f).ap(F.of(x))</span><br></pre></td></tr></table></figure></p>
+<p>那么上面的例子同意可以转换为：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Maybe.of(2).fmap(_.add).ap(Maybe.of(3));</span><br></pre></td></tr></table></figure></p>
+<h3 id="List-Applicative"><a href="#List-Applicative" class="headerlink" title="List Applicative"></a>List Applicative</h3><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Applicative</span> [] <span class="keyword">where</span></span></span><br><span class="line">    pure x    = [x]</span><br><span class="line">    fs &lt;*&gt; xs = [f x | f &lt;- fs, x &lt;- xs]</span><br></pre></td></tr></table></figure>
+<p>可以看到<code>&lt;*&gt;</code>是将左右两个<code>[]</code>进行任意组合，左边的包含了多个函数，右边包含了多个原始值。<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="title">ghci</span>&gt; (++) &lt;$&gt; [<span class="string">"ha"</span>,<span class="string">"heh"</span>,<span class="string">"hmm"</span>] &lt;*&gt; [<span class="string">"?"</span>,<span class="string">"!"</span>,<span class="string">"."</span>]  </span><br><span class="line">[<span class="string">"ha?"</span>,<span class="string">"ha!"</span>,<span class="string">"ha."</span>,<span class="string">"heh?"</span>,<span class="string">"heh!"</span>,<span class="string">"heh."</span>,<span class="string">"hmm?"</span>,<span class="string">"hmm!"</span>,<span class="string">"hmm."</span>]</span><br></pre></td></tr></table></figure></p>
+<p>来看看ramdajs关于List的<code>ap</code>实现：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">R.ap([R.multiply(<span class="number">2</span>), R.add(<span class="number">3</span>)], [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>]); <span class="comment">//=&gt; [2, 4, 6, 4, 5, 6]</span></span><br></pre></td></tr></table></figure></p>
+<p>显然它们是异曲同工。</p>
+<h3 id="IO-Applicative"><a href="#IO-Applicative" class="headerlink" title="IO Applicative"></a>IO Applicative</h3><p>首先是定义:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Applicative</span> <span class="type">IO</span> <span class="keyword">where</span></span></span><br><span class="line">    pure  = returnIO</span><br><span class="line">    (&lt;*&gt;) = ap</span><br><span class="line"><span class="title">ap</span>                :: (<span class="type">Monad</span> m) =&gt; m (a -&gt; b) -&gt; m a -&gt; m b</span><br><span class="line"><span class="title">ap</span> m1 m2          = <span class="keyword">do</span> &#123; x1 &lt;- m1; x2 &lt;- m2; return (x1 x2) &#125;</span><br></pre></td></tr></table></figure></p>
+<p>终于看到了<code>ap</code>，也就是<code>&lt;*&gt;</code>的别名。换种写法:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Applicative</span> <span class="type">IO</span> <span class="keyword">where</span></span>  </span><br><span class="line">    pure = return  </span><br><span class="line">    a &lt;*&gt; b = <span class="keyword">do</span>  </span><br><span class="line">        f &lt;- a  </span><br><span class="line">        x &lt;- b  </span><br><span class="line">        return (f x)</span><br></pre></td></tr></table></figure></p>
+<p>即<code>(&lt;*&gt;) :: IO (a -&gt; b) -&gt; IO a -&gt; IO b</code>。</p>
+<p>以<code>(++) &lt;$&gt; getLine &lt;*&gt; getLine</code>为例，<code>getLine :: IO String</code>，<code>fmap (++) getLine</code>结果就是<code>fmap (++) getLine :: IO ([Char] -&gt; [Char])</code>，即从第一个<code>getLine</code>里取出结果<code>str1</code>，map over<code>(++)</code>得到<code>IO (++str1)</code>，来到<code>&lt;*&gt;</code>，将<code>(++str1)</code>取出应用到第二个参数的IO上，最后通过<code>return</code>封装成<code>IO ([Char])</code>。</p>
+<p>来看一个js中的例子：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 帮助函数：</span></span><br><span class="line"><span class="comment">// ==============</span></span><br><span class="line"><span class="comment">//  $ :: String -&gt; IO DOM</span></span><br><span class="line"><span class="keyword">var</span> $ = <span class="function"><span class="keyword">function</span>(<span class="params">selector</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> IO(<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123; <span class="keyword">return</span> <span class="built_in">document</span>.querySelector(selector) &#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//  getVal :: String -&gt; IO String</span></span><br><span class="line"><span class="keyword">var</span> getVal = _.compose(map(_.prop(<span class="string">'value'</span>)), $);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Example:</span></span><br><span class="line"><span class="comment">// ===============</span></span><br><span class="line"><span class="comment">//  signIn :: String -&gt; String -&gt; Bool -&gt; User</span></span><br><span class="line"><span class="keyword">var</span> signIn = _.curry(<span class="function"><span class="keyword">function</span>(<span class="params">username, password, remember_me</span>)</span>&#123; <span class="comment">/* signing in */</span>  &#125;)</span><br><span class="line"></span><br><span class="line">IO.of(signIn).ap(getVal(<span class="string">'#email'</span>)).ap(getVal(<span class="string">'#password'</span>)).ap(IO.of(<span class="literal">false</span>));</span><br><span class="line"><span class="comment">// IO(&#123;id: 3, email: "gg@allin.com"&#125;)</span></span><br></pre></td></tr></table></figure></p>
+<p>按照上一节关于IO fmap实现，实际最后的返回结果：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">IO &#123;</span><br><span class="line">    unsafePerformIO: _.compose(<span class="function"><span class="params">remember_me</span>=&gt;</span>&#123;&#125;,()=&gt;<span class="literal">false</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="gt-r-Applicative"><a href="#gt-r-Applicative" class="headerlink" title="(-&gt;) r　Applicative"></a>(-&gt;) r　Applicative</h3><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Applicative</span> ((-&gt;) a) <span class="keyword">where</span></span></span><br><span class="line">    pure = const</span><br><span class="line">    (&lt;*&gt;) f g x = f x (g x)　<span class="comment">-- f &lt;*&gt; g = \x -&gt; f x (g x)</span></span><br></pre></td></tr></table></figure>
+<p><code>(+) &lt;$&gt; (+3) &lt;*&gt; (*100) $ 5</code>结果为<code>508</code>，<code>(+) &lt;$&gt; (+3)</code>相当于<code>(+)</code>和<code>(+3)</code>组合，而这两个组合的结果<code>(+) &lt;$&gt; (+3) :: Num a =&gt; a -&gt; a -&gt; a</code>，返回一个接受两个参数的函数，第一个参数用于(+3)，结果再和第二个参数一起调用(+)。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ghci&gt; (\x y z -&gt; [x,y,z]) &lt;$&gt; (+3) &lt;*&gt; (*2) &lt;*&gt; (/2) $ 5  </span><br><span class="line">[8.0,10.0,2.5]</span><br></pre></td></tr></table></figure>
+<h3 id="lift"><a href="#lift" class="headerlink" title="lift"></a>lift</h3><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="title">liftA2</span> :: (<span class="type">Applicative</span> f) =&gt; (a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c  </span><br><span class="line"><span class="title">liftA2</span> f a b = f &lt;$&gt; a &lt;*&gt; b</span><br></pre></td></tr></table></figure>
+<p>同理，在js中实现:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> liftA2 = curry(<span class="function"><span class="keyword">function</span>(<span class="params">f, functor1, functor2</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> functor1.map(f).ap(functor2);</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> liftA3 = curry(<span class="function"><span class="keyword">function</span>(<span class="params">f, functor1, functor2, functor3</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> functor1.map(f).ap(functor2).ap(functor3);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure></p>
+<p>或者看看ramda关于lift实现:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> madd3 = R.lift(<span class="function">(<span class="params">a, b, c</span>) =&gt;</span> a + b + c);</span><br><span class="line"></span><br><span class="line">madd3([<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>], [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>], [<span class="number">1</span>]); <span class="comment">//=&gt; [3, 4, 5, 4, 5, 6, 5, 6, 7]</span></span><br></pre></td></tr></table></figure></p>
+<p>这样程序写法上就更加通用，因为没有体现具体的functor:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">liftA2(add, Maybe.of(<span class="number">2</span>), Maybe.of(<span class="number">3</span>));</span><br><span class="line"><span class="comment">// Maybe(5)</span></span><br><span class="line"></span><br><span class="line">liftA2(renderPage, Http.get(<span class="string">'/destinations'</span>), Http.get(<span class="string">'/events'</span>))</span><br><span class="line"><span class="comment">// Task("&lt;div&gt;some page with dest and events&lt;/div&gt;")</span></span><br><span class="line"></span><br><span class="line">liftA3(signIn, getVal(<span class="string">'#email'</span>), getVal(<span class="string">'#password'</span>), IO.of(<span class="literal">false</span>));</span><br><span class="line"><span class="comment">// IO(&#123;id: 3, email: "gg@allin.com"&#125;)</span></span><br></pre></td></tr></table></figure></p>
+<h3 id="与Functor-Monad转换"><a href="#与Functor-Monad转换" class="headerlink" title="与Functor,Monad转换"></a>与Functor,Monad转换</h3><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Applicative实现fmap:</span></span><br><span class="line"><span class="title">fmap</span> (<span class="string">"hello "</span>++) (<span class="type">Just</span> <span class="string">"luoxia"</span>)</span><br><span class="line"><span class="title">pure</span> (<span class="string">"hello "</span>++) &lt;*&gt; <span class="type">Just</span> <span class="string">"luoxia"</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Monad实现fmap:</span></span><br><span class="line"><span class="title">fmap</span> (<span class="string">"hello "</span>++) (<span class="type">Just</span> <span class="string">"luoxia"</span>)</span><br><span class="line"><span class="type">Just</span> <span class="string">"luoxia"</span> &gt;&gt;= (\name -&gt; <span class="type">Just</span> (<span class="string">"hello "</span> ++ name))</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Monad实现 &lt;*&gt;:</span></span><br><span class="line"><span class="title">pure</span> (<span class="string">"hello "</span>++) &lt;*&gt; <span class="type">Just</span> <span class="string">"luoxia"</span></span><br><span class="line"><span class="title">pure</span> (<span class="string">"hello "</span>++) &gt;&gt;= (\f -&gt; fmap f (<span class="type">Just</span> <span class="string">"luoxia"</span>))</span><br></pre></td></tr></table></figure>
+<p>js角度：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 从 of/ap 衍生出的 fmap</span></span><br><span class="line">X.prototype.fmap = <span class="function"><span class="keyword">function</span>(<span class="params">f</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">this</span>.constructor.of(f).ap(<span class="keyword">this</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 从 chain 衍生出的 map</span></span><br><span class="line">X.prototype.fmap = <span class="function"><span class="keyword">function</span>(<span class="params">f</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">var</span> m = <span class="keyword">this</span>;</span><br><span class="line">  <span class="keyword">return</span> m.chain(<span class="function"><span class="keyword">function</span>(<span class="params">a</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> m.constructor.of(f(a));</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 从 chain/map 衍生出的 ap</span></span><br><span class="line">X.prototype.ap = <span class="function"><span class="keyword">function</span>(<span class="params">other</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">this</span>.chain(<span class="function"><span class="keyword">function</span>(<span class="params">f</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> other.fmap(f);</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<h2 id="Monoids"><a href="#Monoids" class="headerlink" title="Monoids"></a>Monoids</h2><p>幺半群是一个存在单位元（幺元）的半群。满足结合律，有单位元。一个 monoid 是你有一个遵守结合律的二元函数还有一个可以相对于那个函数作为 identity 的值。</p>
+<p>haskell中关于Monoids class的定义:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="type">Monoid</span> a <span class="keyword">where</span></span></span><br><span class="line">  mempty :: a          <span class="comment">-- 表示一个特定 monoid 的 identity</span></span><br><span class="line">  mappend :: a -&gt; a -&gt; a    <span class="comment">-- 接受两个 monoid 的值并回传另外一个</span></span><br><span class="line">  mconcat :: [a] -&gt; a</span><br></pre></td></tr></table></figure></p>
+<p>这样就可以得出monoid的laws:</p>
+<ol>
+<li>mempty <code>mappend</code> x = x</li>
+<li>x <code>mappend</code> mempty = x</li>
+<li>(x <code>mappend</code> y) <code>mappend</code> z = x <code>mappend</code> (y <code>mappend</code> z)</li>
+</ol>
+<h3 id="Monoids-instance"><a href="#Monoids-instance" class="headerlink" title="Monoids instance"></a>Monoids instance</h3><p>List :</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Monoid</span> [a] <span class="keyword">where</span></span></span><br><span class="line">        mempty  = []</span><br><span class="line">        mappend = (++)</span><br><span class="line">        mconcat xss = [x | xs &lt;- xss, x &lt;- xs]</span><br></pre></td></tr></table></figure>
+<p>Product and Sum:</p>
+<p>由于数值类型的数据可以有不同的monoid实现，如<code>*做二元函数，1作幺元</code>或者<code>+做二元函数,0作幺元</code>。</p>
+<p>要通过两种方式实现，就如同用随机组合和链式两种方式实现List的<code>Applicative instance</code>定义一样，可以用<code>newtype</code>方式实现。这方面我的另外一篇关于<code>Haskell类型系统</code>的总结有说明。</p>
+<p>以<code>Product</code>为例:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">newtype</span> <span class="type">Product</span> a =  <span class="type">Product</span> &#123; <span class="title">getProduct</span> :: <span class="title">a</span> &#125;  </span></span><br><span class="line">    <span class="keyword">deriving</span> (<span class="type">Eq</span>, <span class="type">Ord</span>, <span class="type">Read</span>, <span class="type">Show</span>, <span class="type">Bounded</span>)</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Num</span> a =&gt; <span class="type">Monoid</span> (<span class="type">Product</span> <span class="title">a</span>) <span class="keyword">where</span></span>  </span><br><span class="line">    mempty = <span class="type">Product</span> <span class="number">1</span>  </span><br><span class="line">    <span class="type">Product</span> x `mappend` <span class="type">Product</span> y = <span class="type">Product</span> (x * y)</span><br></pre></td></tr></table></figure></p>
+<p>即<code>getProduct $ Product 3</code>mappend<code>Product 9</code>得　27.</p>
+<p>Any and ALL用于定义Bool数据的两种不同monoid实现。</p>
+<p>The Ordering monoid:</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Monoid</span> <span class="type">Ordering</span> <span class="keyword">where</span></span></span><br><span class="line">        mempty         = <span class="type">EQ</span></span><br><span class="line">        <span class="type">LT</span> `mappend` _ = <span class="type">LT</span></span><br><span class="line">        <span class="type">EQ</span> `mappend` y = y</span><br><span class="line">        <span class="type">GT</span> `mappend` _ = <span class="type">GT</span></span><br></pre></td></tr></table></figure>
+<p>这个可以运用到对于两个数据进行多种方式比较，但不同方式之间有先后顺序时，如:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="title">lengthCompare</span> :: <span class="type">String</span> -&gt; <span class="type">String</span> -&gt; <span class="type">Ordering</span>  </span><br><span class="line"><span class="title">lengthCompare</span> x y = (length x `compare` length y) `mappend`  </span><br><span class="line">                    (vowels x `compare` vowels y) `mappend`  </span><br><span class="line">                    (x `compare` y)  </span><br><span class="line">    <span class="keyword">where</span> vowels = length . filter (`elem` <span class="string">"aeiou"</span>)</span><br></pre></td></tr></table></figure></p>
+<p>Maybe the monoid:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Monoid</span> a =&gt; <span class="type">Monoid</span> (<span class="type">Maybe</span> <span class="title">a</span>) <span class="keyword">where</span></span></span><br><span class="line">  mempty = <span class="type">Nothing</span></span><br><span class="line">  <span class="type">Nothing</span> `mappend` m = m</span><br><span class="line">  m `mappend` <span class="type">Nothing</span> = m</span><br><span class="line">  <span class="type">Just</span> m1 `mappend` <span class="type">Just</span> m2 = <span class="type">Just</span> (m1 `mappend` m2)</span><br></pre></td></tr></table></figure></p>
+<h2 id="Monad-type-class"><a href="#Monad-type-class" class="headerlink" title="Monad type class"></a>Monad type class</h2><p>前面讲了Functor和Applicative Functor，接下来我们要讲讲Monad，这玩意儿着实不好理解。这里仅作为个人学习总结，不代表能够作为学习参考用。</p>
+<p>之前的Functor是: <code>(a -&gt; b) -&gt; f a -&gt; f b</code>，而Applicative是:<code>f (a -&gt; b) -&gt; f a -&gt; f b</code>，然后Monad要求是：<code>(Monad m) =&gt; m a -&gt; (a -&gt; m b) -&gt; m b</code></p>
+<p>先来看看typeclass定义:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="type">Applicative</span> m =&gt; <span class="type">Monad</span> m <span class="keyword">where</span></span></span><br><span class="line">    (&gt;&gt;=)       :: m a -&gt; (a -&gt; m b) -&gt; m b</span><br><span class="line"></span><br><span class="line">    (&gt;&gt;)        :: m a -&gt; m b -&gt; m b</span><br><span class="line">    m &gt;&gt; k = m &gt;&gt;= \_ -&gt; k</span><br><span class="line"></span><br><span class="line">    return      :: a -&gt; m a</span><br><span class="line">    return      = pure</span><br><span class="line"></span><br><span class="line">    fail        :: <span class="type">String</span> -&gt; m a</span><br><span class="line">    fail s      = errorWithoutStackTrace s</span><br></pre></td></tr></table></figure></p>
+<p>我们可以联想到fmap实现，它们的区别是，fmap的函数会返回普通值，而<code>&gt;&gt;=</code>的函数会返回经过Monad context包装的值，如果考虑到直接将函数通过fmap运用到monad,函数的返回值还会再在外面包装一层Monad context,这样就成了两层context:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Prelude&gt; fmap (\s -&gt; Just (s++&quot;,haha&quot;)) (Just &quot;luoxia&quot;)</span><br><span class="line">Just (Just &quot;luoxia,haha&quot;)</span><br></pre></td></tr></table></figure></p>
+<p>js例子：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//  safeProp :: Key -&gt; &#123;Key: a&#125; -&gt; Maybe a</span></span><br><span class="line"><span class="keyword">var</span> safeProp = curry(<span class="function"><span class="keyword">function</span>(<span class="params">x, obj</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> Maybe(obj[x]);</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">//  safeHead :: [a] -&gt; Maybe a</span></span><br><span class="line"><span class="keyword">var</span> safeHead = safeProp(<span class="number">0</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">//  firstAddressStreet :: User -&gt; Maybe (Maybe (Maybe Street) )</span></span><br><span class="line"><span class="keyword">var</span> firstAddressStreet = compose(</span><br><span class="line">  map(map(safeProp(<span class="string">'street'</span>))), map(safeHead), safeProp(<span class="string">'addresses'</span>)</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line">firstAddressStreet(</span><br><span class="line">  &#123;<span class="attr">addresses</span>: [&#123;<span class="attr">street</span>: &#123;<span class="attr">name</span>: <span class="string">'Mulburry'</span>, <span class="attr">number</span>: <span class="number">8402</span>&#125;, <span class="attr">postcode</span>: <span class="string">"WC2N"</span> &#125;]&#125;</span><br><span class="line">);</span><br><span class="line"><span class="comment">// Maybe(Maybe(Maybe(&#123;name: 'Mulburry', number: 8402&#125;)))</span></span><br></pre></td></tr></table></figure></p>
+<p>可以看到，<code>firstAddressStreet</code>组合函数的最后一个map调用为:<code>map(map(safeProp(&#39;street&#39;)))</code>，因为经历过前两个函数调用，实际的结果为：<code>Maybe(Maybe({street: {name: &#39;Mulburry&#39;, number: 8402}, postcode: &quot;WC2N&quot; }))</code>，用得到的对象被包了两层context,对其使用map，就得剥开两层。</p>
+<p>这就好比洋葱，一层一层剥开你的心，会悲伤，会流泪。</p>
+<p>而<code>&gt;&gt;=</code>的作用就是替我们剥开那多的一层外衣：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">Maybe.prototype.join = <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">this</span>.isNothing() ? Maybe.of(<span class="literal">null</span>) : <span class="keyword">this</span>.__value;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//  join :: Monad m =&gt; m (m a) -&gt; m a</span></span><br><span class="line"><span class="keyword">var</span> join = <span class="function"><span class="keyword">function</span>(<span class="params">mma</span>)</span>&#123; <span class="keyword">return</span> mma.join(); &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//  firstAddressStreet :: User -&gt; Maybe Street</span></span><br><span class="line"><span class="keyword">var</span> firstAddressStreet = compose(</span><br><span class="line">  join, map(safeProp(<span class="string">'street'</span>)), join, map(safeHead), safeProp(<span class="string">'addresses'</span>)</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line">firstAddressStreet(</span><br><span class="line">  &#123;<span class="attr">addresses</span>: [&#123;<span class="attr">street</span>: &#123;<span class="attr">name</span>: <span class="string">'Mulburry'</span>, <span class="attr">number</span>: <span class="number">8402</span>&#125;, <span class="attr">postcode</span>: <span class="string">"WC2N"</span> &#125;]&#125;</span><br><span class="line">);</span><br><span class="line"><span class="comment">// Maybe(&#123;name: 'Mulburry', number: 8402&#125;)</span></span><br></pre></td></tr></table></figure></p>
+<p>显然这还不够，要是我们能够将剥开多余外衣的操作和map操作合并就好了，那样就是我们的<code>&gt;&gt;=</code>真正要实现的:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//  chain :: Monad m =&gt; (a -&gt; m b) -&gt; m a -&gt; m b</span></span><br><span class="line"><span class="keyword">var</span> chain = curry(<span class="function"><span class="keyword">function</span>(<span class="params">f, m</span>)</span>&#123;</span><br><span class="line">  <span class="keyword">return</span> m.map(f).join(); <span class="comment">// 或者 compose(join, map(f))(m)</span></span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">// map/join</span></span><br><span class="line"><span class="keyword">var</span> firstAddressStreet = compose(</span><br><span class="line">  join, map(safeProp(<span class="string">'street'</span>)), join, map(safeHead), safeProp(<span class="string">'addresses'</span>)</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">// chain</span></span><br><span class="line"><span class="keyword">var</span> firstAddressStreet = compose(</span><br><span class="line">  chain(safeProp(<span class="string">'street'</span>)), chain(safeHead), safeProp(<span class="string">'addresses'</span>)</span><br><span class="line">);</span><br></pre></td></tr></table></figure></p>
+<p>或者换一种写法：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> result = Maybe.of(<span class="number">3</span>).chain(<span class="function"><span class="params">three</span> =&gt;</span> </span><br><span class="line">    Maybe.of(<span class="number">2</span>).fmap(_.add(three))</span><br><span class="line">).chain(<span class="function"><span class="params">sum</span> =&gt;</span> </span><br><span class="line">    Maybe.of(_.append(sum,[<span class="number">7</span>,<span class="number">6</span>]))</span><br><span class="line">)</span><br></pre></td></tr></table></figure></p>
+<p>咋这么眼熟呢？对，跟Promise贼像。这就是链式调用。</p>
+<h3 id="Maybe-Monad"><a href="#Maybe-Monad" class="headerlink" title="Maybe Monad"></a>Maybe Monad</h3><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">instance</span>  <span class="type">Monad</span> <span class="type">Maybe</span>  <span class="keyword">where</span></span></span><br><span class="line">    (<span class="type">Just</span> x) &gt;&gt;= k      = k x</span><br><span class="line">    <span class="type">Nothing</span>  &gt;&gt;= _      = <span class="type">Nothing</span></span><br><span class="line"></span><br><span class="line">    (&gt;&gt;) = (*&gt;)</span><br><span class="line"></span><br><span class="line">    fail _              = <span class="type">Nothing</span></span><br></pre></td></tr></table></figure>
+<p>例子:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="title">landLeft</span> :: <span class="type">Birds</span> -&gt; <span class="type">Pole</span> -&gt; <span class="type">Maybe</span> <span class="type">Pole</span>  </span><br><span class="line"><span class="title">landLeft</span> n (left,right)  </span><br><span class="line">    | abs ((left + n) - right) &lt; <span class="number">4</span> = <span class="type">Just</span> (left + n, right)  </span><br><span class="line">    | otherwise                    = <span class="type">Nothing</span>  </span><br><span class="line"></span><br><span class="line"><span class="title">landRight</span> :: <span class="type">Birds</span> -&gt; <span class="type">Pole</span> -&gt; <span class="type">Maybe</span> <span class="type">Pole</span>  </span><br><span class="line"><span class="title">landRight</span> n (left,right)  </span><br><span class="line">    | abs (left - (right + n)) &lt; <span class="number">4</span> = <span class="type">Just</span> (left, right + n)  </span><br><span class="line">    | otherwise                    = <span class="type">Nothing</span></span><br><span class="line"></span><br><span class="line"><span class="title">return</span> (<span class="number">0</span>,<span class="number">0</span>) &gt;&gt;= landLeft <span class="number">1</span> &gt;&gt; <span class="type">Nothing</span> &gt;&gt;= landRight <span class="number">1</span>  <span class="comment">--Nothing</span></span><br></pre></td></tr></table></figure></p>
+<p>这里的<code>&gt;&gt;</code>对于Maybe是在<code>Applicative instance</code>定义的：<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Just</span> _m1 *&gt; m2      = m2</span><br><span class="line"><span class="type">Nothing</span>  *&gt; _m2     = <span class="type">Nothing</span></span><br></pre></td></tr></table></figure></p>
+<p>换成<code>do</code>写法:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="title">routine</span> :: <span class="type">Maybe</span> <span class="type">Pole</span>  </span><br><span class="line"><span class="title">routine</span> = <span class="keyword">do</span>  </span><br><span class="line">    start &lt;- return (<span class="number">0</span>,<span class="number">0</span>)  </span><br><span class="line">    first &lt;- landLeft １ start  </span><br><span class="line">    <span class="type">Nothing</span>  </span><br><span class="line">    second &lt;- landRight １ first  </span><br><span class="line">    landLeft <span class="number">1</span> second</span><br></pre></td></tr></table></figure></p>
+<h3 id="List-Monad"><a href="#List-Monad" class="headerlink" title="List Monad"></a>List Monad</h3><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Monad</span> []  <span class="keyword">where</span></span></span><br><span class="line">    xs &gt;&gt;= f             = [y | x &lt;- xs, y &lt;- f x]</span><br><span class="line">    (&gt;&gt;) = (*&gt;)</span><br><span class="line">    fail _              = []</span><br></pre></td></tr></table></figure>
+<p>例子：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ghci&gt; [1,2] &gt;&gt;= \n -&gt; [&apos;a&apos;,&apos;b&apos;] &gt;&gt;= \ch -&gt; return (n,ch)  </span><br><span class="line">[(1,&apos;a&apos;),(1,&apos;b&apos;),(2,&apos;a&apos;),(2,&apos;b&apos;)]</span><br></pre></td></tr></table></figure></p>
+<p>换种写法:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="title">listOfTuples</span> :: [(<span class="type">Int</span>,<span class="type">Char</span>)]  </span><br><span class="line"><span class="title">listOfTuples</span> = <span class="keyword">do</span>  </span><br><span class="line">    n &lt;- [<span class="number">1</span>,<span class="number">2</span>]  </span><br><span class="line">    ch &lt;- ['a','b']  </span><br><span class="line">    return (n,ch)</span><br></pre></td></tr></table></figure></p>
+<p><img src="https://learnyoua.haskell.sg/content/zh-cn/ch12/concatmap.png" alt="https://learnyoua.haskell.sg/content/zh-cn/ch12/concatmap.png"></p>
+<p>实际上<code>[ (n,ch) | n &lt;- [1,2], ch &lt;- [&#39;a&#39;,&#39;b&#39;] ]</code>就是上面写法的一种语法糖。</p>
+<p>再来个例子:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="title">guard</span> :: (<span class="type">MonadPlus</span> m) =&gt; <span class="type">Bool</span> -&gt; m ()  </span><br><span class="line"><span class="title">guard</span> <span class="type">True</span> = return ()  </span><br><span class="line"><span class="title">guard</span> <span class="type">False</span> = mzero</span><br><span class="line"></span><br><span class="line">[<span class="number">1.</span><span class="number">.50</span>] &gt;&gt;= (\x -&gt; guard ('<span class="number">7</span>' `elem` show x) &gt;&gt; return x) 　<span class="comment">--[7,17,27,37,47]</span></span><br></pre></td></tr></table></figure></p>
+<p>这里引用<code>Control.Monad</code>中的<code>guard</code>函数，传递一个Bool参数，回传一个<code>MonadPlus instance</code>包装的数据，这里List在<code>guard True</code>下返回<code>[()]</code>，否则返回<code>[]</code>。</p>
+<p>而对于List的<code>&gt;&gt;</code>在<code>Applicative instance</code>定义:</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="title">xs</span> *&gt; ys  = [y | _ &lt;- xs, y &lt;- ys]</span><br></pre></td></tr></table></figure>
+<p>当<code>[()] &gt;&gt; return x</code>的时候，返回<code>[x]</code>，当<code>[] &gt;&gt; return x</code>的时候，返回<code>[]</code>，这个不难理解。这样就起到了filter的作用。</p>
+<p>也可以换成下面这种写法:<br><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="title">sevensOnly</span> :: [<span class="type">Int</span>]  </span><br><span class="line"><span class="title">sevensOnly</span> = <span class="keyword">do</span>  </span><br><span class="line">    x &lt;- [<span class="number">1.</span><span class="number">.50</span>]  </span><br><span class="line">    guard ('<span class="number">7</span>' `elem` show x)  </span><br><span class="line">    return x</span><br></pre></td></tr></table></figure></p>
+<p>可见guard这句不进行<code>&lt;-</code>，就相当于在其后用<code>&gt;&gt;</code></p>
+<p><strong>未完待续…</strong></p>
+
+      
+    </div>
+
+    <div>
+      
+        
+<div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/code/images/wechat.jpg" alt="罗峡的博客 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎扫描上面的微信公众号二维码，关注我的个人公众号：全栈前端</div>
+</div>
+
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/code/images/wechat_pay.png" alt="罗峡的博客 WeChat Pay"/>
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/code/images/ali_pay.jpg" alt="罗峡的博客 Alipay"/>
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/code/tags/Haskell/" rel="tag">#Haskell</a>
+          
+            <a href="/code/tags/functional/" rel="tag">#functional</a>
+          
+            <a href="/code/tags/Monad/" rel="tag">#Monad</a>
+          
+            <a href="/code/tags/Functor/" rel="tag">#Functor</a>
+          
+            <a href="/code/tags/Applicative/" rel="tag">#Applicative</a>
+          
+            <a href="/code/tags/Monoid/" rel="tag">#Monoid</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/code/2017/07/27/libuv网络IO机制/" rel="next" title="libuv网络I/O机制">
+                <i class="fa fa-chevron-left"></i> libuv网络I/O机制
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/code/2017/09/07/RabbitMQ/" rel="prev" title="RabbitMQ">
+                RabbitMQ <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/code/images/head.jpg"
+               alt="罗峡的博客" />
+          <p class="site-author-name" itemprop="name">罗峡的博客</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/code/archives">
+              <span class="site-state-item-count">43</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/code/categories">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/code/tags">
+                <span class="site-state-item-count">85</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/code/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/laoqiren" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://luoxia.me/life" title="生活随笔" target="_blank">生活随笔</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Functor-typeclass"><span class="nav-number">1.</span> <span class="nav-text">Functor typeclass</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#List-Functor"><span class="nav-number">1.1.</span> <span class="nav-text">List Functor</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Maybe-Functor"><span class="nav-number">1.2.</span> <span class="nav-text">Maybe Functor</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Either-Functor"><span class="nav-number">1.3.</span> <span class="nav-text">Either Functor</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#IO-Functor"><span class="nav-number">1.4.</span> <span class="nav-text">IO Functor</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#gt-r-Functor"><span class="nav-number">1.5.</span> <span class="nav-text">(->) r Functor</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Functor-laws"><span class="nav-number">1.6.</span> <span class="nav-text">Functor laws</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Applicative-Functor-type-class"><span class="nav-number">2.</span> <span class="nav-text">Applicative Functor type class</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Maybe-Applicative"><span class="nav-number">2.1.</span> <span class="nav-text">Maybe Applicative</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#List-Applicative"><span class="nav-number">2.2.</span> <span class="nav-text">List Applicative</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#IO-Applicative"><span class="nav-number">2.3.</span> <span class="nav-text">IO Applicative</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#gt-r-Applicative"><span class="nav-number">2.4.</span> <span class="nav-text">(->) r　Applicative</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#lift"><span class="nav-number">2.5.</span> <span class="nav-text">lift</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#与Functor-Monad转换"><span class="nav-number">2.6.</span> <span class="nav-text">与Functor,Monad转换</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Monoids"><span class="nav-number">3.</span> <span class="nav-text">Monoids</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Monoids-instance"><span class="nav-number">3.1.</span> <span class="nav-text">Monoids instance</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Monad-type-class"><span class="nav-number">4.</span> <span class="nav-text">Monad type class</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Maybe-Monad"><span class="nav-number">4.1.</span> <span class="nav-text">Maybe Monad</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#List-Monad"><span class="nav-number">4.2.</span> <span class="nav-text">List Monad</span></a></li></ol></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">罗峡的博客</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/code/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/code/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/code/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/code/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length == 0) {
+       search_path = "search.xml";
+    }
+    var path = "/code/" + search_path;
+    // monitor main search box;
+
+    function proceedsearch() {
+      $("body").append('<div class="popoverlay">').css('overflow', 'hidden');
+      $('.popup').toggle();
+
+    }
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+    'use strict';
+    $.ajax({
+        url: path,
+        dataType: "xml",
+        async: true,
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            isfetched = true;
+            $('.popup').detach().appendTo('.header-inner');
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                var matchcounts = 0;
+                var str='<ul class=\"search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length > 1) {
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var content_index = [];
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_content = data.content.trim().replace(/<[^>]+>/g,"").toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    var index_content = -1;
+                    var first_occur = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title != '' && data_content != '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            index_content = data_content.indexOf(keyword);
+                            if( index_title < 0 && index_content < 0 ){
+                                isMatch = false;
+                            } else {
+                                if (index_content < 0) {
+                                    index_content = 0;
+                                }
+                                if (i == 0) {
+                                    first_occur = index_content;
+                                }
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        matchcounts += 1;
+                        str += "<li><a href='"+ data_url +"' class='search-result-title'>"+ data_title +"</a>";
+                        var content = data.content.trim().replace(/<[^>]+>/g,"");
+                        if (first_occur >= 0) {
+                            // cut out 100 characters
+                            var start = first_occur - 20;
+                            var end = first_occur + 80;
+                            if(start < 0){
+                                start = 0;
+                            }
+                            if(start == 0){
+                                end = 50;
+                            }
+                            if(end > content.length){
+                                end = content.length;
+                            }
+                            var match_content = content.substring(start, end);
+                            // highlight all keywords
+                            keywords.forEach(function(keyword){
+                                var regS = new RegExp(keyword, "gi");
+                                match_content = match_content.replace(regS, "<b class=\"search-keyword\">"+keyword+"</b>");
+                            });
+
+                            str += "<p class=\"search-result\">" + match_content +"...</p>"
+                        }
+                        str += "</li>";
+                    }
+                })};
+                str += "</ul>";
+                if (matchcounts == 0) { str = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>' }
+                if (keywords == "") { str = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>' }
+                $resultContent.innerHTML = str;
+            });
+            proceedsearch();
+        }
+    });}
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched == false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+
+    });
+
+    $('.popup-btn-close').click(function(e){
+      $('.popup').hide();
+      $(".popoverlay").remove();
+      $('body').css('overflow', '');
+    });
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+  </script>
+
+
+  
+
+  
+
+  
+<script type="text/javascript" async src="//push.zhanzhang.baidu.com/push.js">
+</script>
+
+
+</body>
+</html>

@@ -1,0 +1,893 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/code/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/code/lib/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/code/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="异步编程," />
+
+
+
+
+
+  <link rel="alternate" href="/code/atom.xml" title="罗峡的技术博客" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/code/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="js作为一门单线程语言，同一时间内只能执行一段代码，所以异步编程对于js来说是非常重要的。然而对于许多习惯同步编程思维的程序员来说，异步的编程方式难免有些不适应，要更加清楚地理解异步编程，还得谈到其内部的实现原理。 有些人可能会问到，既然js是单线程的，那它为何能够实现一边儿去执行一些耗时操作（比如文件，网络访问等），">
+<meta name="keywords" content="异步编程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="异步的实现原理">
+<meta property="og:url" content="http://luoxia.me/code/2016/08/16/异步的实现原理/index.html">
+<meta property="og:site_name" content="罗峡的技术博客">
+<meta property="og:description" content="js作为一门单线程语言，同一时间内只能执行一段代码，所以异步编程对于js来说是非常重要的。然而对于许多习惯同步编程思维的程序员来说，异步的编程方式难免有些不适应，要更加清楚地理解异步编程，还得谈到其内部的实现原理。 有些人可能会问到，既然js是单线程的，那它为何能够实现一边儿去执行一些耗时操作（比如文件，网络访问等），一边儿又毫无阻碍的去执行其他代码呢？咋一看，确实有点像多线程的感觉，我们所说的单">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/chi.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/process.png">
+<meta property="og:updated_time" content="2017-11-16T13:10:06.491Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="异步的实现原理">
+<meta name="twitter:description" content="js作为一门单线程语言，同一时间内只能执行一段代码，所以异步编程对于js来说是非常重要的。然而对于许多习惯同步编程思维的程序员来说，异步的编程方式难免有些不适应，要更加清楚地理解异步编程，还得谈到其内部的实现原理。 有些人可能会问到，既然js是单线程的，那它为何能够实现一边儿去执行一些耗时操作（比如文件，网络访问等），一边儿又毫无阻碍的去执行其他代码呢？咋一看，确实有点像多线程的感觉，我们所说的单">
+<meta name="twitter:image" content="http://7xsi10.com1.z0.glb.clouddn.com/chi.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: undefined,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://luoxia.me/code/2016/08/16/异步的实现原理/"/>
+
+  <title> 异步的实现原理 | 罗峡的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?179492533449f84f24555d1cbf10462f";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/code/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">罗峡的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">爱技术，爱生活</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/code/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/code/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/code/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/code/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/code/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup">
+ <span class="search-icon fa fa-search"></span>
+ <input type="text" id="local-search-input">
+ <div id="local-search-result"></div>
+ <span class="popup-btn-close">close</span>
+</div>
+
+
+    </div>
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                异步的实现原理
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-08-16T17:59:47+08:00" content="2016-08-16">
+              2016-08-16
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/code/categories/JavaScript/" itemprop="url" rel="index">
+                    <span itemprop="name">JavaScript</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>js作为一门单线程语言，同一时间内只能执行一段代码，所以异步编程对于js来说是非常重要的。然而对于许多习惯同步编程思维的程序员来说，异步的编程方式难免有些不适应，要更加清楚地理解异步编程，还得谈到其内部的实现原理。</p>
+<p>有些人可能会问到，既然js是单线程的，那它为何能够实现一边儿去执行一些耗时操作（比如文件，网络访问等），一边儿又毫无阻碍的去执行其他代码呢？咋一看，确实有点像多线程的感觉，我们所说的单线程是js自身是单线程的，但在执行异步I/O操作时，底层调用的还是多线程。</p>
+<p><strong>关键词</strong></p>
+<ol>
+<li>异步与同步</li>
+<li>阻塞/非阻塞IO与异步IO</li>
+<li>事件驱动（事件循环，请求对象，执行回调)</li>
+<li>基于事件驱动的非I/O异步API<a id="more"></a>
+</li>
+</ol>
+<h3 id="异步与同步的对比："><a href="#异步与同步的对比：" class="headerlink" title="异步与同步的对比："></a>异步与同步的对比：</h3><p>以文件读取操作为例：</p>
+<p><strong>同步操作</strong><br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> fs = <span class="built_in">require</span>(<span class="string">'fs'</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> data1 = fs.readFileSync(<span class="string">'./file1.txt'</span>,<span class="string">'utf-8'</span>);</span><br><span class="line"><span class="keyword">let</span> data2 = fs.readFileSync(<span class="string">'./file2.txt'</span>,<span class="string">'utf-8'</span>);</span><br><span class="line">process(data1); <span class="comment">//处理data</span></span><br><span class="line">process(data2);</span><br><span class="line">...<span class="comment">//其他任务</span></span><br></pre></td></tr></table></figure></p>
+<p>获取data1,data2都是同步执行，这样就有个问题，后面的任务都被阻塞了，如果有大量的这样代码，程序将会卡死</p>
+<p><strong>异步操作</strong><br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> fs = <span class="built_in">require</span>(<span class="string">'fs'</span>);</span><br><span class="line"></span><br><span class="line">fs.readFile(<span class="string">'./file1.txt'</span>,<span class="string">'utf-8'</span>,<span class="function"><span class="keyword">function</span>(<span class="params">err,data</span>)</span>&#123;</span><br><span class="line">	process(data);</span><br><span class="line">&#125;);</span><br><span class="line">fs.readFile(<span class="string">'./file2.txt'</span>,<span class="string">'utf-8'</span>.function(err,data)&#123;</span><br><span class="line">	process(data);</span><br><span class="line">&#125;);</span><br><span class="line">...<span class="comment">//其他任务</span></span><br></pre></td></tr></table></figure></p>
+<p>上例代码中的文件读取操作异步执行，这样操作的总时间将变为两个操作中最大时间，而且读取过程不会阻塞后续任务。</p>
+<p>对于前端工程师来说，异步编程再普通不过了，有许多场景都是异步操作：</p>
+<ol>
+<li>定时器 setTimeout和setInternal</li>
+<li>事件监听，如click,mouseover等事件</li>
+<li>ajax</li>
+</ol>
+<p>它们的异步实现原理都是事件驱动，而对于非I/O操作，它们和I/O操作的内部原理也有一些差别。容我慢慢道来。</p>
+<h3 id="非阻塞I-O和异步的关系"><a href="#非阻塞I-O和异步的关系" class="headerlink" title="非阻塞I/O和异步的关系"></a>非阻塞I/O和异步的关系</h3><p>两者看似相同，其实是两回事，知乎上关于这个问题的解答：<br><a href="http://www.zhihu.com/question/19732473" target="_blank" rel="noopener">http://www.zhihu.com/question/19732473</a></p>
+<p>阻塞与非阻塞描述的应用层在等待系统内核操作时的状态，阻塞I/O指应用程序在请求数据过程中处于挂起状态，等待完整数据返回，而非阻塞I/O不会立即完整数据，但是会立即返回，在等待完整数据的过程中，可以做其他事情。</p>
+<p>非阻塞I/O的实现方式主要是轮询技术，轮询技术主要有read,select,poll,epoll方式</p>
+<ol>
+<li>read方式是原始的不断调用获取数据操作来检测I/O状态</li>
+<li>select方式通过遍历问卷描述符的事件状态来判断</li>
+<li>poll方式采用链表的方式避免select最大同时检查1024文件描述符的限制</li>
+<li>epoll,等待I/O事件，如果没有，则会处于休眠状态</li>
+</ol>
+<p>根据上述可见，非阻塞的I/O并不等于就是异步的了，因为在等待过程当中，CPU要么用来查询文件描述符状态，要么用来等待I/O事件，实际上还是同步执行，而我们需要的是如文章开头异步地读取文件例子，执行异步方法，内核非阻塞调用立即返回，继续执行其他任务，执行回调。对于单线程的这种实现比较少。</p>
+<p>可见非阻塞并不等同于异步。那要怎样来实现异步呢？</p>
+<h4 id="线程池"><a href="#线程池" class="headerlink" title="线程池"></a>线程池</h4><p>在多线程的情况下，我们可以将I/O操作另起线程，这个线程可以阻塞的方式读取数据，也可以非阻塞的读取数据，最终将数据返回给程序的主线程。这就是线程池</p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/chi.png" alt="线程池"><br>NodeJS在windows平台和*nix平台实现线程池的方式不同，windwos下通过IOCP方式，*nix采用自定义线程池，但是node对不同平台进行了抽象，提供了libuv抽象层。</p>
+<h3 id="事件驱动的异步实现方式"><a href="#事件驱动的异步实现方式" class="headerlink" title="事件驱动的异步实现方式"></a>事件驱动的异步实现方式</h3><h4 id="事件循环"><a href="#事件循环" class="headerlink" title="事件循环"></a>事件循环</h4><p>事件循环机制是Node自身的执行模型，浏览器采用了类似的机制来实现异步。</p>
+<p>事件循环机制中的每一次循环为Tick,首先程序创建主循环，然后每次Tick就会判断是否有事件等待处理，如果有，就取出事件及其回调函数，并执行回调函数。</p>
+<p>这里的事件由哪些产生方式呢？比如有文件读取，ajax,某个dom元素被点击等都会产生事件。</p>
+<h4 id="观察者"><a href="#观察者" class="headerlink" title="观察者"></a>观察者</h4><p>程序的某些操作会不断产生事件，而事件循环过程中需要用于判断是否有事件需要处理的观察者，比如有文件I/O观察者，网络I/O观察者等，对于非I/O操作，对于setTime和setInterval有定时器观察者，process.nextTick()有idle观察者，setImmediate有check观察者等等。</p>
+<p>一个观察者里可能有多个事件，这些事件以队列的方式存在于观察者中，然后每次tick向观察者们循环需要处理的事件</p>
+<h4 id="请求对象"><a href="#请求对象" class="headerlink" title="请求对象"></a>请求对象</h4><p>程序发起异步调用时，会生成请求对象，并设置参数和回调函数，对于文件读取API来说：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> fs = <span class="built_in">require</span>(<span class="string">'fs'</span>);</span><br><span class="line"><span class="keyword">let</span> data = fs.readFile(path,<span class="string">'utf-8'</span>,<span class="function"><span class="keyword">function</span>(<span class="params">err,data</span>)</span>&#123;</span><br><span class="line">	.../</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>发起异步的readFile，调用node核心模块fs,fs调用C++內建模块，內建模块通过libuv抽象层根据不同操作系统调用底层的方法，在调用这个底层方法时，就会封装请求对象，请求对象封装了当初调用readFile时的参数，包括回调函数。</p>
+<p>请求对象封装完毕，通过调用(windows下)<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">QueueUserWorkItem()</span><br></pre></td></tr></table></figure></p>
+<p>方法将请求对象推入线程池（上文中的线程池示例），当线程池有空闲线程时，执行任务。<br>这样I/O操作交给了I/O线程，可以阻塞调用也可以非阻塞调用，js后续的任务就可以继续执行了。</p>
+<h4 id="执行回调"><a href="#执行回调" class="headerlink" title="执行回调"></a>执行回调</h4><p>当I/O操作完成时，会通知IOCP(windows的线程池实现)当前操作完成，通过PostQueuedCompletionStatus()提交状态将该线程归还，而每次Tick中,事件观察者都会调用GetQueuedCompletionStatus()方法检测是否有执行完成的请求。</p>
+<p>当有执行完的操作时，观察者会将它们加入到自己的队列，形成事件队列。</p>
+<p>然后就回到了上文的事件循环，每次tick询问观察者有无事件待处理，有了上面的讲述，整个关系就打通了。</p>
+<p><img src="http://7xsi10.com1.z0.glb.clouddn.com/process.png" alt="process"></p>
+<p>这就是文章开头所说的为什么js是单线程但能够实现一边异步执行耗时操作，一边执行其他操作的原因，虽然Js是单线程的，但是平台自身是多线程的，通过线程池，I/O线程阻塞或非阻塞调用都不会对Js后续代码有影响。</p>
+<h3 id="基于事件驱动的非I-O异步API"><a href="#基于事件驱动的非I-O异步API" class="headerlink" title="基于事件驱动的非I/O异步API"></a>基于事件驱动的非I/O异步API</h3><h4 id="定时器"><a href="#定时器" class="headerlink" title="定时器"></a>定时器</h4><p>在《JavaScript高级程序设计》高级函数那一章讲的高级定时器部分对setTimeout和setInterval的执行机制进行了阐述。</p>
+<p>文中讲述的是，定时器指定的时间并不是定时器代码会在指定时间后执行，而是在指定时间后将代码加入到执行队列当中，当有js的线程空余时，再执行队列当中的代码。</p>
+<p>而就事件驱动的原理来讲，定时器的内部机制是：</p>
+<p>类似于异步I/O，但是不需要线程池，调用setTimout和setInterval都会创建定时器，而这些定时器会被插入到定时器观察者的红黑树中，每次tick,定时器观察者会迭代变量这些定时器，检测它们是否超过设定时间，一旦超过时间，就生成一个事件，这个事件和前面讲述的由异步I/O等操作产生的事件类似，都是在队列当中存在，每次tick只是执行一个事件，这就是为什么定时器的代码往往执行得比指定时间晚的缘故了。</p>
+<h4 id="process-nextTick"><a href="#process-nextTick" class="headerlink" title="process.nextTick()"></a>process.nextTick()</h4><p>该方法立即执行一个异步任务，但是它并不会有诸如红黑树的东西，不用去迭代判断事件的产生，而只是简单的将回调函数放入回调函数执行队列当中</p>
+<h4 id="setImmediate"><a href="#setImmediate" class="headerlink" title="setImmediate()"></a>setImmediate()</h4><p>和process.nextTick()类似，但是process.nextTick()会将回调函数保存在数组当中，每轮循环会将这项数组都执行，而setImmediate则是存于链表中，一次只执行一次。另外process.nextTick的观察者是idle观察者，setImmediate属于check观察者，idle观察者先于I/O观察者，I/O观察者先于check观察者。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">process.nextTick(<span class="function"><span class="params">()</span>=&gt;</span><span class="built_in">console</span>.log(<span class="string">'nextTick1执行'</span>));</span><br><span class="line">process.nextTick(<span class="function"><span class="params">()</span>=&gt;</span><span class="built_in">console</span>.log(<span class="string">'nextTick2执行'</span>));</span><br><span class="line">setImmediate(<span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">	<span class="built_in">console</span>.log(<span class="string">'setImmediate1执行'</span>);</span><br><span class="line">	process.nextTick(<span class="function"><span class="params">()</span>=&gt;</span><span class="built_in">console</span>.log(<span class="string">'插入nextTick'</span>);</span><br><span class="line">&#125;</span><br><span class="line">setImmediate(<span class="function"><span class="params">()</span>=&gt;</span><span class="built_in">console</span>.log(<span class="string">'setImmediate2执行'</span>));</span><br><span class="line"><span class="built_in">console</span>.log(<span class="string">'同步console'</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">同步console</span></span><br><span class="line"><span class="comment">nextTick1执行</span></span><br><span class="line"><span class="comment">nextTick2执行</span></span><br><span class="line"><span class="comment">setImmediate1执行</span></span><br><span class="line"><span class="comment">插入nextTick</span></span><br><span class="line"><span class="comment">setImmediate2执行</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
+<p>感谢朴灵前辈关于nodeJS的书籍《深入浅出nodeJS》，受益匪浅。</p>
+<p>大致了解了异步的实现原理，接下来一篇文章将会总结一下异步编程解决方案。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+<div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/code/images/wechat.jpg" alt="罗峡的博客 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎扫描上面的微信公众号二维码，关注我的个人公众号：全栈前端</div>
+</div>
+
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/code/images/wechat_pay.png" alt="罗峡的博客 WeChat Pay"/>
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/code/images/ali_pay.jpg" alt="罗峡的博客 Alipay"/>
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/code/tags/异步编程/" rel="tag">#异步编程</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/code/2016/08/10/离线应用开发基础/" rel="next" title="离线应用开发基础">
+                <i class="fa fa-chevron-left"></i> 离线应用开发基础
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/code/2016/08/17/异步编程解决方案/" rel="prev" title="异步编程解决方案">
+                异步编程解决方案 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/code/images/head.jpg"
+               alt="罗峡的博客" />
+          <p class="site-author-name" itemprop="name">罗峡的博客</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/code/archives">
+              <span class="site-state-item-count">43</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/code/categories">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/code/tags">
+                <span class="site-state-item-count">85</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/code/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/laoqiren" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://luoxia.me/life" title="生活随笔" target="_blank">生活随笔</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#异步与同步的对比："><span class="nav-number">1.</span> <span class="nav-text">异步与同步的对比：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#非阻塞I-O和异步的关系"><span class="nav-number">2.</span> <span class="nav-text">非阻塞I/O和异步的关系</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#线程池"><span class="nav-number">2.1.</span> <span class="nav-text">线程池</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#事件驱动的异步实现方式"><span class="nav-number">3.</span> <span class="nav-text">事件驱动的异步实现方式</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#事件循环"><span class="nav-number">3.1.</span> <span class="nav-text">事件循环</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#观察者"><span class="nav-number">3.2.</span> <span class="nav-text">观察者</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#请求对象"><span class="nav-number">3.3.</span> <span class="nav-text">请求对象</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#执行回调"><span class="nav-number">3.4.</span> <span class="nav-text">执行回调</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#基于事件驱动的非I-O异步API"><span class="nav-number">4.</span> <span class="nav-text">基于事件驱动的非I/O异步API</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#定时器"><span class="nav-number">4.1.</span> <span class="nav-text">定时器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#process-nextTick"><span class="nav-number">4.2.</span> <span class="nav-text">process.nextTick()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#setImmediate"><span class="nav-number">4.3.</span> <span class="nav-text">setImmediate()</span></a></li></ol></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">罗峡的博客</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/code/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/code/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/code/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/code/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length == 0) {
+       search_path = "search.xml";
+    }
+    var path = "/code/" + search_path;
+    // monitor main search box;
+
+    function proceedsearch() {
+      $("body").append('<div class="popoverlay">').css('overflow', 'hidden');
+      $('.popup').toggle();
+
+    }
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+    'use strict';
+    $.ajax({
+        url: path,
+        dataType: "xml",
+        async: true,
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            isfetched = true;
+            $('.popup').detach().appendTo('.header-inner');
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                var matchcounts = 0;
+                var str='<ul class=\"search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length > 1) {
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var content_index = [];
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_content = data.content.trim().replace(/<[^>]+>/g,"").toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    var index_content = -1;
+                    var first_occur = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title != '' && data_content != '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            index_content = data_content.indexOf(keyword);
+                            if( index_title < 0 && index_content < 0 ){
+                                isMatch = false;
+                            } else {
+                                if (index_content < 0) {
+                                    index_content = 0;
+                                }
+                                if (i == 0) {
+                                    first_occur = index_content;
+                                }
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        matchcounts += 1;
+                        str += "<li><a href='"+ data_url +"' class='search-result-title'>"+ data_title +"</a>";
+                        var content = data.content.trim().replace(/<[^>]+>/g,"");
+                        if (first_occur >= 0) {
+                            // cut out 100 characters
+                            var start = first_occur - 20;
+                            var end = first_occur + 80;
+                            if(start < 0){
+                                start = 0;
+                            }
+                            if(start == 0){
+                                end = 50;
+                            }
+                            if(end > content.length){
+                                end = content.length;
+                            }
+                            var match_content = content.substring(start, end);
+                            // highlight all keywords
+                            keywords.forEach(function(keyword){
+                                var regS = new RegExp(keyword, "gi");
+                                match_content = match_content.replace(regS, "<b class=\"search-keyword\">"+keyword+"</b>");
+                            });
+
+                            str += "<p class=\"search-result\">" + match_content +"...</p>"
+                        }
+                        str += "</li>";
+                    }
+                })};
+                str += "</ul>";
+                if (matchcounts == 0) { str = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>' }
+                if (keywords == "") { str = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>' }
+                $resultContent.innerHTML = str;
+            });
+            proceedsearch();
+        }
+    });}
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched == false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+
+    });
+
+    $('.popup-btn-close').click(function(e){
+      $('.popup').hide();
+      $(".popoverlay").remove();
+      $('body').css('overflow', '');
+    });
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+  </script>
+
+
+  
+
+  
+
+  
+<script type="text/javascript" async src="//push.zhanzhang.baidu.com/push.js">
+</script>
+
+
+</body>
+</html>

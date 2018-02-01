@@ -1,0 +1,866 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/code/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/code/lib/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/code/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Proxy,Agent," />
+
+
+
+
+
+  <link rel="alternate" href="/code/atom.xml" title="罗峡的技术博客" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/code/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="聊聊Agent/Proxy，以Node为例，看看ClientRequest是如何通过http.Agent去管理socket池，用Node写http/https proxy,再自定义Agent并在Agent与目标源之间加入Node proxy。">
+<meta name="keywords" content="Proxy,Agent">
+<meta property="og:type" content="article">
+<meta property="og:title" content="聊聊Agent&#x2F;Proxy">
+<meta property="og:url" content="http://luoxia.me/code/2017/07/16/聊聊Agent&Proxy/index.html">
+<meta property="og:site_name" content="罗峡的技术博客">
+<meta property="og:description" content="聊聊Agent/Proxy，以Node为例，看看ClientRequest是如何通过http.Agent去管理socket池，用Node写http/https proxy,再自定义Agent并在Agent与目标源之间加入Node proxy。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/blog-http-connect.png">
+<meta property="og:image" content="http://7xsi10.com1.z0.glb.clouddn.com/node-https-proxy.png">
+<meta property="og:updated_time" content="2017-11-16T13:10:06.492Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="聊聊Agent&#x2F;Proxy">
+<meta name="twitter:description" content="聊聊Agent/Proxy，以Node为例，看看ClientRequest是如何通过http.Agent去管理socket池，用Node写http/https proxy,再自定义Agent并在Agent与目标源之间加入Node proxy。">
+<meta name="twitter:image" content="http://7xsi10.com1.z0.glb.clouddn.com/blog-http-connect.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: undefined,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://luoxia.me/code/2017/07/16/聊聊Agent&Proxy/"/>
+
+  <title> 聊聊Agent/Proxy | 罗峡的技术博客 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?179492533449f84f24555d1cbf10462f";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/code/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">罗峡的技术博客</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">爱技术，爱生活</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/code/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/code/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/code/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/code/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/code/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup">
+ <span class="search-icon fa fa-search"></span>
+ <input type="text" id="local-search-input">
+ <div id="local-search-result"></div>
+ <span class="popup-btn-close">close</span>
+</div>
+
+
+    </div>
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                聊聊Agent/Proxy
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2017-07-16T21:59:39+08:00" content="2017-07-16">
+              2017-07-16
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/code/categories/Nodejs/" itemprop="url" rel="index">
+                    <span itemprop="name">Nodejs</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>聊聊Agent/Proxy，以Node为例，看看<code>ClientRequest</code>是如何通过<code>http.Agent</code>去管理socket池，用Node写http/https proxy,再自定义Agent并在Agent与目标源之间加入Node proxy。</p>
+<a id="more"></a>
+<h2 id="http-Agent"><a href="#http-Agent" class="headerlink" title="http.Agent"></a>http.Agent</h2><p>首先<code>addRequest()</code>方法是入口，<code>http_client</code>发请求前会判断是否有agent,如果有，则会调用agent的<code>addRequest()</code>方法:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (<span class="keyword">this</span>.agent) &#123;</span><br><span class="line">    <span class="keyword">if</span> (!<span class="keyword">this</span>.agent.keepAlive &amp;&amp; !<span class="built_in">Number</span>.isFinite(<span class="keyword">this</span>.agent.maxSockets)) &#123;</span><br><span class="line">      <span class="keyword">this</span>._last = <span class="literal">true</span>;</span><br><span class="line">      <span class="keyword">this</span>.shouldKeepAlive = <span class="literal">false</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">this</span>._last = <span class="literal">false</span>;</span><br><span class="line">      <span class="keyword">this</span>.shouldKeepAlive = <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">this</span>.agent.addRequest(<span class="keyword">this</span>, options);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>然后我们来看看官方的<code>http.Agent</code>做法:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> name = <span class="keyword">this</span>.getName(options);</span><br><span class="line"><span class="keyword">if</span> (!<span class="keyword">this</span>.sockets[name]) &#123;</span><br><span class="line"><span class="keyword">this</span>.sockets[name] = [];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> freeLen = <span class="keyword">this</span>.freeSockets[name] ? <span class="keyword">this</span>.freeSockets[name].length : <span class="number">0</span>;</span><br><span class="line"><span class="keyword">var</span> sockLen = freeLen + <span class="keyword">this</span>.sockets[name].length;</span><br></pre></td></tr></table></figure></p>
+<p>我们看到<code>this.sockets[name]</code>表示了某个host请求正在处理请求的sockets数组，<code>this.freeSockets[name]</code>则表示某个host请求处于free状态下的sockets，两者数量之和的上限就是我们传给<code>new http.Agent()</code>构造函数options中的<code>maxSockets</code></p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (freeLen) &#123;</span><br><span class="line">    <span class="keyword">var</span> socket = <span class="keyword">this</span>.freeSockets[name].shift();</span><br><span class="line">    socket._handle.asyncReset();</span><br><span class="line">    socket[async_id_symbol] = socket._handle.getAsyncId();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!<span class="keyword">this</span>.freeSockets[name].length)</span><br><span class="line">      <span class="keyword">delete</span> <span class="keyword">this</span>.freeSockets[name];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">this</span>.reuseSocket(socket, req);</span><br><span class="line">    req.onSocket(socket);</span><br><span class="line">    <span class="keyword">this</span>.sockets[name].push(socket);</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (sockLen &lt; <span class="keyword">this</span>.maxSockets) &#123;</span><br><span class="line">    debug(<span class="string">'call onSocket'</span>, sockLen, freeLen);</span><br><span class="line">    <span class="keyword">this</span>.createSocket(req, options, handleSocketCreation(req, <span class="literal">true</span>));</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    debug(<span class="string">'wait for socket'</span>);</span><br><span class="line">    <span class="keyword">if</span> (!<span class="keyword">this</span>.requests[name]) &#123;</span><br><span class="line">      <span class="keyword">this</span>.requests[name] = [];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">this</span>.requests[name].push(req);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>如果该host的socket池里有空闲的，就从<code>freeSockets</code>里取出一个socket,重用并且将这个socket加入到正在处理请求的sockets里，即<code>sockets[name]</code>，如果没有空闲的socket，就准备创建新的socket了，但是首先sockets数不能超过<code>maxSockets</code>，如果超过了，就暂时没有socket用了，就加入到等待队列吧,即这里的<code>this.requests[name]</code>。</p>
+<p>接着我们看看socket是怎么被加入到<code>freeSockets</code>的:</p>
+<p>在<code>createSocket()</code>后，会对新的socket绑定一系列listener,其中包括了<code>onFree</code>:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">onFree</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    debug(<span class="string">'CLIENT socket onFree'</span>);</span><br><span class="line">    agent.emit(<span class="string">'free'</span>, s, options);</span><br><span class="line">  &#125;</span><br><span class="line">s.on(<span class="string">'free'</span>, onFree);</span><br></pre></td></tr></table></figure></p>
+<p>socket所处理的request关闭后,就相当于free了，然后agent监听了free事件:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (socket.writable &amp;&amp;self.requests[name] &amp;&amp; self.requests[name].length) &#123;</span><br><span class="line">      self.requests[name].shift().onSocket(socket);</span><br><span class="line">      ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>free以后就去看还有没有处于等待队列的request,如果有就直接取出一个来复用这个socket</p>
+<p>如果没有，就尝试将其加入<code>freeSockets</code><br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (count &gt; self.maxSockets || freeLen &gt;= self.maxFreeSockets) &#123;</span><br><span class="line">    socket.destroy();</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// add socket to freeSockets</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>当然需要设定agent的<code>keep-alive</code>为true</p>
+<p>当socket被close时，直接从socket池里删除，如果requests队列里还有等待的，就重新create一个socket。</p>
+<h2 id="proxy"><a href="#proxy" class="headerlink" title="proxy"></a>proxy</h2><p>proxy方式有许多，这里仅仅以http/https proxy为例，且用node实现。</p>
+<h3 id="盲中继"><a href="#盲中继" class="headerlink" title="盲中继"></a>盲中继</h3><p>对于http网站，流量是可以通过proxy直接转发的，比如这里我实现的:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> httpAgent = <span class="keyword">new</span> http.Agent(&#123;</span><br><span class="line">        keepAlive: <span class="literal">true</span></span><br><span class="line">    &#125;)</span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">request</span>(<span class="params">cReq, cRes</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">let</span> u = url.parse(cReq.url);</span><br><span class="line">    <span class="keyword">let</span> needAgent = <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> headers = <span class="built_in">Object</span>.assign(&#123;&#125;,cReq.headers,&#123;</span><br><span class="line">        <span class="string">'x-forwarded-for'</span>: cReq.connection.remoteAddress</span><br><span class="line">    &#125;);</span><br><span class="line">    <span class="keyword">if</span>(headers[<span class="string">'proxy-connection'</span>])&#123;</span><br><span class="line">        headers[<span class="string">'connection'</span>] = headers[<span class="string">'proxy-connection'</span>]</span><br><span class="line">        <span class="keyword">delete</span> headers[<span class="string">'proxy-connection'</span>];</span><br><span class="line">        <span class="keyword">if</span>(headers[<span class="string">'connection'</span>] === <span class="string">'keep-alive'</span>)&#123;</span><br><span class="line">            needAgent = <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">let</span> options = &#123;</span><br><span class="line">        hostname : u.hostname, </span><br><span class="line">        port     : u.port || <span class="number">80</span>,</span><br><span class="line">        path     : u.path,       </span><br><span class="line">        method   : cReq.method,</span><br><span class="line">        headers,</span><br><span class="line">        agent: needAgent?httpAgent:<span class="literal">null</span></span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="keyword">let</span> pReq = http.request(options, pRes=&gt;&#123;</span><br><span class="line">        cRes.writeHead(pRes.statusCode, pRes.headers);</span><br><span class="line">        pRes.pipe(cRes);</span><br><span class="line">    &#125;).on(<span class="string">'error'</span>, e=&gt;&#123;</span><br><span class="line">        cRes.end();</span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">    cReq.pipe(pReq);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里实现的中继并不是最傻的，加入了<code>x-forwarded-for</code>请求头，根据keep-alive设计原则，去除来自agent的请求头中的逐跳首部<code>proxy-connection</code>，如果发现agent想要和源网站建立keep-alive连接，这里就加入<code>http.Agent</code>来管理proxy与源之间的keep-alive连接。至于proxy和user-agent之间的keep-alive问题，正在思考解决中。</p>
+<h3 id="CONNECT隧道"><a href="#CONNECT隧道" class="headerlink" title="CONNECT隧道"></a>CONNECT隧道</h3><p>想想agent与https网站的交流，由于证书机制，在它们中间加一个proxy会怎样，如果用上面那种方式去实现，则会存在一个问题，proxy服务器的证书没有加入agent的信任证书里，那么proxy与agent就建立不了连接。</p>
+<p>我们改用CONNECT方式，通过CONNECT方法建立隧道，来实现转发ssl流量:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">connect</span>(<span class="params">cReq, cSock</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">let</span> u = url.parse(<span class="string">'http://'</span> + cReq.url);</span><br><span class="line">    <span class="built_in">console</span>.log(cReq.url)</span><br><span class="line">    <span class="keyword">let</span> pSock = net.connect(u.port, u.hostname, ()=&gt;&#123;</span><br><span class="line">        cSock.write(<span class="string">'HTTP/1.1 200 Connection Established\r\nProxy-agent: Node.js proxy server\r\n\r\n'</span>);</span><br><span class="line">        pSock.pipe(cSock);</span><br><span class="line">    &#125;).on(<span class="string">'error'</span>, e=&gt;&#123;</span><br><span class="line">        cSock.end();</span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">    cSock.pipe(pSock);</span><br><span class="line">&#125;</span><br><span class="line">http.createServer()</span><br><span class="line">    .on(<span class="string">'request'</span>, request)</span><br><span class="line">    .on(<span class="string">'connect'</span>, connect)</span><br><span class="line">    .listen(<span class="number">8888</span>,()=&gt;&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">'the proxy server has been listend at port 8888'</span>)</span><br><span class="line">    &#125;);</span><br></pre></td></tr></table></figure></p>
+<p>抓包看看:<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/blog-http-connect.png" alt="http://7xsi10.com1.z0.glb.clouddn.com/blog-http-connect.png"></p>
+<p>可以看到，这种方式下，agent与proxy之间的流量是明文的，这就会导致一个问题，我试着将服务放到国外vps作为梯子，不访问黑名单网站还好，一访问就被GWF发现，proxy就挂了。那么我们可以在agent与proxy之间加层ssl啊。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">https.createServer(&#123;</span><br><span class="line">    key: fs.readFileSync(__dirname + <span class="string">'/server/server.key'</span>),</span><br><span class="line">    cert: fs.readFileSync(__dirname + <span class="string">'/server/server.crt'</span>)</span><br><span class="line">&#125;)</span><br><span class="line">    .on(<span class="string">'request'</span>, request)</span><br><span class="line">    .on(<span class="string">'connect'</span>, connect)</span><br><span class="line">    .listen(<span class="number">8888</span>,()=&gt;&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">'the proxy server has been listend at port 8888'</span>)</span><br><span class="line">    &#125;);</span><br></pre></td></tr></table></figure>
+<p>最终测试是没问题的:<br><img src="http://7xsi10.com1.z0.glb.clouddn.com/node-https-proxy.png" alt="http://7xsi10.com1.z0.glb.clouddn.com/node-https-proxy.png"></p>
+<h2 id="加入了proxy的agent"><a href="#加入了proxy的agent" class="headerlink" title="加入了proxy的agent"></a>加入了proxy的agent</h2><p>通过自定义agent，并实现<code>addRequest()</code>方法，有时候的需求是给Agent加上proxy,这个时候就需要在自定义的agent里进行模拟browser行为与proxy进行交流了。</p>
+<h3 id="http-proxy-agent"><a href="#http-proxy-agent" class="headerlink" title="http-proxy-agent"></a>http-proxy-agent</h3><p>这种agent只适用于源网站为http的，这种网站可以直接走盲中继</p>
+<p>它的实现方式很简单，直接使用<code>net</code>或<code>tls</code>建立socket,然后与proxy进行交流:<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (<span class="keyword">this</span>.secureProxy) &#123;</span><br><span class="line">    socket = tls.connect(proxy);</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    socket = net.connect(proxy);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
+<p>这个模块它是直接放弃<code>keep-alive</code>行为的，即没有发送<code>&#39;proxy-connection&#39;:&#39;keep-alive&#39;</code>,粗暴处理</p>
+<h3 id="https-proxy-agent"><a href="#https-proxy-agent" class="headerlink" title="https-proxy-agent"></a>https-proxy-agent</h3><p>该模块为了转发ssl流量，做法就是上面<code>proxy</code>小节提到的CONNECT方式：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> hostname = opts.host + <span class="string">':'</span> + opts.port;</span><br><span class="line">  <span class="keyword">var</span> msg = <span class="string">'CONNECT '</span> + hostname + <span class="string">' HTTP/1.1\r\n'</span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">var</span> headers = <span class="built_in">Object</span>.assign(&#123;&#125;, proxy.headers);</span><br><span class="line">  <span class="keyword">if</span> (proxy.auth) &#123;</span><br><span class="line">    headers[<span class="string">'Proxy-Authorization'</span>] =</span><br><span class="line">      <span class="string">'Basic '</span> + <span class="keyword">new</span> Buffer(proxy.auth).toString(<span class="string">'base64'</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">var</span> host = opts.host;</span><br><span class="line">  <span class="keyword">if</span> (!isDefaultPort(opts.port, opts.secureEndpoint)) &#123;</span><br><span class="line">    host += <span class="string">':'</span> + opts.port;</span><br><span class="line">  &#125;</span><br><span class="line">  headers[<span class="string">'Host'</span>] = host;</span><br><span class="line"></span><br><span class="line">  headers[<span class="string">'Connection'</span>] = <span class="string">'close'</span>;</span><br><span class="line">  <span class="built_in">Object</span>.keys(headers).forEach(<span class="function"><span class="keyword">function</span>(<span class="params">name</span>) </span>&#123;</span><br><span class="line">    msg += name + <span class="string">': '</span> + headers[name] + <span class="string">'\r\n'</span>;</span><br><span class="line">  &#125;);</span><br><span class="line"></span><br><span class="line">  socket.write(msg + <span class="string">'\r\n'</span>);</span><br></pre></td></tr></table></figure></p>
+<p>相当于就是模拟了browser的行为，向proxy发送CONNECT请求来建立隧道。</p>
+<h3 id="其他proxy"><a href="#其他proxy" class="headerlink" title="其他proxy"></a>其他proxy</h3><p>如socks之类的，篇幅有限，这里就不解释了。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+<div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/code/images/wechat.jpg" alt="罗峡的博客 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎扫描上面的微信公众号二维码，关注我的个人公众号：全栈前端</div>
+</div>
+
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/code/images/wechat_pay.png" alt="罗峡的博客 WeChat Pay"/>
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/code/images/ali_pay.jpg" alt="罗峡的博客 Alipay"/>
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/code/tags/Proxy/" rel="tag">#Proxy</a>
+          
+            <a href="/code/tags/Agent/" rel="tag">#Agent</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/code/2017/06/29/Buffer-Stream与内存管理/" rel="next" title="Buffer/Stream与内存管理">
+                <i class="fa fa-chevron-left"></i> Buffer/Stream与内存管理
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/code/2017/07/24/Process初始化与模块系统形成/" rel="prev" title="Process初始化与模块系统形成">
+                Process初始化与模块系统形成 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/code/images/head.jpg"
+               alt="罗峡的博客" />
+          <p class="site-author-name" itemprop="name">罗峡的博客</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/code/archives">
+              <span class="site-state-item-count">43</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/code/categories">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/code/tags">
+                <span class="site-state-item-count">85</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/code/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/laoqiren" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://luoxia.me/life" title="生活随笔" target="_blank">生活随笔</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#http-Agent"><span class="nav-number">1.</span> <span class="nav-text">http.Agent</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#proxy"><span class="nav-number">2.</span> <span class="nav-text">proxy</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#盲中继"><span class="nav-number">2.1.</span> <span class="nav-text">盲中继</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CONNECT隧道"><span class="nav-number">2.2.</span> <span class="nav-text">CONNECT隧道</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#加入了proxy的agent"><span class="nav-number">3.</span> <span class="nav-text">加入了proxy的agent</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#http-proxy-agent"><span class="nav-number">3.1.</span> <span class="nav-text">http-proxy-agent</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#https-proxy-agent"><span class="nav-number">3.2.</span> <span class="nav-text">https-proxy-agent</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#其他proxy"><span class="nav-number">3.3.</span> <span class="nav-text">其他proxy</span></a></li></ol></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">罗峡的博客</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/code/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/code/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/code/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/code/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/code/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/code/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length == 0) {
+       search_path = "search.xml";
+    }
+    var path = "/code/" + search_path;
+    // monitor main search box;
+
+    function proceedsearch() {
+      $("body").append('<div class="popoverlay">').css('overflow', 'hidden');
+      $('.popup').toggle();
+
+    }
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+    'use strict';
+    $.ajax({
+        url: path,
+        dataType: "xml",
+        async: true,
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            isfetched = true;
+            $('.popup').detach().appendTo('.header-inner');
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                var matchcounts = 0;
+                var str='<ul class=\"search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length > 1) {
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var content_index = [];
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_content = data.content.trim().replace(/<[^>]+>/g,"").toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    var index_content = -1;
+                    var first_occur = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title != '' && data_content != '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            index_content = data_content.indexOf(keyword);
+                            if( index_title < 0 && index_content < 0 ){
+                                isMatch = false;
+                            } else {
+                                if (index_content < 0) {
+                                    index_content = 0;
+                                }
+                                if (i == 0) {
+                                    first_occur = index_content;
+                                }
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        matchcounts += 1;
+                        str += "<li><a href='"+ data_url +"' class='search-result-title'>"+ data_title +"</a>";
+                        var content = data.content.trim().replace(/<[^>]+>/g,"");
+                        if (first_occur >= 0) {
+                            // cut out 100 characters
+                            var start = first_occur - 20;
+                            var end = first_occur + 80;
+                            if(start < 0){
+                                start = 0;
+                            }
+                            if(start == 0){
+                                end = 50;
+                            }
+                            if(end > content.length){
+                                end = content.length;
+                            }
+                            var match_content = content.substring(start, end);
+                            // highlight all keywords
+                            keywords.forEach(function(keyword){
+                                var regS = new RegExp(keyword, "gi");
+                                match_content = match_content.replace(regS, "<b class=\"search-keyword\">"+keyword+"</b>");
+                            });
+
+                            str += "<p class=\"search-result\">" + match_content +"...</p>"
+                        }
+                        str += "</li>";
+                    }
+                })};
+                str += "</ul>";
+                if (matchcounts == 0) { str = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>' }
+                if (keywords == "") { str = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>' }
+                $resultContent.innerHTML = str;
+            });
+            proceedsearch();
+        }
+    });}
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched == false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+
+    });
+
+    $('.popup-btn-close').click(function(e){
+      $('.popup').hide();
+      $(".popoverlay").remove();
+      $('body').css('overflow', '');
+    });
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+  </script>
+
+
+  
+
+  
+
+  
+<script type="text/javascript" async src="//push.zhanzhang.baidu.com/push.js">
+</script>
+
+
+</body>
+</html>
